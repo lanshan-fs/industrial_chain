@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Card, Typography } from "antd";
+import { Typography } from "antd";
 import { AppstoreOutlined } from "@ant-design/icons";
 
 // 引入组件
@@ -33,7 +33,7 @@ const App: React.FC = () => {
 
         {/* 使用 MainLayout 作为父级路由 */}
         <Route element={<MainLayout />}>
-          {/* ============ 模块1: 首页 ============ */}
+          {/* 首页 */}
           <Route path="home">
             <Route path="overview" element={<Overview />} />
             <Route
@@ -53,9 +53,9 @@ const App: React.FC = () => {
             />
           </Route>
 
-          {/* ============ 模块2: 数据管理 ============ */}
+          {/* 数据管理 */}
           <Route path="data-mgmt">
-            {/* 核心页面：企业基础数据 */}
+            {/* 企业基础数据 */}
             <Route path="enterprise-data" element={<EnterpriseData />} />
 
             {/* 待开发子页面 */}

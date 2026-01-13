@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Layout, Menu, Avatar, Dropdown, Breadcrumb, theme } from "antd";
+import { Layout, Menu, Avatar, Dropdown, Breadcrumb, theme, Tag } from "antd";
 import type { MenuProps } from "antd";
 import {
   UserOutlined,
@@ -14,6 +14,7 @@ import {
   BellOutlined,
   SettingOutlined,
   LogoutOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -64,6 +65,14 @@ const BREADCRUMB_MAP: Record<string, string> = {
   "weight-data": "评分维度权重",
   "tag-data": "标签基础数据",
 };
+
+// 4. 用户下拉菜单配置
+const userDropdownItems: MenuProps["items"] = [
+  { key: "center", label: "个人中心", icon: <UserOutlined /> },
+  { key: "settings", label: "系统设置", icon: <SettingOutlined /> },
+  { type: "divider" },
+  { key: "logout", label: "退出登录", icon: <LogoutOutlined />, danger: true },
+];
 
 const MainLayout: React.FC = () => {
   const {
@@ -144,26 +153,67 @@ const MainLayout: React.FC = () => {
             disabledOverflow={false}
           />
         </div>
-        <div>
+        {/* 右侧 用户信息 (恢复原有设计) */}
+        <div style={{ flexShrink: 0 }}>
           <Dropdown
-            menu={{
-              items: [
-                {
-                  key: "logout",
-                  label: "退出登录",
-                  icon: <LogoutOutlined />,
-                  danger: true,
-                },
-              ],
-            }}
+            menu={{ items: userDropdownItems }}
+            placement="bottomRight"
+            arrow
           >
-            <div style={{ cursor: "pointer", color: "white" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                padding: "4px 8px",
+                borderRadius: "6px",
+                background: "rgba(255,255,255,0.05)",
+                transition: "all 0.3s",
+              }}
+            >
               <Avatar
-                style={{ backgroundColor: "#1890ff", marginRight: 8 }}
+                style={{ backgroundColor: "#1890ff", verticalAlign: "middle" }}
                 icon={<UserOutlined />}
                 size="small"
               />
-              <span>管理员</span>
+              {/* 信息区：在小屏幕(hidden-xs)隐藏，只留头像 */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  marginLeft: 8,
+                  lineHeight: 1.2,
+                }}
+                className="hidden-xs"
+              >
+                <span style={{ color: "white", fontWeight: 500, fontSize: 13 }}>
+                  管理员
+                </span>
+                <span
+                  style={{ fontSize: "10px", color: "rgba(255,255,255,0.65)" }}
+                >
+                  <Tag
+                    color="cyan"
+                    style={{
+                      margin: 0,
+                      border: 0,
+                      padding: "0 2px",
+                      fontSize: 10,
+                      height: 14,
+                      lineHeight: "14px",
+                    }}
+                  >
+                    数智医疗
+                  </Tag>
+                </span>
+              </div>
+              <DownOutlined
+                style={{
+                  color: "rgba(255,255,255,0.5)",
+                  marginLeft: 8,
+                  fontSize: 10,
+                }}
+              />
             </div>
           </Dropdown>
         </div>
@@ -216,6 +266,12 @@ const MainLayout: React.FC = () => {
           </Footer>
         </Layout>
       </Layout>
+      {/* 补充样式：用于在极小屏幕隐藏元素 */}
+      <style>{`
+        @media (max-width: 576px) {
+          .hidden-xs { display: none !important; }
+        }
+      `}</style>
     </Layout>
   );
 };
