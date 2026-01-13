@@ -105,6 +105,16 @@ const MainLayout: React.FC = () => {
     navigate(`/${currentTopNav}/${e.key}`);
   };
 
+  const handleUserMenuClick: MenuProps["onClick"] = (e) => {
+    if (e.key === "logout") {
+      // TODO: 如果有存储 token（如 localStorage），建议在此处清除
+      // localStorage.removeItem('token');
+
+      // 跳转至登录页
+      navigate("/login");
+    }
+  };
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* Header */}
@@ -156,7 +166,7 @@ const MainLayout: React.FC = () => {
         {/* 右侧 用户信息 (恢复原有设计) */}
         <div style={{ flexShrink: 0 }}>
           <Dropdown
-            menu={{ items: userDropdownItems }}
+            menu={{ items: userDropdownItems, onClick: handleUserMenuClick }}
             placement="bottomRight"
             arrow
           >
