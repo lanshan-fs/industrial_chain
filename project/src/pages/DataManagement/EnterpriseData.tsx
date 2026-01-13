@@ -15,6 +15,7 @@ import {
   message,
   Popconfirm,
   Tabs,
+  Typography,
 } from "antd";
 import type { TableProps } from "antd";
 import {
@@ -147,7 +148,7 @@ const EnterpriseData: React.FC = () => {
       title: "统一社会信用代码",
       dataIndex: "code",
       key: "code",
-      copyable: true,
+      render: (text) => <Typography.Text copyable>{text}</Typography.Text>,
     },
     {
       title: "产业链环节",
