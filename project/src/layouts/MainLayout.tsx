@@ -1,0 +1,223 @@
+import React, { useState, useEffect } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Layout, Menu, Avatar, Dropdown, Breadcrumb, theme } from "antd";
+import type { MenuProps } from "antd";
+import {
+  UserOutlined,
+  DashboardOutlined,
+  AppstoreOutlined,
+  BarChartOutlined,
+  ProjectOutlined,
+  TagsOutlined,
+  LineChartOutlined,
+  SearchOutlined,
+  BellOutlined,
+  SettingOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
+
+const { Header, Content, Footer, Sider } = Layout;
+
+// --- 导航配置 ---
+// 1. 顶部一级导航
+const TOP_NAV_ITEMS: MenuProps["items"] = [
+  { key: "home", label: "首页", icon: <DashboardOutlined /> },
+  { key: "data-mgmt", label: "数据管理", icon: <AppstoreOutlined /> },
+  { key: "score-mgmt", label: "评分管理", icon: <BarChartOutlined /> },
+  { key: "graph-portrait", label: "图谱画像", icon: <ProjectOutlined /> },
+  { key: "tag-mgmt", label: "标签管理", icon: <TagsOutlined /> },
+  { key: "industry-analysis", label: "产业分析", icon: <LineChartOutlined /> },
+];
+
+// 2. 侧边栏二级导航配置 (一级Key -> 二级菜单Items)
+const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
+  home: [
+    { key: "overview", icon: <AppstoreOutlined />, label: "数据概览" },
+    { key: "search", icon: <SearchOutlined />, label: "高级搜索" },
+    { key: "notice", icon: <BellOutlined />, label: "公告栏" },
+  ],
+  "data-mgmt": [
+    {
+      key: "enterprise-data",
+      icon: <ProjectOutlined />,
+      label: "企业基础数据",
+    },
+    {
+      key: "industry-data",
+      icon: <LineChartOutlined />,
+      label: "行业统计数据",
+    },
+    { key: "weight-data", icon: <SettingOutlined />, label: "评分维度权重" },
+    { key: "tag-data", icon: <TagsOutlined />, label: "标签基础数据" },
+  ],
+};
+
+// 3. 面包屑映射
+const BREADCRUMB_MAP: Record<string, string> = {
+  home: "首页",
+  "data-mgmt": "数据管理",
+  overview: "数据概览",
+  search: "高级搜索",
+  notice: "公告栏",
+  "enterprise-data": "企业基础数据",
+  "industry-data": "行业统计数据",
+  "weight-data": "评分维度权重",
+  "tag-data": "标签基础数据",
+};
+
+const MainLayout: React.FC = () => {
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
+
+  // 解析当前路由路径
+  // 假设路径格式为: /一级/二级 (例如 /data-mgmt/enterprise-data)
+  const pathSnippets = location.pathname.split("/").filter((i) => i);
+  const currentTopNav = pathSnippets[0] || "home";
+  const currentSiderKey = pathSnippets[1] || "";
+
+  // 处理顶部导航点击
+  const handleTopNavClick = (e: { key: string }) => {
+    const key = e.key;
+    // 查找该模块下的第一个子菜单，默认跳转过去
+    const subItems = SIDER_CONFIG[key];
+    if (subItems && subItems.length > 0 && subItems[0]) {
+      navigate(`/${key}/${subItems[0].key}`);
+    } else {
+      navigate(`/${key}`);
+    }
+  };
+
+  // 处理侧边栏点击
+  const handleSiderClick = (e: { key: string }) => {
+    navigate(`/${currentTopNav}/${e.key}`);
+  };
+
+  return (
+    <Layout style={{ minHeight: "100vh" }}>
+      {/* Header */}
+      <Header
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "#001529",
+          padding: "0 16px",
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          width: "100%",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", minWidth: 160 }}>
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              background: "linear-gradient(135deg, #1890ff 0%, #0050b3 100%)",
+              borderRadius: 6,
+              marginRight: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontWeight: "bold",
+            }}
+          >
+            P
+          </div>
+          <span style={{ color: "white", fontSize: "18px", fontWeight: 600 }}>
+            区域产业链洞察
+          </span>
+        </div>
+        <div style={{ flex: 1, margin: "0 20px" }}>
+          <Menu
+            theme="dark"
+            mode="horizontal"
+            selectedKeys={[currentTopNav]}
+            items={TOP_NAV_ITEMS}
+            onClick={handleTopNavClick}
+            style={{ borderBottom: "none", lineHeight: "64px" }}
+            disabledOverflow={false}
+          />
+        </div>
+        <div>
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  key: "logout",
+                  label: "退出登录",
+                  icon: <LogoutOutlined />,
+                  danger: true,
+                },
+              ],
+            }}
+          >
+            <div style={{ cursor: "pointer", color: "white" }}>
+              <Avatar
+                style={{ backgroundColor: "#1890ff", marginRight: 8 }}
+                icon={<UserOutlined />}
+                size="small"
+              />
+              <span>管理员</span>
+            </div>
+          </Dropdown>
+        </div>
+      </Header>
+
+      <Layout>
+        {/* Sider: 动态显示 */}
+        <Sider
+          width={220}
+          collapsible
+          collapsed={collapsed}
+          onCollapse={setCollapsed}
+          breakpoint="lg"
+          collapsedWidth="60"
+          style={{ background: colorBgContainer }}
+        >
+          <Menu
+            mode="inline"
+            selectedKeys={[currentSiderKey]}
+            items={SIDER_CONFIG[currentTopNav] || []}
+            onClick={handleSiderClick}
+            style={{ height: "100%", borderRight: 0, paddingTop: 10 }}
+          />
+        </Sider>
+
+        {/* Main Content */}
+        <Layout style={{ padding: "0 16px 16px" }}>
+          <Breadcrumb
+            style={{ margin: "12px 0" }}
+            items={[
+              { title: BREADCRUMB_MAP[currentTopNav] || currentTopNav },
+              { title: BREADCRUMB_MAP[currentSiderKey] || currentSiderKey },
+            ]}
+          />
+
+          <Content
+            style={{
+              padding: 24,
+              margin: 0,
+              minHeight: 280,
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+              overflowY: "auto",
+            }}
+          >
+            <Outlet />
+          </Content>
+          <Footer style={{ textAlign: "center", color: "#999", fontSize: 12 }}>
+            区域产业链平台 ©2026
+          </Footer>
+        </Layout>
+      </Layout>
+    </Layout>
+  );
+};
+
+export default MainLayout;
