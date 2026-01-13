@@ -1,0 +1,34 @@
+/* src/index.css */
+
+/* 1. 消除浏览器默认边距 */
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* 防止外层出现滚动条 */
+  background-color: #f0f2f5; /* 与 AntD 默认底色一致 */
+}
+
+/* 2. 强制 React 挂载点占满屏幕 */
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 3. 滚动条美化 (可选) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
