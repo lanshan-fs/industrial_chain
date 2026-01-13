@@ -7,6 +7,8 @@ import { AppstoreOutlined } from "@ant-design/icons";
 import MainLayout from "./layouts/MainLayout";
 import Overview from "./pages/Home/Overview";
 import EnterpriseData from "./pages/DataManagement/EnterpriseData";
+// 引入新创建的登录页
+import Login from "./pages/Auth/Login";
 
 const { Title, Text } = Typography;
 
@@ -28,10 +30,23 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 根路径重定向到 首页-数据概览 */}
+        {/* 1. 公开路由：登录页 */}
+        <Route path="/login" element={<Login />} />
+
+        {/* 注册和忘记密码页预留 */}
+        <Route
+          path="/register"
+          element={<PlaceholderPage title="注册页面" desc="开发中..." />}
+        />
+        <Route
+          path="/forgot-password"
+          element={<PlaceholderPage title="找回密码" desc="开发中..." />}
+        />
+
+        {/* 2. 根路径重定向到 首页-数据概览 */}
         <Route path="/" element={<Navigate to="/home/overview" replace />} />
 
-        {/* 使用 MainLayout 作为父级路由 */}
+        {/* 3. 受保护路由（需要 MainLayout） */}
         <Route element={<MainLayout />}>
           {/* 首页 */}
           <Route path="home">
