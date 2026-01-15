@@ -3,14 +3,15 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Typography } from "antd";
 import { AppstoreOutlined } from "@ant-design/icons";
 
-// 引入组件
 import MainLayout from "./layouts/MainLayout";
 import Overview from "./pages/Home/Overview";
 import EnterpriseData from "./pages/DataManagement/EnterpriseData";
-// 引入 Auth 组件
+
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
-import ForgotPassword from "./pages/Auth/ForgotPassword"; // 新增引用
+import ForgotPassword from "./pages/Auth/ForgotPassword";
+
+import AutoTag from "./pages/TagManagement/AutoTag";
 
 const { Title, Text } = Typography;
 
@@ -110,10 +111,30 @@ const App: React.FC = () => {
               />
             }
           />
-          <Route
-            path="tag-mgmt/*"
-            element={<PlaceholderPage title="标签管理" desc="企业标签库管理" />}
-          />
+          <Route path="tag-mgmt">
+            {/* 自动打标签 */}
+            <Route path="auto-tag" element={<AutoTag />} />
+
+            {/* 其他子页面暂时使用占位符，后续开发 */}
+            <Route
+              path="enterprise-tag"
+              element={
+                <PlaceholderPage
+                  title="企业标签管理"
+                  desc="管理单个企业的标签信息"
+                />
+              }
+            />
+            <Route
+              path="tag-library"
+              element={
+                <PlaceholderPage
+                  title="标签体系库"
+                  desc="标签维度与热门标签统计"
+                />
+              }
+            />
+          </Route>
           <Route
             path="industry-analysis/*"
             element={

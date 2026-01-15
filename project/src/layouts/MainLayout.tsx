@@ -15,6 +15,9 @@ import {
   SettingOutlined,
   LogoutOutlined,
   DownOutlined,
+  ThunderboltOutlined,
+  ReadOutlined,
+  TagOutlined,
 } from "@ant-design/icons";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -51,6 +54,11 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
     { key: "weight-data", icon: <SettingOutlined />, label: "评分维度权重" },
     { key: "tag-data", icon: <TagsOutlined />, label: "标签基础数据" },
   ],
+  "tag-mgmt": [
+    { key: "auto-tag", icon: <ThunderboltOutlined />, label: "自动打标签" },
+    { key: "enterprise-tag", icon: <TagOutlined />, label: "企业标签管理" },
+    { key: "tag-library", icon: <ReadOutlined />, label: "标签体系库" },
+  ],
 };
 
 // 3. 面包屑映射
@@ -64,6 +72,9 @@ const BREADCRUMB_MAP: Record<string, string> = {
   "industry-data": "行业统计数据",
   "weight-data": "评分维度权重",
   "tag-data": "标签基础数据",
+  "auto-tag": "自动打标签",
+  "enterprise-tag": "企业标签管理",
+  "tag-library": "标签体系库",
 };
 
 // 4. 用户下拉菜单配置
