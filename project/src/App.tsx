@@ -97,12 +97,14 @@ const App: React.FC = () => {
             />
           </Route>
 
+          {/* 评分管理 */}
           <Route path="score-mgmt">
-            {/* 默认跳转到产业评分 */}
             <Route index element={<Navigate to="industry-score" replace />} />
             <Route path="industry-score" element={<IndustryScore />} />
             <Route path="enterprise-score" element={<EnterpriseScore />} />
           </Route>
+
+          {/* 图谱画像 */}
           <Route
             path="graph-portrait/*"
             element={
@@ -112,11 +114,15 @@ const App: React.FC = () => {
               />
             }
           />
+
+          {/* 标签管理 */}
           <Route path="tag-mgmt">
             <Route path="auto-tag" element={<AutoTag />} />
             <Route path="enterprise-tag" element={<EnterpriseTag />} />
             <Route path="tag-library" element={<TagLibrary />} />
           </Route>
+
+          {/* 产业分析 */}
           <Route
             path="industry-analysis/*"
             element={

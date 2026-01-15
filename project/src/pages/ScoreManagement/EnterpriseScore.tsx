@@ -175,7 +175,7 @@ const EnterpriseScore: React.FC = () => {
     }
   }, [searchParams]);
 
-  const handleSearch = (value: string) => {
+  const handleSearch = () => {
     setLoading(true);
     setTimeout(() => setLoading(false), 800);
   };
