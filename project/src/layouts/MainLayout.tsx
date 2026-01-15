@@ -18,6 +18,7 @@ import {
   ThunderboltOutlined,
   ReadOutlined,
   TagOutlined,
+  PieChartOutlined,
 } from "@ant-design/icons";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -54,6 +55,10 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
     { key: "weight-data", icon: <SettingOutlined />, label: "评分维度权重" },
     { key: "tag-data", icon: <TagsOutlined />, label: "标签基础数据" },
   ],
+  "score-mgmt": [
+    { key: "industry-score", icon: <PieChartOutlined />, label: "产业评分" },
+    { key: "enterprise-score", icon: <BarChartOutlined />, label: "企业评分" },
+  ],
   "tag-mgmt": [
     { key: "auto-tag", icon: <ThunderboltOutlined />, label: "自动打标签" },
     { key: "enterprise-tag", icon: <TagOutlined />, label: "企业标签管理" },
@@ -65,6 +70,7 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
 const BREADCRUMB_MAP: Record<string, string> = {
   home: "首页",
   "data-mgmt": "数据管理",
+  "score-mgmt": "评分管理",
   overview: "数据概览",
   search: "高级搜索",
   notice: "公告栏",
@@ -72,6 +78,8 @@ const BREADCRUMB_MAP: Record<string, string> = {
   "industry-data": "行业统计数据",
   "weight-data": "评分维度权重",
   "tag-data": "标签基础数据",
+  "industry-score": "产业评分",
+  "enterprise-score": "企业评分",
   "auto-tag": "自动打标签",
   "enterprise-tag": "企业标签管理",
   "tag-library": "标签体系库",
