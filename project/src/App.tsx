@@ -15,6 +15,8 @@ import AutoTag from "./pages/TagManagement/AutoTag";
 import EnterpriseTag from "./pages/TagManagement/EnterpriseTag";
 import TagLibrary from "./pages/TagManagement/TagLibrary";
 
+import IndustryScore from "./pages/ScoreManagement/IndustryScore";
+
 const { Title, Text } = Typography;
 
 // 简单的占位组件，用于那些还没开发的页面
@@ -94,16 +96,20 @@ const App: React.FC = () => {
             />
           </Route>
 
-          {/* ============ 其他一级模块 (暂未开发) ============ */}
-          <Route
-            path="score-mgmt/*"
-            element={
-              <PlaceholderPage
-                title="评分管理"
-                desc="产业与企业评分全流程管理"
-              />
-            }
-          />
+          <Route path="score-mgmt">
+            {/* 默认跳转到产业评分 */}
+            <Route index element={<Navigate to="industry-score" replace />} />
+            <Route path="industry-score" element={<IndustryScore />} />
+            <Route
+              path="enterprise-score"
+              element={
+                <PlaceholderPage
+                  title="企业评分"
+                  desc="企业微观评分详情与计算依据 (开发中)"
+                />
+              }
+            />
+          </Route>
           <Route
             path="graph-portrait/*"
             element={
