@@ -16,6 +16,7 @@ import EnterpriseTag from "./pages/TagManagement/EnterpriseTag";
 import TagLibrary from "./pages/TagManagement/TagLibrary";
 
 import IndustryScore from "./pages/ScoreManagement/IndustryScore";
+import EnterpriseScore from "./pages/ScoreManagement/EnterpriseScore";
 
 const { Title, Text } = Typography;
 
@@ -100,15 +101,7 @@ const App: React.FC = () => {
             {/* 默认跳转到产业评分 */}
             <Route index element={<Navigate to="industry-score" replace />} />
             <Route path="industry-score" element={<IndustryScore />} />
-            <Route
-              path="enterprise-score"
-              element={
-                <PlaceholderPage
-                  title="企业评分"
-                  desc="企业微观评分详情与计算依据 (开发中)"
-                />
-              }
-            />
+            <Route path="enterprise-score" element={<EnterpriseScore />} />
           </Route>
           <Route
             path="graph-portrait/*"
