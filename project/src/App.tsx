@@ -12,6 +12,7 @@ import Register from "./pages/Auth/Register";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 
 import AutoTag from "./pages/TagManagement/AutoTag";
+import EnterpriseTag from "./pages/TagManagement/EnterpriseTag";
 
 const { Title, Text } = Typography;
 
@@ -112,19 +113,10 @@ const App: React.FC = () => {
             }
           />
           <Route path="tag-mgmt">
-            {/* 自动打标签 */}
             <Route path="auto-tag" element={<AutoTag />} />
+            {/* 2. 替换占位符 */}
+            <Route path="enterprise-tag" element={<EnterpriseTag />} />
 
-            {/* 其他子页面暂时使用占位符，后续开发 */}
-            <Route
-              path="enterprise-tag"
-              element={
-                <PlaceholderPage
-                  title="企业标签管理"
-                  desc="管理单个企业的标签信息"
-                />
-              }
-            />
             <Route
               path="tag-library"
               element={
