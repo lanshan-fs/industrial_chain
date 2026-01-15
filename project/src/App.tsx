@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/Auth/ForgotPassword";
 
 import AutoTag from "./pages/TagManagement/AutoTag";
 import EnterpriseTag from "./pages/TagManagement/EnterpriseTag";
+import TagLibrary from "./pages/TagManagement/TagLibrary";
 
 const { Title, Text } = Typography;
 
@@ -114,18 +115,8 @@ const App: React.FC = () => {
           />
           <Route path="tag-mgmt">
             <Route path="auto-tag" element={<AutoTag />} />
-            {/* 2. 替换占位符 */}
             <Route path="enterprise-tag" element={<EnterpriseTag />} />
-
-            <Route
-              path="tag-library"
-              element={
-                <PlaceholderPage
-                  title="标签体系库"
-                  desc="标签维度与热门标签统计"
-                />
-              }
-            />
+            <Route path="tag-library" element={<TagLibrary />} />
           </Route>
           <Route
             path="industry-analysis/*"
