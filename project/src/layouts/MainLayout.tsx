@@ -19,6 +19,8 @@ import {
   ReadOutlined,
   TagOutlined,
   PieChartOutlined,
+  RobotOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -64,25 +66,33 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
     { key: "enterprise-tag", icon: <TagOutlined />, label: "企业标签管理" },
     { key: "tag-library", icon: <ReadOutlined />, label: "标签体系库" },
   ],
+  "industry-analysis": [
+    { key: "rici-v1", icon: <RobotOutlined />, label: "RICI V1" },
+    { key: "history", icon: <HistoryOutlined />, label: "历史记录" },
+  ],
 };
 
 // 3. 面包屑映射
 const BREADCRUMB_MAP: Record<string, string> = {
   home: "首页",
-  "data-mgmt": "数据管理",
-  "score-mgmt": "评分管理",
   overview: "数据概览",
   search: "高级搜索",
   notice: "公告栏",
+  "data-mgmt": "数据管理",
   "enterprise-data": "企业基础数据",
   "industry-data": "行业统计数据",
   "weight-data": "评分维度权重",
   "tag-data": "标签基础数据",
+  "score-mgmt": "评分管理",
   "industry-score": "产业评分",
   "enterprise-score": "企业评分",
+  "tag-mgmt": "标签管理",
   "auto-tag": "自动打标签",
   "enterprise-tag": "企业标签管理",
   "tag-library": "标签体系库",
+  "industry-analysis": "产业分析",
+  "rici-v1": "RICI V1 助手",
+  history: "历史记录",
 };
 
 // 4. 用户下拉菜单配置

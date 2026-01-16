@@ -18,6 +18,9 @@ import TagLibrary from "./pages/TagManagement/TagLibrary";
 import IndustryScore from "./pages/ScoreManagement/IndustryScore";
 import EnterpriseScore from "./pages/ScoreManagement/EnterpriseScore";
 
+import RICIV1 from "./pages/IndustryAnalysis/RICIV1";
+import History from "./pages/IndustryAnalysis/History";
+
 const { Title, Text } = Typography;
 
 // 简单的占位组件，用于那些还没开发的页面
@@ -123,12 +126,11 @@ const App: React.FC = () => {
           </Route>
 
           {/* 产业分析 */}
-          <Route
-            path="industry-analysis/*"
-            element={
-              <PlaceholderPage title="产业分析" desc="AI 大模型辅助决策分析" />
-            }
-          />
+          <Route path="industry-analysis">
+            <Route index element={<Navigate to="rici-v1" replace />} />
+            <Route path="rici-v1" element={<RICIV1 />} />
+            <Route path="history" element={<History />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
