@@ -5,6 +5,7 @@ import { AppstoreOutlined } from "@ant-design/icons";
 
 import MainLayout from "./layouts/MainLayout";
 import Overview from "./pages/Home/Overview";
+import AdvancedSearch from "./pages/Home/AdvancedSearch";
 import EnterpriseData from "./pages/DataManagement/EnterpriseData";
 
 import Login from "./pages/Auth/Login";
@@ -54,15 +55,7 @@ const App: React.FC = () => {
           {/* 首页 */}
           <Route path="home">
             <Route path="overview" element={<Overview />} />
-            <Route
-              path="search"
-              element={
-                <PlaceholderPage
-                  title="高级搜索"
-                  desc="支持多维度组合检索企业主体"
-                />
-              }
-            />
+            <Route path="search" element={<AdvancedSearch />} />
             <Route
               path="notice"
               element={
