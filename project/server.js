@@ -4,7 +4,7 @@ import cors from "cors";
 import { message } from "antd";
 
 const app = express();
-const PORT = 3306;
+const PORT = 3001;
 
 app.use(cors());
 app.use(express.json());
