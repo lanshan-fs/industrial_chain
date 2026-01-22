@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -10,12 +10,12 @@ import {
   Tag,
   Modal,
   Form,
-  Select,
   Upload,
   message,
   Popconfirm,
   Tabs,
   Typography,
+  Tooltip,
 } from "antd";
 import type { TableProps } from "antd";
 import {
@@ -26,79 +26,49 @@ import {
   EditOutlined,
   DeleteOutlined,
   FileExcelOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
 
-const { Option } = Select;
-
-// 模拟数据
 interface EnterpriseDataType {
   key: string;
   name: string;
-  code: string;
-  chainLink: string;
-  patents: number;
-  softwares: number;
+  variants: string;
   updateTime: string;
 }
 
-const initialEnterpriseData: EnterpriseDataType[] = [
-  {
-    key: "1",
-    name: "北京数字医疗科技有限公司",
-    code: "91110105MA01...",
-    chainLink: "上游研发",
-    patents: 24,
-    softwares: 12,
-    updateTime: "2026-01-12",
-  },
-  {
-    key: "2",
-    name: "朝阳区智慧康养中心",
-    code: "52110105MJ23...",
-    chainLink: "下游服务",
-    patents: 5,
-    softwares: 8,
-    updateTime: "2026-01-10",
-  },
-  {
-    key: "3",
-    name: "未来生命科学研究院",
-    code: "121000004000...",
-    chainLink: "基础研究",
-    patents: 156,
-    softwares: 45,
-    updateTime: "2026-01-13",
-  },
-  {
-    key: "4",
-    name: "博爱医疗器械股份公司",
-    code: "911100007890...",
-    chainLink: "设备生产",
-    patents: 88,
-    softwares: 30,
-    updateTime: "2026-01-09",
-  },
-  {
-    key: "5",
-    name: "云端健康大数据中心",
-    code: "911101086666...",
-    chainLink: "软件开发",
-    patents: 12,
-    softwares: 120,
-    updateTime: "2026-01-11",
-  },
-];
-
 const EnterpriseData: React.FC = () => {
-  const [data, setData] = useState(initialEnterpriseData);
+  const [data, setData] = useState<EnterpriseDataType[]>([]);
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState("");
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/companies");
+      const result = await response.json();
+      if (result.success) {
+        setData(result.data);
+      } else {
+        message.error("获取数据失败：" + result.message);
+      }
+    } catch (error) {
+      message.error("网络请求错误，请确保 server.js 已启动");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredData = data.filter(
-    (item) => item.name.includes(searchText) || item.code.includes(searchText)
+    (item) =>
+      item.name.includes(searchText) || item.variants.includes(searchText),
   );
 
   const handleOk = () => {
@@ -107,15 +77,13 @@ const EnterpriseData: React.FC = () => {
         const newData = {
           key: Date.now().toString(),
           ...values,
-          patents: 0,
-          softwares: 0,
           updateTime: new Date().toISOString().split("T")[0],
         };
         setData([newData, ...data]);
-        message.success("新增成功 (已写入临时表)");
+        message.success("新增成功");
       } else {
         const newData = data.map((item) =>
-          item.key === editingKey ? { ...item, ...values } : item
+          item.key === editingKey ? { ...item, ...values } : item,
         );
         setData(newData);
         message.success("修改成功");
@@ -127,7 +95,7 @@ const EnterpriseData: React.FC = () => {
 
   const handleDelete = (key: string) => {
     setData(data.filter((item) => item.key !== key));
-    message.success("删除成功 (已记录日志)");
+    message.success("删除成功");
   };
 
   const openEdit = (record: EnterpriseDataType) => {
@@ -142,44 +110,73 @@ const EnterpriseData: React.FC = () => {
       title: "企业名称",
       dataIndex: "name",
       key: "name",
-      render: (text) => <a>{text}</a>,
+      width: 180,
+      render: (text) => <a style={{ fontWeight: "bold" }}>{text}</a>,
     },
     {
-      title: "统一社会信用代码",
-      dataIndex: "code",
-      key: "code",
-      render: (text) => <Typography.Text copyable>{text}</Typography.Text>,
+      title: "企业ID / 唯一标识",
+      dataIndex: "key",
+      key: "key",
+      width: 120,
+      ellipsis: true,
+      render: (text) => (
+        <Typography.Text type="secondary" copyable style={{ fontSize: 12 }}>
+          {text}
+        </Typography.Text>
+      ),
     },
     {
-      title: "产业链环节",
-      dataIndex: "chainLink",
-      key: "chainLink",
-      filters: [
-        { text: "上游研发", value: "上游研发" },
-        { text: "设备生产", value: "设备生产" },
-      ],
-      onFilter: (value, record) =>
-        record.chainLink.indexOf(value as string) === 0,
-    },
-    {
-      title: "核心评分数据",
-      key: "scoreData",
-      render: (_, record) => (
-        <Space size="small" direction="vertical" style={{ fontSize: 12 }}>
-          <Tag color="blue">专利: {record.patents}</Tag>
-          <Tag color="cyan">软著: {record.softwares}</Tag>
+      title: (
+        <Space>
+          <TagsOutlined />
+          <span>业务标签 / 原始变体 (Tags)</span>
         </Space>
       ),
+      dataIndex: "variants",
+      key: "variants",
+      render: (text: string) => {
+        if (!text) return <Tag>无</Tag>;
+        // 核心逻辑：解析 CSV 中的 "|" 分隔符，生成 Tag 列表
+        const tags = text
+          .split("|")
+          .map((t) => t.trim())
+          .filter((t) => t);
+        // 只显示前3个，超出的放入 Tooltip
+        const showTags = tags.slice(0, 3);
+        const hiddenTags = tags.slice(3);
+
+        return (
+          <Space size={[0, 4]} wrap>
+            {showTags.map((tag, index) => {
+              // 简单处理，去掉括号外的重复名称，让标签更简洁 (可选)
+              // 例如 "DeepSeek（通用开源模型）" -> "通用开源模型"
+              // 这里为了保持原汁原味，暂时直接展示
+              return (
+                <Tag color="blue" key={index} style={{ marginRight: 4 }}>
+                  {tag}
+                </Tag>
+              );
+            })}
+            {hiddenTags.length > 0 && (
+              <Tooltip title={hiddenTags.join(", ")}>
+                <Tag>+{hiddenTags.length}...</Tag>
+              </Tooltip>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: "更新时间",
       dataIndex: "updateTime",
       key: "updateTime",
+      width: 120,
       sorter: (a, b) => a.updateTime.localeCompare(b.updateTime),
     },
     {
       title: "操作",
       key: "action",
+      width: 150,
       render: (_, record) => (
         <Space size="middle">
           <Button
@@ -214,9 +211,9 @@ const EnterpriseData: React.FC = () => {
           <Col>
             <Space>
               <Input
-                placeholder="搜索企业名称/代码..."
+                placeholder="搜索企业或业务标签..."
                 prefix={<SearchOutlined />}
-                style={{ width: 250 }}
+                style={{ width: 300 }}
                 onChange={(e) => setSearchText(e.target.value)}
               />
               <Button icon={<FilterOutlined />}>更多筛选</Button>
@@ -233,8 +230,9 @@ const EnterpriseData: React.FC = () => {
               >
                 <PlusOutlined /> 手动新增
               </Button>
+              {/* 这里在真实场景中可以连接后端的导入接口 */}
               <Button type="primary" icon={<ImportOutlined />}>
-                Excel 导入
+                Excel/CSV 导入
               </Button>
             </Space>
           </Col>
@@ -245,12 +243,14 @@ const EnterpriseData: React.FC = () => {
         <Table
           columns={columns}
           dataSource={filteredData}
+          loading={loading}
           pagination={{ pageSize: 8 }}
+          rowKey="key"
         />
       </Card>
 
       <Modal
-        title={modalMode === "add" ? "新增企业主体" : "编辑企业信息"}
+        title={modalMode === "add" ? "新增企业" : "编辑企业信息"}
         open={isModalOpen}
         onOk={handleOk}
         onCancel={() => setIsModalOpen(false)}
@@ -264,44 +264,26 @@ const EnterpriseData: React.FC = () => {
                 key: "manual",
                 label: "人工录入",
                 children: (
-                  <Form
-                    form={form}
-                    layout="vertical"
-                    initialValues={{ chainLink: "上游研发" }}
-                  >
+                  <Form form={form} layout="vertical">
                     <Form.Item
                       name="name"
                       label="企业名称"
                       rules={[{ required: true }]}
                     >
-                      <Input placeholder="请输入全称" />
+                      <Input placeholder="请输入企业全称" />
                     </Form.Item>
-                    <Row gutter={16}>
-                      <Col span={12}>
-                        <Form.Item
-                          name="code"
-                          label="社会信用代码"
-                          rules={[{ required: true }]}
-                        >
-                          <Input />
-                        </Form.Item>
-                      </Col>
-                      <Col span={12}>
-                        <Form.Item name="chainLink" label="产业链环节">
-                          <Select>
-                            <Option value="上游研发">上游研发</Option>
-                            <Option value="设备生产">设备生产</Option>
-                            <Option value="下游服务">下游服务</Option>
-                          </Select>
-                        </Form.Item>
-                      </Col>
-                    </Row>
+                    <Form.Item name="variants" label="业务标签/变体">
+                      <Input.TextArea
+                        placeholder="例如：DeepSeek（医疗大模型）| DeepSeek（开源）"
+                        rows={3}
+                      />
+                    </Form.Item>
                   </Form>
                 ),
               },
               {
                 key: "import",
-                label: "Excel导入",
+                label: "文件导入",
                 children: (
                   <div style={{ textAlign: "center", padding: "20px 0" }}>
                     <Upload.Dragger>
@@ -309,12 +291,12 @@ const EnterpriseData: React.FC = () => {
                         <FileExcelOutlined />
                       </p>
                       <p className="ant-upload-text">
-                        点击或拖拽 Excel 文件到此区域上传
+                        点击或拖拽 CSV 文件到此区域上传
+                      </p>
+                      <p className="ant-upload-hint">
+                        支持 .csv, .xlsx 格式，将自动解析并存入数据库
                       </p>
                     </Upload.Dragger>
-                    <Button type="link" style={{ marginTop: 10 }}>
-                      下载标准导入模板
-                    </Button>
                   </div>
                 ),
               },
@@ -330,19 +312,8 @@ const EnterpriseData: React.FC = () => {
             >
               <Input />
             </Form.Item>
-            <Form.Item
-              name="code"
-              label="社会信用代码"
-              rules={[{ required: true }]}
-            >
-              <Input disabled />
-            </Form.Item>
-            <Form.Item name="chainLink" label="产业链环节">
-              <Select>
-                <Option value="上游研发">上游研发</Option>
-                <Option value="设备生产">设备生产</Option>
-                <Option value="下游服务">下游服务</Option>
-              </Select>
+            <Form.Item name="variants" label="业务标签/变体">
+              <Input.TextArea rows={4} />
             </Form.Item>
           </Form>
         )}
