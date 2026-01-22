@@ -1,209 +1,152 @@
-import React, { useState, useMemo } from "react";
+import React from "react";
 import {
   Row,
   Col,
   Card,
-  Tree,
   Statistic,
   List,
-  Avatar,
   Tag,
   Typography,
+  Collapse,
   theme,
   ConfigProvider,
+  FloatButton,
+  Badge,
 } from "antd";
-import type { TreeDataNode } from "antd";
-// 移除 Column 组件引用，因为不再使用柱状图
 import {
-  ShopOutlined,
-  DashboardOutlined,
-  ThunderboltFilled,
-  ApartmentOutlined,
   SafetyCertificateOutlined,
-  TrophyOutlined,
+  BankOutlined,
   GlobalOutlined,
   RocketOutlined,
-  BankOutlined,
+  TrophyOutlined,
   CrownOutlined,
-  RiseOutlined,
+  ShopOutlined,
+  RightOutlined,
+  RobotOutlined,
+  LinkOutlined,
+  EnvironmentOutlined,
+  ThunderboltFilled,
+  SoundOutlined,
+  AimOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
+const { Panel } = Collapse;
 
 // --- 1. 模拟数据 ---
 
-// 标签树数据 (1-3级)
-const tagTreeData: TreeDataNode[] = [
+// 左屏：产业链上中下游数据
+const chainData = [
   {
-    title: "产业链全景",
-    key: "all",
-    children: [
-      {
-        title: "上游研发",
-        key: "upstream",
-        children: [
-          { title: "基础研究", key: "basic-research" },
-          { title: "原料供应", key: "raw-material" },
-        ],
-      },
-      {
-        title: "中游制造",
-        key: "midstream",
-        children: [
-          { title: "设备生产", key: "equipment" },
-          { title: "软件开发", key: "software" },
-          { title: "系统集成", key: "integration" },
-        ],
-      },
-      {
-        title: "下游服务",
-        key: "downstream",
-        children: [
-          { title: "医疗服务", key: "medical-service" },
-          { title: "健康管理", key: "health-mgmt" },
-        ],
-      },
+    type: "upstream",
+    title: "上游 · 研发与技术",
+    total: 342,
+    color: "#1890ff",
+    subTags: [
+      { name: "创新药研发", count: 86, isWeak: false },
+      { name: "医疗器械基础研究", count: 120, isWeak: false },
+      { name: "生物医药原料供应", count: 32, isWeak: true }, // 薄弱
+      { name: "核心零部件", count: 104, isWeak: false },
+    ],
+  },
+  {
+    type: "midstream",
+    title: "中游 · 生产与制造",
+    total: 518,
+    color: "#52c41a",
+    subTags: [
+      { name: "高端医疗设备生产", count: 145, isWeak: false },
+      { name: "医药耗材制造", count: 210, isWeak: false },
+      { name: "数字化系统集成", count: 98, isWeak: false },
+      { name: "工业软件开发", count: 65, isWeak: true }, // 薄弱
+    ],
+  },
+  {
+    type: "downstream",
+    title: "下游 · 服务与应用",
+    total: 620,
+    color: "#fa8c16",
+    subTags: [
+      { name: "医疗机构服务", count: 280, isWeak: false },
+      { name: "智慧健康管理", count: 156, isWeak: false },
+      { name: "医疗电商流通", count: 134, isWeak: false },
+      { name: "医药冷链物流", count: 50, isWeak: true }, // 薄弱
     ],
   },
 ];
 
-interface EnterpriseItem {
-  id: string;
-  title: string;
-  tagKey: string;
-  tagName: string;
-  score: number;
-  description: string;
-}
+// 计算所有薄弱环节（补链建议数据源）
+const weakLinks = chainData.flatMap((layer) =>
+  layer.subTags
+    .filter((t) => t.isWeak)
+    .map((t) => ({ ...t, layer: layer.title })),
+);
 
-const allEnterprises: EnterpriseItem[] = [
+// 朝阳区概览数据
+const chaoyangStats = [
   {
-    id: "1",
-    title: "北京数字医疗科技有限公司",
-    tagKey: "software",
-    tagName: "软件开发",
-    score: 92,
-    description: "AI影像识别算法领军企业",
+    label: "朝阳区上市企业",
+    value: 35,
+    icon: <GlobalOutlined />,
+    color: "#cf1322",
   },
   {
-    id: "2",
-    title: "朝阳区智慧康养中心",
-    tagKey: "medical-service",
-    tagName: "医疗服务",
-    score: 88,
-    description: "智慧养老示范试点单位",
+    label: "朝阳区外资企业",
+    value: 128,
+    icon: <GlobalOutlined />,
+    color: "#d48806",
+  },
+  { label: "独角兽企业", value: 12, icon: <CrownOutlined />, color: "#eb2f96" },
+  { label: "专精特新", value: 185, icon: <TrophyOutlined />, color: "#722ed1" },
+  { label: "高新技术", value: 456, icon: <RocketOutlined />, color: "#1890ff" },
+  { label: "科技中小", value: 890, icon: <ShopOutlined />, color: "#52c41a" },
+];
+
+// 推荐补链企业（引育推荐数据源 - 模拟来自其他区）
+const recommendEnterprises = [
+  {
+    name: "北京神州生物原料有限公司",
+    district: "大兴区",
+    tag: "生物医药原料供应",
+    match: "98%",
   },
   {
-    id: "3",
-    title: "未来生物制药实验室",
-    tagKey: "basic-research",
-    tagName: "基础研究",
-    score: 95,
-    description: "国家级生物医药重点实验室",
+    name: "中关村工业软件研发院",
+    district: "海淀区",
+    tag: "工业软件开发",
+    match: "95%",
   },
   {
-    id: "4",
-    title: "健安医疗器械厂",
-    tagKey: "equipment",
-    tagName: "设备生产",
-    score: 81,
-    description: "家用健康监测设备制造商",
-  },
-  {
-    id: "5",
-    title: "云端健康数据平台",
-    tagKey: "integration",
-    tagName: "系统集成",
-    score: 89,
-    description: "区域医疗数据互联互通平台",
+    name: "京北医药冷链物流集团",
+    district: "顺义区",
+    tag: "医药冷链物流",
+    match: "92%",
   },
 ];
 
-// 新增：企业资质类型统计数据 (模拟您提到的分类排布)
-const enterpriseTypeStats = [
-  {
-    label: "上市企业",
-    value: 12,
-    icon: <GlobalOutlined />,
-    color: "#cf1322", // 红色系
-    bg: "rgba(207, 19, 34, 0.1)",
-  },
-  {
-    label: "拟上市企业",
-    value: 8,
-    icon: <RiseOutlined />,
-    color: "#d48806", // 橙色系
-    bg: "rgba(212, 136, 6, 0.1)",
-  },
-  {
-    label: "独角兽企业",
-    value: 3,
-    icon: <CrownOutlined />,
-    color: "#eb2f96", // 粉色系
-    bg: "rgba(235, 47, 150, 0.1)",
-  },
-  {
-    label: "专精特新",
-    value: 45,
-    icon: <TrophyOutlined />,
-    color: "#722ed1", // 紫色系
-    bg: "rgba(114, 46, 209, 0.1)",
-  },
-  {
-    label: "高新技术",
-    value: 156,
-    icon: <RocketOutlined />,
-    color: "#1890ff", // 蓝色系
-    bg: "rgba(24, 144, 255, 0.1)",
-  },
-  {
-    label: "科技中小",
-    value: 380,
-    icon: <ShopOutlined />,
-    color: "#52c41a", // 绿色系
-    bg: "rgba(82, 196, 26, 0.1)",
-  },
+// 公告栏数据
+const notices = [
+  "【通知】关于2026年第一季度高新技术企业申报的预通知",
+  "【动态】朝阳区新增3家国家级专精特新“小巨人”企业",
+  "【系统】平台将于本周日凌晨 02:00 进行系统维护升级",
 ];
 
 // --- 2. 页面组件 ---
 
 const Overview: React.FC = () => {
-  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>(["all"]);
-
-  // 筛选逻辑
-  const filteredData = useMemo(() => {
-    const key = selectedKeys[0];
-    if (!key || key === "all") return allEnterprises;
-
-    const keyMap: Record<string, string[]> = {
-      upstream: ["basic-research", "raw-material"],
-      midstream: ["equipment", "software", "integration"],
-      downstream: ["medical-service", "health-mgmt"],
-    };
-
-    if (keyMap[key as string]) {
-      return allEnterprises.filter((item) =>
-        keyMap[key as string].includes(item.tagKey)
-      );
-    }
-    return allEnterprises.filter((item) => item.tagKey === key);
-  }, [selectedKeys]);
+  const navigate = useNavigate();
 
   // 大屏配色方案
   const dashboardColors = {
-    bg: "linear-gradient(180deg, #001529 0%, #000c17 100%)", // 深空蓝背景
-    cardBg: "rgba(255, 255, 255, 0.04)", // 玻璃拟态卡片背景
-    accent: "#1890ff", // 科技蓝
+    bg: "linear-gradient(180deg, #001529 0%, #000c17 100%)",
+    cardBg: "rgba(255, 255, 255, 0.04)",
+    accent: "#1890ff",
     border: "rgba(255,255,255,0.1)",
     textSecondary: "rgba(255, 255, 255, 0.65)",
   };
 
-  const handleSelect = (keys: React.Key[]) => {
-    if (keys.length > 0) setSelectedKeys(keys);
-  };
-
   return (
-    // 使用 ConfigProvider 强制局部暗色模式
     <ConfigProvider
       theme={{
         algorithm: theme.darkAlgorithm,
@@ -215,10 +158,8 @@ const Overview: React.FC = () => {
     >
       <div
         style={{
-          // Hack: 使用负 margin 抵消父容器的 padding，营造全屏沉浸感
-          margin: "-24px",
           padding: "24px",
-          minHeight: "calc(100% + 48px)",
+          minHeight: "100%",
           background: dashboardColors.bg,
           color: "#fff",
         }}
@@ -239,284 +180,472 @@ const Overview: React.FC = () => {
               level={3}
               style={{ margin: 0, color: "#fff", letterSpacing: "1px" }}
             >
-              <DashboardOutlined
+              <EnvironmentOutlined
                 style={{ marginRight: 12, color: dashboardColors.accent }}
               />
-              产业链数据驾驶舱
+              产业链全景驾驶舱
             </Title>
             <Text
               style={{ color: dashboardColors.textSecondary, fontSize: 12 }}
             >
-              REGIONAL INDUSTRIAL CHAIN DATA DASHBOARD
+              CHAOYANG DISTRICT INDUSTRIAL CHAIN DASHBOARD
             </Text>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <Tag color="blue" style={{ margin: 0 }}>
-              实时监控中
-            </Tag>
           </div>
         </div>
 
-        <Row gutter={[20, 20]}>
-          {/* 左侧：标签筛选 (侧边控制面板风格) */}
-          <Col xs={24} md={6}>
+        {/* 5:5 分屏布局 */}
+        <Row gutter={[24, 24]}>
+          {/* ================= 左半屏：产业链分类 ================= */}
+          <Col xs={24} md={12}>
             <Card
-              title={
-                <span style={{ color: dashboardColors.accent }}>
-                  {" "}
-                  <ApartmentOutlined /> 环节透视
-                </span>
-              }
+              title={<span style={{ color: "#fff" }}>全景产业链树谱</span>}
               bordered={false}
-              style={{
-                height: "100%",
-                minHeight: 600,
-                borderLeft: `2px solid ${dashboardColors.accent}`, // 科技感左边框
-              }}
+              style={{ height: "100%" }}
             >
-              <Tree
-                showLine
-                defaultExpandedKeys={["all", "upstream", "midstream"]}
-                selectedKeys={selectedKeys}
-                onSelect={handleSelect}
-                treeData={tagTreeData}
-                style={{ background: "transparent" }}
-              />
-            </Card>
-          </Col>
-
-          {/* 右侧：数据展示区 */}
-          <Col xs={24} md={18}>
-            {/* 1. 关键指标卡片 (Key Metrics) */}
-            <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-              <Col xs={24} sm={8}>
-                <Card bordered={false} hoverable>
-                  <Statistic
-                    title={
-                      <span style={{ color: dashboardColors.textSecondary }}>
-                        收录企业总数
-                      </span>
-                    }
-                    value={filteredData.length}
-                    suffix={<span style={{ fontSize: 14 }}>家</span>}
-                    valueStyle={{ color: "#fff", fontWeight: "bold" }}
-                    prefix={
-                      <BankOutlined style={{ color: dashboardColors.accent }} />
-                    }
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={8}>
-                <Card bordered={false} hoverable>
-                  <Statistic
-                    title={
-                      <span style={{ color: dashboardColors.textSecondary }}>
-                        平均健康度评分
-                      </span>
-                    }
-                    value={
-                      filteredData.length > 0
-                        ? filteredData.reduce(
-                            (acc, cur) => acc + cur.score,
-                            0
-                          ) / filteredData.length
-                        : 0
-                    }
-                    precision={1}
-                    valueStyle={{ color: "#52c41a", fontWeight: "bold" }}
-                    prefix={<SafetyCertificateOutlined />}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={8}>
-                <Card bordered={false} hoverable>
-                  <Statistic
-                    title={
-                      <span style={{ color: dashboardColors.textSecondary }}>
-                        产业链活跃度
-                      </span>
-                    }
-                    value={88.5}
-                    suffix="%"
-                    valueStyle={{ color: "#f5222d", fontWeight: "bold" }}
-                    prefix={<ThunderboltFilled />}
-                  />
-                </Card>
-              </Col>
-            </Row>
-
-            {/* 2. 企业资质分布态势 (Grid Layout) - 替换了原来的图表 */}
-            <Card
-              title={<span style={{ color: "#fff" }}>企业资质分布态势</span>}
-              bordered={false}
-              style={{ marginBottom: 20 }}
-            >
-              <Row gutter={[16, 16]}>
-                {enterpriseTypeStats.map((item, index) => (
-                  <Col xs={24} sm={12} md={8} key={index}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        padding: "16px 20px",
-                        background: item.bg, // 动态背景色
-                        borderRadius: "8px",
-                        border: `1px solid ${item.color}`, // 动态边框色
-                        transition: "all 0.3s",
-                        cursor: "pointer",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-4px)";
-                        e.currentTarget.style.boxShadow = `0 4px 12px ${item.bg}`;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    >
-                      {/* 图标区 */}
+              <Collapse
+                defaultActiveKey={["upstream", "midstream", "downstream"]}
+                ghost
+                expandIconPosition="end"
+              >
+                {chainData.map((category) => (
+                  <Panel
+                    key={category.type}
+                    header={
                       <div
                         style={{
-                          width: 48,
-                          height: 48,
                           display: "flex",
+                          justifyContent: "space-between",
+                          width: "100%",
                           alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: "50%",
-                          background: item.color,
-                          color: "#fff",
-                          fontSize: 24,
-                          marginRight: 16,
-                          boxShadow: `0 0 10px ${item.color}`,
                         }}
                       >
-                        {item.icon}
-                      </div>
-
-                      {/* 文字区 */}
-                      <div style={{ flex: 1 }}>
-                        <div
+                        <span
                           style={{
-                            color: "rgba(255,255,255,0.7)",
-                            fontSize: 13,
-                            marginBottom: 4,
-                          }}
-                        >
-                          {item.label}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 24,
+                            fontSize: 16,
                             fontWeight: "bold",
-                            color: "#fff",
-                            lineHeight: 1,
+                            color: category.color,
                           }}
                         >
-                          {item.value}{" "}
-                          <span
-                            style={{
-                              fontSize: 12,
-                              fontWeight: "normal",
-                              color: "rgba(255,255,255,0.5)",
-                            }}
-                          >
-                            家
-                          </span>
-                        </div>
+                          {category.title}
+                        </span>
+                        <Tag color={category.color}>{category.total} 家</Tag>
                       </div>
-                    </div>
-                  </Col>
-                ))}
-              </Row>
-            </Card>
-
-            {/* 3. 重点关注主体列表 */}
-            <Card
-              title={
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <span style={{ color: "#fff" }}>重点关注主体</span>
-                  <Tag color="cyan">
-                    当前视图：
-                    {selectedKeys[0] === "all" ? "全产业链" : selectedKeys[0]}
-                  </Tag>
-                </div>
-              }
-              bordered={false}
-            >
-              <List
-                itemLayout="horizontal"
-                dataSource={filteredData}
-                pagination={{
-                  pageSize: 3,
-                  simple: true,
-                  style: { color: "white" },
-                }}
-                renderItem={(item) => (
-                  <List.Item
+                    }
                     style={{
                       borderBottom: `1px solid ${dashboardColors.border}`,
+                      marginBottom: 12,
+                      background: "rgba(255,255,255,0.02)",
+                      borderRadius: 8,
                     }}
-                    actions={[
-                      <a key="detail" style={{ color: dashboardColors.accent }}>
-                        深度画像
-                      </a>,
-                    ]}
                   >
-                    <List.Item.Meta
-                      avatar={
-                        <Avatar
-                          style={{
-                            backgroundColor: "rgba(24,144,255,0.2)",
-                            color: dashboardColors.accent,
-                            border: `1px solid ${dashboardColors.accent}`,
-                          }}
-                        >
-                          {item.title[0]}
-                        </Avatar>
-                      }
-                      title={
-                        <span style={{ color: "#fff", fontSize: 15 }}>
-                          {item.title}
-                        </span>
-                      }
-                      description={
-                        <span style={{ color: "rgba(255,255,255,0.45)" }}>
-                          <Tag color="geekblue">{item.tagName}</Tag>{" "}
-                          {item.description}
-                        </span>
-                      }
+                    <List
+                      grid={{ gutter: 16, column: 2 }}
+                      dataSource={category.subTags}
+                      renderItem={(tag) => (
+                        <List.Item>
+                          <Card
+                            size="small"
+                            style={{
+                              background: tag.isWeak
+                                ? "rgba(250, 140, 22, 0.1)"
+                                : "rgba(255,255,255,0.03)",
+                              borderColor: tag.isWeak
+                                ? "#fa8c16"
+                                : dashboardColors.border,
+                              cursor: "pointer",
+                            }}
+                            onClick={() =>
+                              navigate(`/graph-portrait/map?tag=${tag.name}`)
+                            }
+                            hoverable
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: 14,
+                                    color: tag.isWeak ? "#fa8c16" : "#fff",
+                                  }}
+                                >
+                                  {tag.name}{" "}
+                                  {tag.isWeak && (
+                                    <Tag
+                                      color="warning"
+                                      style={{ marginLeft: 4 }}
+                                    >
+                                      需补链
+                                    </Tag>
+                                  )}
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: 12,
+                                    color: dashboardColors.textSecondary,
+                                  }}
+                                >
+                                  企业数:{" "}
+                                  <span
+                                    style={{
+                                      color: category.color,
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {tag.count}
+                                  </span>
+                                </div>
+                              </div>
+                              <RightOutlined
+                                style={{ color: dashboardColors.textSecondary }}
+                              />
+                            </div>
+                          </Card>
+                        </List.Item>
+                      )}
                     />
-                    <div style={{ textAlign: "right", minWidth: 80 }}>
-                      <div
-                        style={{
-                          fontSize: 20,
-                          fontWeight: "bold",
-                          color:
-                            item.score >= 90
-                              ? "#52c41a"
-                              : dashboardColors.accent,
-                          textShadow:
-                            item.score >= 90
-                              ? "0 0 10px rgba(82,196,26,0.3)"
-                              : "none",
-                        }}
-                      >
-                        {item.score}
-                      </div>
-                      <div
-                        style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}
-                      >
-                        综合评分
-                      </div>
-                    </div>
-                  </List.Item>
-                )}
-              />
+                  </Panel>
+                ))}
+              </Collapse>
             </Card>
           </Col>
+
+          {/* ================= 右半屏：概览 & 诊断 ================= */}
+          <Col xs={24} md={12}>
+            <Row gutter={[16, 16]}>
+              {/* 1. 关键指标 */}
+              <Col span={24}>
+                <Row gutter={[16, 16]}>
+                  <Col span={8}>
+                    <Card bordered={false}>
+                      <Statistic
+                        title={
+                          <span
+                            style={{ color: dashboardColors.textSecondary }}
+                          >
+                            朝阳区收录总数
+                          </span>
+                        }
+                        value={1480}
+                        suffix="家"
+                        valueStyle={{ color: "#fff", fontWeight: "bold" }}
+                        prefix={<BankOutlined />}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card bordered={false}>
+                      <Statistic
+                        title={
+                          <span
+                            style={{ color: dashboardColors.textSecondary }}
+                          >
+                            朝阳区健康度评分
+                          </span>
+                        }
+                        value={85.2}
+                        valueStyle={{ color: "#52c41a", fontWeight: "bold" }}
+                        prefix={<SafetyCertificateOutlined />}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card bordered={false}>
+                      <Statistic
+                        title={
+                          <span
+                            style={{ color: dashboardColors.textSecondary }}
+                          >
+                            朝阳区协同效率
+                          </span>
+                        }
+                        value={78.5}
+                        suffix="%"
+                        valueStyle={{ color: "#fa8c16", fontWeight: "bold" }}
+                        prefix={<ThunderboltFilled />}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+              </Col>
+
+              {/* 2. 企业类型概览 */}
+              <Col span={24}>
+                <Card
+                  title={
+                    <span style={{ color: "#fff" }}>朝阳区企业类型概览</span>
+                  }
+                  bordered={false}
+                  bodyStyle={{ padding: "12px 24px" }}
+                >
+                  <Row gutter={[12, 12]}>
+                    {chaoyangStats.map((item, idx) => (
+                      <Col span={8} key={idx}>
+                        <div
+                          style={{
+                            padding: "12px",
+                            background: "rgba(255,255,255,0.03)",
+                            borderRadius: "6px",
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: item.color,
+                              fontSize: 24,
+                              marginRight: 12,
+                            }}
+                          >
+                            {item.icon}
+                          </span>
+                          <div>
+                            <div
+                              style={{
+                                color: dashboardColors.textSecondary,
+                                fontSize: 12,
+                              }}
+                            >
+                              {item.label}
+                            </div>
+                            <div
+                              style={{
+                                color: "#fff",
+                                fontSize: 18,
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {item.value}
+                            </div>
+                          </div>
+                        </div>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card>
+              </Col>
+
+              {/* 3. 智能诊断 - 模块拆分 */}
+              <Col span={24}>
+                <Row gutter={[16, 16]}>
+                  {/* 3.1 补链建议：显示朝阳区需要补链的行业 */}
+                  <Col span={12}>
+                    <Card
+                      title={
+                        <span style={{ color: "#fa8c16" }}>
+                          <LinkOutlined /> 补链建议 (朝阳区)
+                        </span>
+                      }
+                      bordered={false}
+                      style={{ height: "100%", borderTop: "2px solid #fa8c16" }}
+                    >
+                      <List
+                        dataSource={weakLinks}
+                        renderItem={(item) => (
+                          <List.Item
+                            style={{
+                              padding: "10px 0",
+                              borderBottom: `1px dashed ${dashboardColors.border}`,
+                            }}
+                          >
+                            <div style={{ width: "100%" }}>
+                              <div
+                                style={{
+                                  color: "#fff",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                }}
+                              >
+                                <span>{item.name}</span>
+                                <Tag color="error">缺口明显</Tag>
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  color: dashboardColors.textSecondary,
+                                  marginTop: 4,
+                                }}
+                              >
+                                所属环节：{item.layer}
+                              </div>
+                            </div>
+                          </List.Item>
+                        )}
+                      />
+                    </Card>
+                  </Col>
+
+                  {/* 3.2 引育推荐：显示北京市其他区的推荐企业 */}
+                  <Col span={12}>
+                    <Card
+                      title={
+                        <span style={{ color: "#1890ff" }}>
+                          <AimOutlined /> 引育推荐 (全市联动)
+                        </span>
+                      }
+                      bordered={false}
+                      style={{ height: "100%", borderTop: "2px solid #1890ff" }}
+                    >
+                      <List
+                        dataSource={recommendEnterprises}
+                        renderItem={(item) => (
+                          <List.Item
+                            style={{
+                              padding: "10px 0",
+                              borderBottom: `1px dashed ${dashboardColors.border}`,
+                            }}
+                          >
+                            <div style={{ width: "100%" }}>
+                              <div
+                                style={{
+                                  color: "#fff",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                }}
+                              >
+                                <span>{item.name}</span>
+                                <span
+                                  style={{ color: "#52c41a", fontSize: 12 }}
+                                >
+                                  匹配 {item.match}
+                                </span>
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  color: dashboardColors.textSecondary,
+                                  marginTop: 4,
+                                  display: "flex",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <EnvironmentOutlined
+                                  style={{ marginRight: 4 }}
+                                />{" "}
+                                {item.district}
+                                <span style={{ margin: "0 8px" }}>|</span>
+                                <Tag
+                                  bordered={false}
+                                  style={{
+                                    color: "#fff",
+                                    background: "rgba(255,255,255,0.1)",
+                                  }}
+                                >
+                                  {item.tag}
+                                </Tag>
+                              </div>
+                            </div>
+                          </List.Item>
+                        )}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+              </Col>
+            </Row>
+          </Col>
         </Row>
+
+        {/* ================= 底部：公告栏模块 ================= */}
+        <div
+          style={{
+            marginTop: 24,
+            padding: "16px",
+            background: "rgba(24,144,255,0.1)",
+            border: `1px solid ${dashboardColors.accent}`,
+            borderRadius: 8,
+          }}
+        >
+          <Row align="middle">
+            <Col
+              span={2}
+              style={{
+                textAlign: "center",
+                borderRight: `1px solid ${dashboardColors.border}`,
+              }}
+            >
+              <SoundOutlined
+                style={{ fontSize: 20, color: dashboardColors.accent }}
+              />
+              <div
+                style={{
+                  fontSize: 12,
+                  color: dashboardColors.accent,
+                  marginTop: 4,
+                }}
+              >
+                公告栏
+              </div>
+            </Col>
+            <Col span={22} style={{ paddingLeft: 24 }}>
+              <div style={{ display: "flex", overflow: "hidden" }}>
+                {/* 简单模拟滚动或列表 */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    width: "100%",
+                  }}
+                >
+                  {notices.map((notice, idx) => (
+                    <div
+                      key={idx}
+                      style={{ display: "flex", alignItems: "center" }}
+                    >
+                      <Tag
+                        color={idx === 2 ? "red" : "blue"}
+                        style={{ marginRight: 12 }}
+                      >
+                        {idx === 2 ? "紧急" : "最新"}
+                      </Tag>
+                      <span
+                        style={{
+                          color: "rgba(255,255,255,0.85)",
+                          fontSize: 14,
+                        }}
+                      >
+                        {notice}
+                      </span>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          color: dashboardColors.textSecondary,
+                          fontSize: 12,
+                        }}
+                      >
+                        2026-01-23
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+
+        {/* 悬浮按钮 */}
+        <FloatButton.Group
+          trigger="hover"
+          style={{ right: 24, bottom: 80 }}
+          icon={<RobotOutlined />}
+        >
+          <Badge count={"New"} offset={[-10, 0]}>
+            <FloatButton
+              tooltip="风险预警"
+              icon={<SafetyCertificateOutlined />}
+            />
+          </Badge>
+          <FloatButton
+            tooltip="AI 助手"
+            icon={<RobotOutlined />}
+            type="primary"
+          />
+        </FloatButton.Group>
       </div>
     </ConfigProvider>
   );
