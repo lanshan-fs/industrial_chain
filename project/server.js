@@ -1,6 +1,7 @@
 import express from "express";
 import mysql from "mysql2/promise";
 import cors from "cors";
+import crypto from "crypto";
 import { message } from "antd";
 
 const app = express();
@@ -123,6 +124,107 @@ app.get("/api/dashboard/overview", async (req, res) => {
   } catch (error) {
     console.error("Dashboard overview query failed:", error);
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get("/api/chat/history", async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT session_id, title, create_time FROM chat_sessions ORDER BY create_time DESC LIMIT 20",
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get("/api/chat/history/:sessionId", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const [rows] = await pool.query(
+      "SELECT role, content, create_time FROM chat_messages WHERE session_id = ? ORDER BY message_id ASC",
+      [sessionId],
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post("/api/chat", async (req, res) => {
+  const { messages, sessionId } = req.body; // 前端传当前的 sessionId (如果是新对话则为 null)
+
+  const API_KEY = "sk-d1a18b48e5b544fbadd0ece3ab3960ee";
+  const API_URL = "https://api.deepseek.com/chat/completions";
+
+  // 生成或使用现有的 session_id
+  let currentSessionId = sessionId;
+  let isNewSession = false;
+
+  if (!currentSessionId) {
+    currentSessionId = crypto.randomUUID();
+    isNewSession = true;
+  }
+
+  // 获取用户最新的一条消息（用于做标题和存库）
+  const userLatestMsg = messages[messages.length - 1].content;
+
+  try {
+    // 1. 如果是新会话，先存 session 表
+    if (isNewSession) {
+      // 截取前 20 个字作为标题
+      const title =
+        userLatestMsg.substring(0, 20) +
+        (userLatestMsg.length > 20 ? "..." : "");
+      await pool.query(
+        "INSERT INTO chat_sessions (session_id, title) VALUES (?, ?)",
+        [currentSessionId, title],
+      );
+    }
+
+    // 2. 存用户的提问到 message 表
+    await pool.query(
+      "INSERT INTO chat_messages (session_id, role, content) VALUES (?, ?, ?)",
+      [currentSessionId, "user", userLatestMsg],
+    );
+
+    // 3. 调用 DeepSeek API
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: "你是一个专业的区域产业链分析助手..." },
+          ...messages,
+        ],
+        stream: false,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || "API调用失败");
+
+    const aiContent = data.choices[0].message.content;
+
+    // 4. 存 AI 的回复到 message 表
+    await pool.query(
+      "INSERT INTO chat_messages (session_id, role, content) VALUES (?, ?, ?)",
+      [currentSessionId, "assistant", aiContent],
+    );
+
+    // 返回内容，同时返回 sessionId 给前端，以便前端下次接着发
+    res.json({
+      success: true,
+      data: aiContent,
+      sessionId: currentSessionId,
+    });
+  } catch (error) {
+    console.error("Chat API Error:", error);
+    res.status(500).json({ success: false, message: "服务异常" });
   }
 });
 

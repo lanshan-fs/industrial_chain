@@ -89,4 +89,24 @@ INSERT INTO chain_stage_map VALUES
 
 ('药物','化学制药','下游','化学药品生产'),
 ('药物','生物制品','下游','生物药品生产'),
-('药物','中药','下游','中成药及中药制品')
+('药物','中药','下游','中成药及中药制品');
+
+-- 4. 创建会话表 (chat_sessions)
+-- 用于存储对话的标题、创建时间
+CREATE TABLE IF NOT EXISTS `chat_sessions` (
+  `session_id` VARCHAR(50) NOT NULL COMMENT '会话ID',
+  `title` VARCHAR(255) DEFAULT NULL COMMENT '会话标题(通常是第一个问题)',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`session_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI对话会话表';
+
+-- 5. 创建消息表 (chat_messages)
+-- 用于存储具体的问答内容
+CREATE TABLE IF NOT EXISTS `chat_messages` (
+  `message_id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '消息ID',
+  `session_id` VARCHAR(50) NOT NULL COMMENT '关联的会话ID',
+  `role` ENUM('user', 'assistant') NOT NULL COMMENT '角色',
+  `content` TEXT NOT NULL COMMENT '消息内容',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
+  INDEX `idx_session` (`session_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI对话消息记录表';
