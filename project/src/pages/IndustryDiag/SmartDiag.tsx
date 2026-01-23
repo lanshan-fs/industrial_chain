@@ -184,11 +184,15 @@ const RICIV1: React.FC = () => {
                     maxWidth: "70%",
                     padding: "12px 16px",
                     borderRadius: 8,
-                    backgroundColor: msg.role === "user" ? "#e6f7ff" : "#f5f5f5",
-                    border: msg.role === "user" ? "1px solid #91d5ff" : "1px solid #f0f0f0",
+                    backgroundColor:
+                      msg.role === "user" ? "#e6f7ff" : "#f5f5f5",
+                    border:
+                      msg.role === "user"
+                        ? "1px solid #91d5ff"
+                        : "1px solid #f0f0f0",
                   }}
                 >
-                   <div style={{ whiteSpace: "pre-wrap" }}>{msg.content}</div>
+                  <div style={{ whiteSpace: "pre-wrap" }}>{msg.content}</div>
                 </div>
                 {msg.role === "user" && (
                   <Avatar
@@ -203,14 +207,29 @@ const RICIV1: React.FC = () => {
               </div>
             ))}
             {loading && (
-              <div style={{ display: "flex", alignItems: "center", marginBottom: 24 }}>
-                 <Avatar icon={<RobotOutlined />} style={{ backgroundColor: "#1890ff", marginRight: 12 }} />
-                 <div style={{ padding: "12px 16px", background: "#f5f5f5", borderRadius: 8 }}>
-                    <Space>
-                        <span>分析中</span>
-                        <span className="loading-dots">...</span>
-                    </Space>
-                 </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: 24,
+                }}
+              >
+                <Avatar
+                  icon={<RobotOutlined />}
+                  style={{ backgroundColor: "#1890ff", marginRight: 12 }}
+                />
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    background: "#f5f5f5",
+                    borderRadius: 8,
+                  }}
+                >
+                  <Space>
+                    <span>分析中</span>
+                    <span className="loading-dots">...</span>
+                  </Space>
+                </div>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -219,37 +238,44 @@ const RICIV1: React.FC = () => {
       </div>
 
       {/* 底部输入框 */}
-      <div style={{ marginTop: 16, maxWidth: 800, width: "100%", margin: "0 auto" }}>
+      <div
+        style={{
+          marginTop: 16,
+          maxWidth: 800,
+          width: "100%",
+          margin: "0 auto",
+        }}
+      >
         <div style={{ position: "relative" }}>
-            <TextArea
+          <TextArea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onPressEnter={(e) => {
-                if (!e.shiftKey) {
+              if (!e.shiftKey) {
                 e.preventDefault();
                 handleSend();
-                }
+              }
             }}
             placeholder="输入您的问题，例如：分析当前产业链的薄弱环节..."
             autoSize={{ minRows: 2, maxRows: 6 }}
-            style={{ paddingRight: 60, borderRadius: 12, resize: 'none' }}
-            />
-            <Button
+            style={{ paddingRight: 60, borderRadius: 12, resize: "none" }}
+          />
+          <Button
             type="primary"
             shape="circle"
             icon={<SendOutlined />}
             onClick={handleSend}
             style={{
-                position: "absolute",
-                right: 12,
-                bottom: 12,
+              position: "absolute",
+              right: 12,
+              bottom: 12,
             }}
-            />
+          />
         </div>
         <div style={{ textAlign: "center", marginTop: 8 }}>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-                RICI 生成的内容可能不准确，请核对重要信息。
-            </Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            RICI 生成的内容可能不准确，请核对重要信息。
+          </Text>
         </div>
       </div>
 
@@ -261,7 +287,10 @@ const RICIV1: React.FC = () => {
         onCancel={() => setIsConfigModalOpen(false)}
         okText="保存配置"
       >
-        <Form layout="vertical" initialValues={{ reportType: "industry", concerns: [] }}>
+        <Form
+          layout="vertical"
+          initialValues={{ reportType: "industry", concerns: [] }}
+        >
           <Form.Item label="报告类型" name="reportType">
             <Select>
               <Select.Option value="industry">产业链整体分析</Select.Option>
@@ -271,21 +300,25 @@ const RICIV1: React.FC = () => {
             </Select>
           </Form.Item>
           <Form.Item label="核心关注点" name="concerns">
-            <Checkbox.Group style={{ width: '100%' }}>
-                <Space direction="vertical">
-                    <Checkbox value="tech">技术创新能力</Checkbox>
-                    <Checkbox value="market">市场占有率</Checkbox>
-                    <Checkbox value="finance">财务健康度</Checkbox>
-                    <Checkbox value="supply">供应链稳定性</Checkbox>
-                </Space>
+            <Checkbox.Group style={{ width: "100%" }}>
+              <Space direction="vertical">
+                <Checkbox value="tech">技术创新能力</Checkbox>
+                <Checkbox value="market">市场占有率</Checkbox>
+                <Checkbox value="finance">财务健康度</Checkbox>
+                <Checkbox value="supply">供应链稳定性</Checkbox>
+              </Space>
             </Checkbox.Group>
           </Form.Item>
           <Form.Item label="分析深度">
-             <Select defaultValue="standard">
-                 <Select.Option value="fast">快速分析（基于摘要）</Select.Option>
-                 <Select.Option value="standard">标准分析（基于结构化数据）</Select.Option>
-                 <Select.Option value="deep">深度推理（结合外部知识库）</Select.Option>
-             </Select>
+            <Select defaultValue="standard">
+              <Select.Option value="fast">快速分析（基于摘要）</Select.Option>
+              <Select.Option value="standard">
+                标准分析（基于结构化数据）
+              </Select.Option>
+              <Select.Option value="deep">
+                深度推理（结合外部知识库）
+              </Select.Option>
+            </Select>
           </Form.Item>
         </Form>
       </Modal>

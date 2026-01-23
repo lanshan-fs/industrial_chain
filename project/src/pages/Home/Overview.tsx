@@ -213,7 +213,7 @@ const Overview: React.FC = () => {
               <EnvironmentOutlined
                 style={{ marginRight: 12, color: dashboardColors.accent }}
               />
-              朝阳区数字医疗产业链洞察
+              数字医疗产业全景驾驶舱
             </Title>
             <Text
               style={{ color: dashboardColors.textSecondary, fontSize: 12 }}

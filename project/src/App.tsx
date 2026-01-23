@@ -4,37 +4,40 @@ import { Typography } from "antd";
 import { AppstoreOutlined } from "@ant-design/icons";
 
 import MainLayout from "./layouts/MainLayout";
-import Overview from "./pages/Home/Overview";
-import AdvancedSearch from "./pages/Home/AdvancedSearch";
-import EnterpriseData from "./pages/DataManagement/EnterpriseData";
 
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 
-import AutoTag from "./pages/TagManagement/AutoTag";
-import EnterpriseTag from "./pages/TagManagement/EnterpriseTag";
-import TagLibrary from "./pages/TagManagement/TagLibrary";
+import Overview from "./pages/Home/Overview";
+import IndustryScore from "./pages/IndustryScore/Index";
+import SmartDiag from "./pages/IndustryDiag/SmartDiag";
 
-import IndustryScore from "./pages/ScoreManagement/IndustryScore";
-import EnterpriseScore from "./pages/ScoreManagement/EnterpriseScore";
+import EnterpriseData from "./pages/SystemMgmt/Data/EnterpriseData";
 
-import RICIV1 from "./pages/IndustryAnalysis/RICIV1";
-import History from "./pages/IndustryAnalysis/History";
+import AutoTag from "./pages/SystemMgmt/Data/Tag/AutoTag";
+import EnterpriseTag from "./pages/SystemMgmt/Data/Tag/EnterpriseTag";
+import TagLibrary from "./pages/SystemMgmt/Data/Tag/TagLibrary";
 
+// --- 占位组件 ---
 const { Title, Text } = Typography;
-
-// 简单的占位组件，用于那些还没开发的页面
 const PlaceholderPage: React.FC<{ title: string; desc: string }> = ({
   title,
   desc,
 }) => (
-  <div style={{ textAlign: "center", padding: "50px 0", color: "#999" }}>
-    <AppstoreOutlined style={{ fontSize: 48, marginBottom: 16 }} />
-    <Title level={4} style={{ color: "#666" }}>
+  <div style={{ textAlign: "center", padding: "100px 0", color: "#999" }}>
+    <AppstoreOutlined
+      style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }}
+    />
+    <Title level={4} style={{ color: "#666", marginBottom: 8 }}>
       {title}
     </Title>
     <Text type="secondary">{desc}</Text>
+    <div style={{ marginTop: 20 }}>
+      <Text type="secondary" style={{ fontSize: 12 }}>
+        此模块正在规划开发中 (V1.2)
+      </Text>
+    </div>
   </div>
 );
 
@@ -42,89 +45,89 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 1. 公开路由：登录、注册、找回密码 */}
+        {/* --- 公开路由 --- */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* 2. 根路径重定向到 首页-数据概览 */}
-        <Route path="/" element={<Navigate to="/home/overview" replace />} />
+        {/* --- 根路径重定向 --- */}
+        <Route path="/" element={<Navigate to="/home" replace />} />
 
-        {/* 3. 受保护路由（需要 MainLayout） */}
+        {/* --- 主布局 --- */}
         <Route element={<MainLayout />}>
-          {/* 首页 */}
-          <Route path="home">
-            <Route path="overview" element={<Overview />} />
-            <Route path="search" element={<AdvancedSearch />} />
-            <Route
-              path="notice"
-              element={
-                <PlaceholderPage title="公告栏" desc="系统公告与操作指引" />
-              }
-            />
-          </Route>
+          {/* 1. 首页 */}
+          <Route path="home" element={<Overview />} />
 
-          {/* 数据管理 */}
-          <Route path="data-mgmt">
-            {/* 企业基础数据 */}
-            <Route path="enterprise-data" element={<EnterpriseData />} />
-
-            {/* 待开发子页面 */}
-            <Route
-              path="industry-data"
-              element={
-                <PlaceholderPage title="行业统计数据" desc="管理宏观产业指标" />
-              }
-            />
-            <Route
-              path="weight-data"
-              element={
-                <PlaceholderPage title="评分维度权重" desc="配置模型权重参数" />
-              }
-            />
-            <Route
-              path="tag-data"
-              element={
-                <PlaceholderPage
-                  title="标签基础数据"
-                  desc="管理标签体系与自动打标规则"
-                />
-              }
-            />
-          </Route>
-
-          {/* 评分管理 */}
-          <Route path="score-mgmt">
-            <Route index element={<Navigate to="industry-score" replace />} />
-            <Route path="industry-score" element={<IndustryScore />} />
-            <Route path="enterprise-score" element={<EnterpriseScore />} />
-          </Route>
-
-          {/* 图谱画像 */}
+          {/* 2. 产业分类 */}
           <Route
-            path="graph-portrait/*"
+            path="industry-class"
             element={
-              <PlaceholderPage
-                title="图谱画像"
-                desc="产业链图谱可视化与画像分析"
-              />
+              <PlaceholderPage title="产业分类" desc="高级搜索 | 产业链树" />
             }
           />
 
-          {/* 标签管理 */}
-          <Route path="tag-mgmt">
-            <Route path="auto-tag" element={<AutoTag />} />
-            <Route path="enterprise-tag" element={<EnterpriseTag />} />
-            <Route path="tag-library" element={<TagLibrary />} />
+          {/* 3. 产业画像 */}
+          <Route path="industry-portrait">
+            <Route index element={<Navigate to="industry-profile" replace />} />
+            <Route
+              path="industry-profile"
+              element={<PlaceholderPage title="行业画像" desc="行业多维分析" />}
+            />
+            <Route
+              path="enterprise-profile"
+              element={<PlaceholderPage title="企业画像" desc="企业全景视图" />}
+            />
           </Route>
 
-          {/* 产业分析 */}
-          <Route path="industry-analysis">
-            <Route index element={<Navigate to="rici-v1" replace />} />
-            <Route path="rici-v1" element={<RICIV1 />} />
-            <Route path="history" element={<History />} />
+          {/* 4. 产业评分 */}
+          <Route path="industry-score" element={<IndustryScore />} />
+
+          {/* 5. 产业诊断 */}
+          <Route path="industry-diag">
+            <Route index element={<Navigate to="smart-diag" replace />} />
+            <Route path="smart-diag" element={<SmartDiag />} />
+          </Route>
+
+          {/* 6. 系统管理 */}
+          <Route path="system-mgmt">
+            <Route index element={<Navigate to="enterprise-data" replace />} />
+
+            {/* 6.1 数据管理 */}
+            {/* 企业数据 */}
+            <Route path="enterprise-data" element={<EnterpriseData />} />
+            {/* 行业数据 */}
+            <Route
+              path="industry-data"
+              element={
+                <PlaceholderPage title="行业数据管理" desc="统计指标维护" />
+              }
+            />
+            {/* 评分权重 */}
+            <Route
+              path="weight-data"
+              element={
+                <PlaceholderPage title="评分权重管理" desc="模型与权重配置" />
+              }
+            />
+
+            {/* 6.2 标签数据管理 (归属于数据管理) */}
+            {/* 注意：路由 Path 依然保持扁平，方便 MainLayout 跳转 */}
+            <Route path="enterprise-tag" element={<EnterpriseTag />} />
+            <Route path="tag-library" element={<TagLibrary />} />
+            <Route path="auto-tag" element={<AutoTag />} />
+
+            {/* 6.3 用户管理 */}
+            <Route
+              path="user-mgmt"
+              element={
+                <PlaceholderPage title="用户管理" desc="RBAC 权限管理" />
+              }
+            />
           </Route>
         </Route>
+
+        {/* 404 */}
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </BrowserRouter>
   );
