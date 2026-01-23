@@ -22,7 +22,7 @@ const pool = mysql.createPool({
 pool
   .getConnection()
   .then((conn) => {
-    console.log("Database connected");
+    console.log("Database connected successfully");
     conn.release();
   })
   .catch((err) => console.error("Fail", err.message));
@@ -43,6 +43,85 @@ app.get("/api/companies", async (req, res) => {
     res.json({ success: true, data: formattedData });
   } catch (error) {
     console.error("查询出错", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get("/api/dashboard/overview", async (req, res) => {
+  try {
+    const [totalRows] = await pool.query(
+      "SELECT COUNT(*) as total FROM companies",
+    );
+    const totalCompanies = totalRows[0].total;
+
+    const [chainRows] = await pool.query(`
+      SELECT 
+        m.chain_stage as stage,
+        t.level1 as tagName,
+        COUNT(DISTINCT ctm.company_id) as count
+      FROM 
+        tags t
+      JOIN 
+        tags_chain_stage_map m ON t.domain = m.domain AND t.level1 = m.level1
+      LEFT JOIN 
+        companies_tags_map ctm ON t.tag_id = ctm.tag_id
+      WHERE 
+        t.level1 IS NOT NULL AND t.level1 != ''
+      GROUP BY 
+        m.chain_stage, t.level1
+      ORDER BY 
+        count DESC
+
+      `);
+
+    const stageMap = {
+      上游: {
+        type: "upstream",
+        title: "上游 · 研发与技术",
+        color: "#1890ff",
+        list: [],
+      },
+      中游: {
+        type: "midstream",
+        title: "中游 · 生产与制造",
+        color: "#52c41a",
+        list: [],
+      },
+      下游: {
+        type: "downstream",
+        title: "下游 · 服务与应用",
+        color: "#fa8c16",
+        list: [],
+      },
+    };
+
+    chainRows.forEach((row) => {
+      if (stageMap[row.stage]) {
+        stageMap[row.stage].list.push({
+          name: row.tagName,
+          count: row.count,
+          isWeak: row.count < 50 && row.count > 0,
+        });
+      }
+    });
+
+    const chainData = Object.values(stageMap).map((item) => ({
+      type: item.type,
+      title: item.title,
+      color: item.color,
+      total: item.list.reduce((acc, cur) => acc + cur.count, 0),
+      subTags: item.list,
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        totalCompanies,
+        chainData,
+      },
+    });
+  } catch (error) {
+    console.error("Dashboard overview query failed:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

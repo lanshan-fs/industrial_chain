@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Row,
   Col,
@@ -16,6 +16,8 @@ import {
   Modal,
   Progress,
   Button,
+  Spin,
+  message,
 } from "antd";
 import {
   SafetyCertificateOutlined,
@@ -39,87 +41,11 @@ import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
-// --- 1. 模拟数据 ---
+// --- 1. 静态模拟数据 (保留部分未接接口的数据) ---
 
-// 1.1 产业链数据 (左屏用)
-const chainData = [
-  {
-    type: "upstream",
-    title: "上游 · 研发与技术",
-    total: 342,
-    color: "#1890ff",
-    subTags: [
-      { name: "创新药研发", count: 86, isWeak: false },
-      { name: "医疗器械研发", count: 120, isWeak: false },
-      { name: "生物原料供应", count: 32, isWeak: true },
-      { name: "核心零部件", count: 104, isWeak: false },
-      { name: "基因测序技术", count: 45, isWeak: false },
-      { name: "CRO服务", count: 67, isWeak: false },
-      { name: "实验动物养殖", count: 23, isWeak: true },
-      { name: "医学检验试剂", count: 89, isWeak: false },
-      { name: "制药装备研发", count: 41, isWeak: false },
-      { name: "生物信息分析", count: 55, isWeak: true },
-      { name: "纳米材料应用", count: 18, isWeak: true },
-      { name: "其它基础研究", count: 30, isWeak: false },
-    ],
-  },
-  {
-    type: "midstream",
-    title: "中游 · 生产与制造",
-    total: 518,
-    color: "#52c41a",
-    subTags: [
-      { name: "高端设备生产", count: 145, isWeak: false },
-      { name: "医药耗材制造", count: 210, isWeak: false },
-      { name: "系统集成", count: 98, isWeak: false },
-      { name: "工业软件开发", count: 65, isWeak: true },
-      { name: "中成药加工", count: 112, isWeak: false },
-      { name: "生物制剂生产", count: 78, isWeak: false },
-      { name: "智能穿戴制造", count: 56, isWeak: false },
-      { name: "康复辅具制造", count: 44, isWeak: true },
-      { name: "医用机器人", count: 22, isWeak: true },
-      { name: "制药自动化", count: 66, isWeak: false },
-      { name: "包装材料制造", count: 88, isWeak: false },
-      { name: "其它制造", count: 45, isWeak: false },
-    ],
-  },
-  {
-    type: "downstream",
-    title: "下游 · 服务与应用",
-    total: 620,
-    color: "#fa8c16",
-    subTags: [
-      { name: "综合医疗服务", count: 280, isWeak: false },
-      { name: "智慧健康管理", count: 156, isWeak: false },
-      { name: "医药电商流通", count: 134, isWeak: false },
-      { name: "医药冷链物流", count: 50, isWeak: true },
-      { name: "专科诊疗", count: 90, isWeak: false },
-      { name: "互联网医院", count: 77, isWeak: false },
-      { name: "康养护理", count: 120, isWeak: false },
-      { name: "商业健康险", count: 45, isWeak: true },
-      { name: "医疗大数据", count: 66, isWeak: false },
-      { name: "医生集团", count: 33, isWeak: true },
-      { name: "公卫服务", count: 88, isWeak: false },
-      { name: "其它服务", count: 56, isWeak: false },
-    ],
-  },
-];
+// (已移除) chainData 将从接口获取
 
-// 1.2 计算所有薄弱环节（增加数据量以演示 Top 5 功能）
-const weakLinksSource = chainData.flatMap((layer) =>
-  layer.subTags
-    .filter((t) => t.isWeak)
-    .map((t) => ({ ...t, layer: layer.title })),
-);
-// 模拟更多数据
-const weakLinksFull = [
-  ...weakLinksSource,
-  { name: "高端传感器", layer: "上游 · 研发与技术", isWeak: true },
-  { name: "抗体偶联药物", layer: "上游 · 研发与技术", isWeak: true },
-  { name: "3D打印医疗材料", layer: "中游 · 生产与制造", isWeak: true },
-];
-
-// 1.3 朝阳区企业资质分布
+// 模拟：朝阳区企业资质分布 (保留静态)
 const chaoyangStats = [
   { label: "上市企业", value: 35, icon: <GlobalOutlined />, color: "#cf1322" },
   { label: "外资企业", value: 128, icon: <GlobalOutlined />, color: "#d48806" },
@@ -129,59 +55,7 @@ const chaoyangStats = [
   { label: "科技中小", value: 890, icon: <ShopOutlined />, color: "#52c41a" },
 ];
 
-// 1.4 引育推荐（增加数据量以演示 Top 5 功能）
-const recommendEnterprisesFull = [
-  {
-    name: "北京神州生物原料有限公司",
-    district: "大兴区",
-    tag: "生物原料供应",
-    match: "98%",
-  },
-  {
-    name: "中关村工业软件研发院",
-    district: "海淀区",
-    tag: "工业软件开发",
-    match: "95%",
-  },
-  {
-    name: "京北医药冷链物流集团",
-    district: "顺义区",
-    tag: "医药冷链物流",
-    match: "92%",
-  },
-  {
-    name: "亦庄生物医药基地",
-    district: "亦庄",
-    tag: "实验动物养殖",
-    match: "90%",
-  },
-  {
-    name: "昌平生命科学园",
-    district: "昌平区",
-    tag: "纳米材料应用",
-    match: "88%",
-  },
-  {
-    name: "丰台医用机器人中心",
-    district: "丰台区",
-    tag: "医用机器人",
-    match: "86%",
-  },
-  {
-    name: "通州智慧康养示范区",
-    district: "通州区",
-    tag: "康复辅具制造",
-    match: "85%",
-  },
-  {
-    name: "海淀AI制药实验室",
-    district: "海淀区",
-    tag: "生物信息分析",
-    match: "84%",
-  },
-];
-
-// 1.5 热门区域分布 (Top 5 街道)
+// 模拟：热门区域分布 (保留静态)
 const hotspotStreets = [
   { name: "酒仙桥街道", count: 156, percent: 85 },
   { name: "望京街道", count: 132, percent: 72 },
@@ -190,7 +64,7 @@ const hotspotStreets = [
   { name: "奥运村街道", count: 65, percent: 36 },
 ];
 
-// 1.6 公告栏
+// 模拟：公告栏 (保留静态)
 const notices = [
   "【通知】关于2026年第一季度高新技术企业申报的预通知",
   "【动态】朝阳区新增3家国家级专精特新“小巨人”企业",
@@ -202,9 +76,96 @@ const notices = [
 const Overview: React.FC = () => {
   const navigate = useNavigate();
 
-  // 弹窗状态管理
+  // 状态管理
+  const [loading, setLoading] = useState(true);
+  const [chainData, setChainData] = useState<any[]>([]); // 产业链树谱数据
+  const [totalCompanies, setTotalCompanies] = useState(0); // 收录总数
+  const [weakLinksFull, setWeakLinksFull] = useState<any[]>([]); // 薄弱环节 (基于 chainData 计算)
+  const [recommendEnterprisesFull, setRecommendEnterprisesFull] = useState<
+    any[]
+  >([]); // 推荐企业 (暂时保留静态或混合)
+
+  // 弹窗状态
   const [isWeakModalVisible, setIsWeakModalVisible] = useState(false);
   const [isRecModalVisible, setIsRecModalVisible] = useState(false);
+
+  // 初始化：获取后端数据
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:3001/api/dashboard/overview",
+        );
+        const json = await response.json();
+
+        if (json.success) {
+          setTotalCompanies(json.data.totalCompanies);
+          setChainData(json.data.chainData);
+
+          // 基于返回的 chainData 动态计算薄弱环节 (isWeak 为 true 的项)
+          const computedWeakLinks = json.data.chainData.flatMap((layer: any) =>
+            layer.subTags
+              .filter((t: any) => t.isWeak)
+              .map((t: any) => ({ ...t, layer: layer.title })),
+          );
+          // 为了演示效果，如果数据为空，可以拼一些假数据，或者直接使用计算结果
+          // 这里我们混合一点静态数据保证展示效果，实际可全用 computedWeakLinks
+          setWeakLinksFull([
+            ...computedWeakLinks,
+            // 补充几条静态演示数据，防止数据库数据不足导致空白
+            {
+              name: "高端传感器 (示例)",
+              layer: "上游 · 研发与技术",
+              isWeak: true,
+            },
+          ]);
+        } else {
+          message.error("获取概览数据失败");
+        }
+      } catch (error) {
+        console.error("Fetch error:", error);
+        // message.error("连接服务器失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    // 初始化推荐企业数据 (这里暂时还是静态，后续可接接口)
+    setRecommendEnterprisesFull([
+      {
+        name: "北京神州生物原料有限公司",
+        district: "大兴区",
+        tag: "生物原料供应",
+        match: "98%",
+      },
+      {
+        name: "中关村工业软件研发院",
+        district: "海淀区",
+        tag: "工业软件开发",
+        match: "95%",
+      },
+      {
+        name: "京北医药冷链物流集团",
+        district: "顺义区",
+        tag: "医药冷链物流",
+        match: "92%",
+      },
+      {
+        name: "亦庄生物医药基地",
+        district: "亦庄",
+        tag: "实验动物养殖",
+        match: "90%",
+      },
+      {
+        name: "昌平生命科学园",
+        district: "昌平区",
+        tag: "纳米材料应用",
+        match: "88%",
+      },
+    ]);
+  }, []);
 
   const dashboardColors = {
     bg: "linear-gradient(180deg, #001529 0%, #000c17 100%)",
@@ -212,7 +173,6 @@ const Overview: React.FC = () => {
     accent: "#1890ff",
     border: "rgba(255,255,255,0.1)",
     textSecondary: "rgba(255, 255, 255, 0.65)",
-    modalBodyBg: "#001529", // 弹窗背景深色适配
   };
 
   return (
@@ -222,7 +182,7 @@ const Overview: React.FC = () => {
         token: {
           colorBgContainer: dashboardColors.cardBg,
           colorBorderSecondary: dashboardColors.border,
-          colorBgElevated: "#1f1f1f", // 弹窗背景色
+          colorBgElevated: "#1f1f1f",
         },
       }}
     >
@@ -263,523 +223,536 @@ const Overview: React.FC = () => {
           </div>
         </div>
 
-        <Row gutter={[24, 24]}>
-          {/* ================= 左半屏：产业链树谱 (保持之前的优化效果) ================= */}
-          <Col xs={24} md={12}>
-            <Card
-              title={<span style={{ color: "#fff" }}>全景产业链树谱</span>}
-              bordered={false}
-              style={{ height: "100%" }}
-              bodyStyle={{ padding: "12px" }}
-            >
-              <Collapse
-                defaultActiveKey={["upstream", "midstream", "downstream"]}
-                ghost
-                expandIconPosition="end"
+        <Spin spinning={loading} tip="加载产业数据中...">
+          <Row gutter={[24, 24]}>
+            {/* ================= 左半屏：产业链树谱 (动态数据) ================= */}
+            <Col xs={24} md={12}>
+              <Card
+                title={<span style={{ color: "#fff" }}>全景产业链树谱</span>}
+                bordered={false}
+                style={{ height: "100%" }}
+                bodyStyle={{ padding: "12px" }}
               >
-                {chainData.map((category) => (
-                  <Panel
-                    key={category.type}
-                    header={
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          width: "100%",
-                          alignItems: "center",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 15,
-                            fontWeight: "bold",
-                            color: category.color,
-                          }}
-                        >
-                          {category.title}
-                        </span>
-                        <Tag color={category.color} style={{ marginRight: 0 }}>
-                          {category.total} 家
-                        </Tag>
-                      </div>
-                    }
-                    style={{
-                      borderBottom: `1px solid ${dashboardColors.border}`,
-                      marginBottom: 8,
-                      background: "rgba(255,255,255,0.02)",
-                      borderRadius: 6,
-                    }}
-                  >
-                    <List
-                      grid={{
-                        gutter: 10,
-                        xs: 2,
-                        sm: 2,
-                        md: 2,
-                        lg: 3,
-                        xl: 4,
-                        xxl: 5,
-                      }}
-                      dataSource={category.subTags}
-                      renderItem={(tag) => (
-                        <List.Item style={{ marginBottom: 10 }}>
-                          <Tooltip
-                            title={
-                              tag.isWeak ? "该环节较为薄弱，建议重点关注" : ""
-                            }
-                          >
-                            <Card
-                              size="small"
-                              hoverable
-                              onClick={() =>
-                                navigate(`/graph-portrait/map?tag=${tag.name}`)
-                              }
-                              style={{
-                                background: tag.isWeak
-                                  ? "rgba(250, 140, 22, 0.1)"
-                                  : "rgba(255,255,255,0.03)",
-                                borderColor: tag.isWeak
-                                  ? "#fa8c16"
-                                  : "transparent",
-                                cursor: "pointer",
-                                width: "100%",
-                              }}
-                              bodyStyle={{
-                                padding: "8px 12px",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                minHeight: 46,
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: 13,
-                                  color: tag.isWeak ? "#fa8c16" : "#fff",
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  fontWeight: 500,
-                                  flex: 1,
-                                  marginRight: 8,
-                                }}
-                              >
-                                {tag.name}
-                              </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    color: category.color,
-                                    fontWeight: "bold",
-                                    fontSize: 14,
-                                    marginRight: 2,
-                                  }}
-                                >
-                                  {tag.count}
-                                </span>
-                                {tag.isWeak ? (
-                                  <ThunderboltFilled
-                                    style={{ fontSize: 12, color: "#fa8c16" }}
-                                  />
-                                ) : (
-                                  <RightOutlined
-                                    style={{
-                                      fontSize: 10,
-                                      color: dashboardColors.textSecondary,
-                                    }}
-                                  />
-                                )}
-                              </div>
-                            </Card>
-                          </Tooltip>
-                        </List.Item>
-                      )}
-                    />
-                  </Panel>
-                ))}
-              </Collapse>
-            </Card>
-          </Col>
-
-          {/* ================= 右半屏：概览区域 (根据最新计划优化) ================= */}
-          <Col xs={24} md={12}>
-            <Row gutter={[16, 16]}>
-              {/* 1. 概览企业主体及其总数 & 关键评分 */}
-              <Col span={24}>
-                <Row gutter={[16, 16]}>
-                  <Col span={8}>
-                    <Card bordered={false} bodyStyle={{ padding: 16 }}>
-                      <Statistic
-                        title={
-                          <span
-                            style={{
-                              color: dashboardColors.textSecondary,
-                              fontSize: 12,
-                            }}
-                          >
-                            收录总数
-                          </span>
-                        }
-                        value={1480}
-                        suffix="家"
-                        valueStyle={{
-                          color: "#fff",
-                          fontWeight: "bold",
-                          fontSize: 20,
-                        }}
-                        prefix={<BankOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col span={8}>
-                    <Card bordered={false} bodyStyle={{ padding: 16 }}>
-                      <Statistic
-                        title={
-                          <span
-                            style={{
-                              color: dashboardColors.textSecondary,
-                              fontSize: 12,
-                            }}
-                          >
-                            健康评分
-                          </span>
-                        }
-                        value={85.2}
-                        valueStyle={{
-                          color: "#52c41a",
-                          fontWeight: "bold",
-                          fontSize: 20,
-                        }}
-                        prefix={<SafetyCertificateOutlined />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col span={8}>
-                    <Card bordered={false} bodyStyle={{ padding: 16 }}>
-                      <Statistic
-                        title={
-                          <span
-                            style={{
-                              color: dashboardColors.textSecondary,
-                              fontSize: 12,
-                            }}
-                          >
-                            协同效率
-                          </span>
-                        }
-                        value={78.5}
-                        suffix="%"
-                        valueStyle={{
-                          color: "#fa8c16",
-                          fontWeight: "bold",
-                          fontSize: 20,
-                        }}
-                        prefix={<ThunderboltFilled />}
-                      />
-                    </Card>
-                  </Col>
-                </Row>
-              </Col>
-
-              {/* 2. 企业资质构成 (Enterprise Qualification Composition) */}
-              <Col span={24}>
-                <Card
-                  title={
-                    <span style={{ color: "#fff" }}>朝阳区企业资质构成</span>
-                  }
-                  bordered={false}
-                  bodyStyle={{ padding: "16px" }}
+                <Collapse
+                  defaultActiveKey={["upstream", "midstream", "downstream"]}
+                  ghost
+                  expandIconPosition="end"
                 >
-                  <Row gutter={[8, 8]}>
-                    {chaoyangStats.map((item, idx) => (
-                      <Col span={4} key={idx} style={{ minWidth: 100 }}>
+                  {chainData.map((category) => (
+                    <Panel
+                      key={category.type}
+                      header={
                         <div
                           style={{
-                            padding: "8px",
-                            background: "rgba(255,255,255,0.03)",
-                            borderRadius: "4px",
-                            textAlign: "center",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            width: "100%",
+                            alignItems: "center",
                           }}
                         >
-                          <div
+                          <span
                             style={{
-                              color: item.color,
-                              fontSize: 20,
-                              marginBottom: 4,
-                            }}
-                          >
-                            {item.icon}
-                          </div>
-                          <div
-                            style={{
-                              color: "#fff",
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: "bold",
-                              lineHeight: 1,
-                              marginBottom: 4,
+                              color: category.color,
                             }}
                           >
-                            {item.value}
-                          </div>
-                          <div
-                            style={{
-                              color: dashboardColors.textSecondary,
-                              fontSize: 10,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {item.label}
-                          </div>
-                        </div>
-                      </Col>
-                    ))}
-                  </Row>
-                </Card>
-              </Col>
-
-              {/* 3. 热门区域分布 Top 5 (新增模块) */}
-              <Col span={24}>
-                <Card
-                  title={
-                    <span style={{ color: "#fff" }}>
-                      热门区域分布 (Top 5 街道)
-                    </span>
-                  }
-                  bordered={false}
-                  bodyStyle={{ padding: "12px 24px" }}
-                  extra={
-                    <Tag color="volcano">
-                      <FireOutlined /> 热度
-                    </Tag>
-                  }
-                >
-                  <Row gutter={[24, 12]}>
-                    {hotspotStreets.map((street, idx) => (
-                      <Col
-                        span={24}
-                        key={idx}
-                        style={{ display: "flex", alignItems: "center" }}
-                      >
-                        <div style={{ width: 80, color: "#fff", fontSize: 13 }}>
-                          <span
-                            style={{
-                              display: "inline-block",
-                              width: 20,
-                              height: 20,
-                              lineHeight: "20px",
-                              textAlign: "center",
-                              background:
-                                idx < 3 ? "#cf1322" : "rgba(255,255,255,0.1)",
-                              borderRadius: "50%",
-                              fontSize: 12,
-                              marginRight: 8,
-                            }}
-                          >
-                            {idx + 1}
+                            {category.title}
                           </span>
-                          {street.name}
+                          <Tag
+                            color={category.color}
+                            style={{ marginRight: 0 }}
+                          >
+                            {category.total} 家
+                          </Tag>
                         </div>
-                        <div style={{ flex: 1, margin: "0 16px" }}>
-                          <Progress
-                            percent={street.percent}
-                            strokeColor={
-                              idx < 3
-                                ? { "0%": "#fa541c", "100%": "#cf1322" }
-                                : "#1890ff"
-                            }
-                            showInfo={false}
-                            size="small"
-                            trailColor="rgba(255,255,255,0.1)"
-                          />
-                        </div>
-                        <div
-                          style={{
-                            width: 60,
-                            textAlign: "right",
-                            color: dashboardColors.textSecondary,
-                            fontSize: 12,
-                          }}
-                        >
-                          {street.count} 家
-                        </div>
-                      </Col>
-                    ))}
-                  </Row>
-                </Card>
-              </Col>
-
-              {/* 4. 产业诊断基本信息 (优化：默认显示 Top 5 + 查看更多) */}
-              <Col span={24}>
-                <Row gutter={[16, 16]}>
-                  {/* 4.1 补链建议 (朝阳区缺口) */}
-                  <Col span={12}>
-                    <Card
-                      title={
-                        <span style={{ color: "#fa8c16", fontSize: 14 }}>
-                          <LinkOutlined /> 补链建议 (朝阳区)
-                        </span>
                       }
-                      bordered={false}
-                      style={{ height: "100%", borderTop: "2px solid #fa8c16" }}
-                      bodyStyle={{ padding: "0 12px 12px" }}
-                      extra={
-                        <Button
-                          type="text"
-                          size="small"
-                          style={{
-                            color: dashboardColors.textSecondary,
-                            fontSize: 12,
-                          }}
-                          onClick={() => setIsWeakModalVisible(true)}
-                        >
-                          更多 <RightOutlined />
-                        </Button>
-                      }
+                      style={{
+                        borderBottom: `1px solid ${dashboardColors.border}`,
+                        marginBottom: 8,
+                        background: "rgba(255,255,255,0.02)",
+                        borderRadius: 6,
+                      }}
                     >
                       <List
-                        size="small"
-                        dataSource={weakLinksFull.slice(0, 5)} // 仅显示 Top 5
-                        renderItem={(item) => (
-                          <List.Item
-                            style={{
-                              padding: "8px 0",
-                              borderBottom: `1px dashed ${dashboardColors.border}`,
-                            }}
-                          >
-                            <div style={{ width: "100%" }}>
-                              <div
+                        grid={{
+                          gutter: 10,
+                          xs: 2,
+                          sm: 2,
+                          md: 2,
+                          lg: 3,
+                          xl: 4,
+                          xxl: 5,
+                        }}
+                        dataSource={category.subTags}
+                        renderItem={(tag: any) => (
+                          <List.Item style={{ marginBottom: 10 }}>
+                            <Tooltip
+                              title={
+                                tag.isWeak ? "该环节较为薄弱，建议重点关注" : ""
+                              }
+                            >
+                              <Card
+                                size="small"
+                                hoverable
+                                onClick={() =>
+                                  navigate(
+                                    `/graph-portrait/map?tag=${tag.name}`,
+                                  )
+                                }
                                 style={{
-                                  color: "#fff",
+                                  background: tag.isWeak
+                                    ? "rgba(250, 140, 22, 0.1)"
+                                    : "rgba(255,255,255,0.03)",
+                                  borderColor: tag.isWeak
+                                    ? "#fa8c16"
+                                    : "transparent",
+                                  cursor: "pointer",
+                                  width: "100%",
+                                }}
+                                bodyStyle={{
+                                  padding: "8px 12px",
                                   display: "flex",
                                   justifyContent: "space-between",
-                                  fontSize: 13,
+                                  alignItems: "center",
+                                  minHeight: 46,
                                 }}
                               >
-                                <span>{item.name}</span>
-                                <Tag
-                                  color="error"
+                                <div
                                   style={{
-                                    margin: 0,
-                                    fontSize: 10,
-                                    lineHeight: "16px",
-                                  }}
-                                >
-                                  缺口
-                                </Tag>
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  color: dashboardColors.textSecondary,
-                                  marginTop: 2,
-                                }}
-                              >
-                                所属: {item.layer.split("·")[0]}
-                              </div>
-                            </div>
-                          </List.Item>
-                        )}
-                      />
-                    </Card>
-                  </Col>
-
-                  {/* 4.2 引育推荐 (全市联动) */}
-                  <Col span={12}>
-                    <Card
-                      title={
-                        <span style={{ color: "#1890ff", fontSize: 14 }}>
-                          <AimOutlined /> 引育推荐 (全市联动)
-                        </span>
-                      }
-                      bordered={false}
-                      style={{ height: "100%", borderTop: "2px solid #1890ff" }}
-                      bodyStyle={{ padding: "0 12px 12px" }}
-                      extra={
-                        <Button
-                          type="text"
-                          size="small"
-                          style={{
-                            color: dashboardColors.textSecondary,
-                            fontSize: 12,
-                          }}
-                          onClick={() => setIsRecModalVisible(true)}
-                        >
-                          更多 <RightOutlined />
-                        </Button>
-                      }
-                    >
-                      <List
-                        size="small"
-                        dataSource={recommendEnterprisesFull.slice(0, 5)} // 仅显示 Top 5
-                        renderItem={(item) => (
-                          <List.Item
-                            style={{
-                              padding: "8px 0",
-                              borderBottom: `1px dashed ${dashboardColors.border}`,
-                            }}
-                          >
-                            <div style={{ width: "100%" }}>
-                              <div
-                                style={{
-                                  color: "#fff",
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  fontSize: 13,
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    maxWidth: "60%",
+                                    fontSize: 13,
+                                    color: tag.isWeak ? "#fa8c16" : "#fff",
+                                    whiteSpace: "nowrap",
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
+                                    fontWeight: 500,
+                                    flex: 1,
+                                    marginRight: 8,
                                   }}
                                 >
-                                  {item.name}
-                                </span>
-                                <span
-                                  style={{ color: "#52c41a", fontSize: 11 }}
+                                  {tag.name}
+                                </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    flexShrink: 0,
+                                  }}
                                 >
-                                  {item.match}
-                                </span>
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  color: dashboardColors.textSecondary,
-                                  marginTop: 2,
-                                  display: "flex",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <EnvironmentOutlined
-                                  style={{ marginRight: 2 }}
-                                />{" "}
-                                {item.district}
-                                <span style={{ margin: "0 4px" }}>|</span>
-                                <span style={{ color: "#1890ff" }}>
-                                  {item.tag}
-                                </span>
-                              </div>
-                            </div>
+                                  <span
+                                    style={{
+                                      color: category.color,
+                                      fontWeight: "bold",
+                                      fontSize: 14,
+                                      marginRight: 2,
+                                    }}
+                                  >
+                                    {tag.count}
+                                  </span>
+                                  {tag.isWeak ? (
+                                    <ThunderboltFilled
+                                      style={{ fontSize: 12, color: "#fa8c16" }}
+                                    />
+                                  ) : (
+                                    <RightOutlined
+                                      style={{
+                                        fontSize: 10,
+                                        color: dashboardColors.textSecondary,
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              </Card>
+                            </Tooltip>
                           </List.Item>
                         )}
                       />
-                    </Card>
-                  </Col>
-                </Row>
-              </Col>
-            </Row>
-          </Col>
-        </Row>
+                    </Panel>
+                  ))}
+                </Collapse>
+              </Card>
+            </Col>
 
-        {/* 公告栏 */}
+            {/* ================= 右半屏：概览区域 ================= */}
+            <Col xs={24} md={12}>
+              <Row gutter={[16, 16]}>
+                {/* 1. 概览企业主体及其总数 (动态数据) */}
+                <Col span={24}>
+                  <Row gutter={[16, 16]}>
+                    <Col span={8}>
+                      <Card bordered={false} bodyStyle={{ padding: 16 }}>
+                        <Statistic
+                          title={
+                            <span
+                              style={{
+                                color: dashboardColors.textSecondary,
+                                fontSize: 12,
+                              }}
+                            >
+                              收录总数
+                            </span>
+                          }
+                          value={totalCompanies} // 动态数据
+                          suffix="家"
+                          valueStyle={{
+                            color: "#fff",
+                            fontWeight: "bold",
+                            fontSize: 20,
+                          }}
+                          prefix={<BankOutlined />}
+                        />
+                      </Card>
+                    </Col>
+                    <Col span={8}>
+                      <Card bordered={false} bodyStyle={{ padding: 16 }}>
+                        <Statistic
+                          title={
+                            <span
+                              style={{
+                                color: dashboardColors.textSecondary,
+                                fontSize: 12,
+                              }}
+                            >
+                              健康评分
+                            </span>
+                          }
+                          value={85.2}
+                          valueStyle={{
+                            color: "#52c41a",
+                            fontWeight: "bold",
+                            fontSize: 20,
+                          }}
+                          prefix={<SafetyCertificateOutlined />}
+                        />
+                      </Card>
+                    </Col>
+                    <Col span={8}>
+                      <Card bordered={false} bodyStyle={{ padding: 16 }}>
+                        <Statistic
+                          title={
+                            <span
+                              style={{
+                                color: dashboardColors.textSecondary,
+                                fontSize: 12,
+                              }}
+                            >
+                              协同效率
+                            </span>
+                          }
+                          value={78.5}
+                          suffix="%"
+                          valueStyle={{
+                            color: "#fa8c16",
+                            fontWeight: "bold",
+                            fontSize: 20,
+                          }}
+                          prefix={<ThunderboltFilled />}
+                        />
+                      </Card>
+                    </Col>
+                  </Row>
+                </Col>
+
+                {/* 2. 企业资质构成 (静态) */}
+                <Col span={24}>
+                  <Card
+                    title={<span style={{ color: "#fff" }}>企业资质构成</span>}
+                    bordered={false}
+                    bodyStyle={{ padding: "16px" }}
+                  >
+                    <Row gutter={[8, 8]}>
+                      {chaoyangStats.map((item, idx) => (
+                        <Col span={4} key={idx} style={{ minWidth: 100 }}>
+                          <div
+                            style={{
+                              padding: "8px",
+                              background: "rgba(255,255,255,0.03)",
+                              borderRadius: "4px",
+                              textAlign: "center",
+                            }}
+                          >
+                            <div
+                              style={{
+                                color: item.color,
+                                fontSize: 20,
+                                marginBottom: 4,
+                              }}
+                            >
+                              {item.icon}
+                            </div>
+                            <div
+                              style={{
+                                color: "#fff",
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                lineHeight: 1,
+                                marginBottom: 4,
+                              }}
+                            >
+                              {item.value}
+                            </div>
+                            <div
+                              style={{
+                                color: dashboardColors.textSecondary,
+                                fontSize: 10,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {item.label}
+                            </div>
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </Card>
+                </Col>
+
+                {/* 3. 热门区域分布 (静态) */}
+                <Col span={24}>
+                  <Card
+                    title={
+                      <span style={{ color: "#fff" }}>
+                        热门区域分布 (Top 5 街道)
+                      </span>
+                    }
+                    bordered={false}
+                    bodyStyle={{ padding: "12px 24px" }}
+                    extra={
+                      <Tag color="volcano">
+                        <FireOutlined /> 热度
+                      </Tag>
+                    }
+                  >
+                    <Row gutter={[24, 12]}>
+                      {hotspotStreets.map((street, idx) => (
+                        <Col
+                          span={24}
+                          key={idx}
+                          style={{ display: "flex", alignItems: "center" }}
+                        >
+                          <div
+                            style={{ width: 160, color: "#fff", fontSize: 13 }}
+                          >
+                            <span
+                              style={{
+                                display: "inline-block",
+                                width: 20,
+                                height: 20,
+                                lineHeight: "20px",
+                                textAlign: "center",
+                                background:
+                                  idx < 3 ? "#cf1322" : "rgba(255,255,255,0.1)",
+                                borderRadius: "50%",
+                                fontSize: 12,
+                                marginRight: 8,
+                              }}
+                            >
+                              {idx + 1}
+                            </span>
+                            {street.name}
+                          </div>
+                          <div style={{ flex: 1, margin: "0 16px" }}>
+                            <Progress
+                              percent={street.percent}
+                              strokeColor={
+                                idx < 3
+                                  ? { "0%": "#fa541c", "100%": "#cf1322" }
+                                  : "#1890ff"
+                              }
+                              showInfo={false}
+                              size="small"
+                              trailColor="rgba(255,255,255,0.1)"
+                            />
+                          </div>
+                          <div
+                            style={{
+                              width: 60,
+                              textAlign: "right",
+                              color: dashboardColors.textSecondary,
+                              fontSize: 12,
+                            }}
+                          >
+                            {street.count} 家
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </Card>
+                </Col>
+
+                {/* 4. 产业诊断基本信息 */}
+                <Col span={24}>
+                  <Row gutter={[16, 16]}>
+                    {/* 4.1 补链建议 (动态计算) */}
+                    <Col span={12}>
+                      <Card
+                        title={
+                          <span style={{ color: "#fa8c16", fontSize: 14 }}>
+                            <LinkOutlined /> 建议补链行业
+                          </span>
+                        }
+                        bordered={false}
+                        style={{
+                          height: "100%",
+                          borderTop: "2px solid #fa8c16",
+                        }}
+                        bodyStyle={{ padding: "0 12px 12px" }}
+                        extra={
+                          <Button
+                            type="text"
+                            size="small"
+                            style={{
+                              color: dashboardColors.textSecondary,
+                              fontSize: 12,
+                            }}
+                            onClick={() => setIsWeakModalVisible(true)}
+                          >
+                            更多 <RightOutlined />
+                          </Button>
+                        }
+                      >
+                        <List
+                          size="small"
+                          dataSource={weakLinksFull.slice(0, 5)}
+                          renderItem={(item) => (
+                            <List.Item
+                              style={{
+                                padding: "8px 0",
+                                borderBottom: `1px dashed ${dashboardColors.border}`,
+                              }}
+                            >
+                              <div style={{ width: "100%" }}>
+                                <div
+                                  style={{
+                                    color: "#fff",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  <span>{item.name}</span>
+                                  <Tag
+                                    color="error"
+                                    style={{
+                                      margin: 0,
+                                      fontSize: 10,
+                                      lineHeight: "16px",
+                                    }}
+                                  >
+                                    缺口
+                                  </Tag>
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: 11,
+                                    color: dashboardColors.textSecondary,
+                                    marginTop: 2,
+                                  }}
+                                >
+                                  所属: {item.layer.split("·")[0]}
+                                </div>
+                              </div>
+                            </List.Item>
+                          )}
+                        />
+                      </Card>
+                    </Col>
+
+                    {/* 4.2 引育推荐 (静态) */}
+                    <Col span={12}>
+                      <Card
+                        title={
+                          <span style={{ color: "#1890ff", fontSize: 14 }}>
+                            <AimOutlined /> 推荐引育企业
+                          </span>
+                        }
+                        bordered={false}
+                        style={{
+                          height: "100%",
+                          borderTop: "2px solid #1890ff",
+                        }}
+                        bodyStyle={{ padding: "0 12px 12px" }}
+                        extra={
+                          <Button
+                            type="text"
+                            size="small"
+                            style={{
+                              color: dashboardColors.textSecondary,
+                              fontSize: 12,
+                            }}
+                            onClick={() => setIsRecModalVisible(true)}
+                          >
+                            更多 <RightOutlined />
+                          </Button>
+                        }
+                      >
+                        <List
+                          size="small"
+                          dataSource={recommendEnterprisesFull.slice(0, 5)}
+                          renderItem={(item) => (
+                            <List.Item
+                              style={{
+                                padding: "8px 0",
+                                borderBottom: `1px dashed ${dashboardColors.border}`,
+                              }}
+                            >
+                              <div style={{ width: "100%" }}>
+                                <div
+                                  style={{
+                                    color: "#fff",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      maxWidth: "60%",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {item.name}
+                                  </span>
+                                  <span
+                                    style={{ color: "#52c41a", fontSize: 11 }}
+                                  >
+                                    {item.match}
+                                  </span>
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: 11,
+                                    color: dashboardColors.textSecondary,
+                                    marginTop: 2,
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <EnvironmentOutlined
+                                    style={{ marginRight: 2 }}
+                                  />{" "}
+                                  {item.district}
+                                  <span style={{ margin: "0 4px" }}>|</span>
+                                  <span style={{ color: "#1890ff" }}>
+                                    {item.tag}
+                                  </span>
+                                </div>
+                              </div>
+                            </List.Item>
+                          )}
+                        />
+                      </Card>
+                    </Col>
+                  </Row>
+                </Col>
+              </Row>
+            </Col>
+          </Row>
+        </Spin>
+
+        {/* 公告栏和悬浮按钮保持不变... */}
         <div
           style={{
             marginTop: 16,
@@ -789,6 +762,7 @@ const Overview: React.FC = () => {
             borderRadius: 6,
           }}
         >
+          {/* ...公告栏内容保持不变... */}
           <Row align="middle">
             <Col
               span={2}
@@ -849,7 +823,6 @@ const Overview: React.FC = () => {
           </Row>
         </div>
 
-        {/* 悬浮按钮 */}
         <FloatButton.Group
           trigger="hover"
           style={{ right: 24, bottom: 80 }}
@@ -868,12 +841,11 @@ const Overview: React.FC = () => {
           />
         </FloatButton.Group>
 
-        {/* --- Modals for "More" --- */}
-        {/* 补链建议 Modal */}
+        {/* --- Modals --- */}
         <Modal
           title={
             <span style={{ color: "#fa8c16" }}>
-              <LinkOutlined /> 朝阳区补链建议清单 (完整版)
+              <LinkOutlined /> 补链建议完整清单
             </span>
           }
           open={isWeakModalVisible}
@@ -883,7 +855,7 @@ const Overview: React.FC = () => {
         >
           <List
             dataSource={weakLinksFull}
-            renderItem={(item) => (
+            renderItem={(item: any) => (
               <List.Item>
                 <div
                   style={{
@@ -908,11 +880,10 @@ const Overview: React.FC = () => {
           />
         </Modal>
 
-        {/* 引育推荐 Modal */}
         <Modal
           title={
             <span style={{ color: "#1890ff" }}>
-              <AimOutlined /> 北京市引育企业推荐库 (完整版)
+              <AimOutlined /> 引育推荐完整清单
             </span>
           }
           open={isRecModalVisible}
@@ -922,7 +893,7 @@ const Overview: React.FC = () => {
         >
           <List
             dataSource={recommendEnterprisesFull}
-            renderItem={(item) => (
+            renderItem={(item: any) => (
               <List.Item>
                 <div
                   style={{
