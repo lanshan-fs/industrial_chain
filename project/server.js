@@ -260,7 +260,7 @@ app.get("/api/industry/tree", async (req, res) => {
       tagNodeMap[tag.tag_id] = {
         key: tag.tag_id,
         title: tag.tag_name,
-        level: tag.level,
+        level: parseInt(tag.level, 10),
         children: [],
         count: countMap[tag.tag_id] || 0,
         isTag: true,
@@ -273,7 +273,9 @@ app.get("/api/industry/tree", async (req, res) => {
 
       if (tag.parent_tag_id && tagNodeMap[tag.parent_tag_id]) {
         tagNodeMap[tag.parent_tag_id].children.push(node);
-      } else if (tag.level === 1) {
+      }
+
+      if (parseInt(tag.level, 10) === 1) {
         l1Nodes.push(node);
       }
     });
@@ -317,7 +319,6 @@ app.get("/api/industry/tree", async (req, res) => {
     let mappedCount = 0;
     l1Nodes.forEach((node) => {
       const stageName = stageMap[node.title ? node.title.trim() : ""];
-
       if (stageName) {
         const targetRoot = rootTree.find((r) => r.title === stageName);
         if (targetRoot) {
@@ -331,8 +332,9 @@ app.get("/api/industry/tree", async (req, res) => {
     });
 
     console.log(
-      `Tree Build Complete: Total L1 Tags: ${l1Nodes.length}, Mapped: ${mappedCount}`,
+      `Tree Build: Total L1 Tags: ${l1Nodes.length}, Mapped: ${mappedCount}`,
     );
+
     res.json({ success: true, data: rootTree });
   } catch (error) {
     console.error("Tree Error:", error);
@@ -350,7 +352,8 @@ app.get("/api/industry/companies", async (req, res) => {
     if (stageKey) {
       const stageName = stageKey.replace("stage_", "");
       const l1Tags = tags.filter(
-        (t) => t.level === 1 && stageMap[t.tag_name] === stageName,
+        (t) =>
+          parseInt(t.level, 10) === 1 && stageMap[t.tag_name] === stageName,
       );
 
       l1Tags.forEach((t) => {
@@ -363,18 +366,10 @@ app.get("/api/industry/companies", async (req, res) => {
       targetTagIds = getDescendantTagIds(tagId, tags);
     }
 
-    let sql = `
-      SELECT DISTINCT 
-        c.company_id, 
-        c.company_name, 
-        c.raw_variants
-      FROM companies c
-    `;
-
+    let sql = `SELECT DISTINCT c.company_id, c.company_name, c.raw_variants FROM companies c`;
     if (targetTagIds.length > 0) {
       sql += ` JOIN companies_tags_map ctm ON c.company_id = ctm.company_id `;
     }
-
     sql += ` WHERE 1=1 `;
     const params = [];
 
@@ -391,11 +386,10 @@ app.get("/api/industry/companies", async (req, res) => {
     }
 
     sql += ` LIMIT 50`;
-
     const [rows] = await pool.query(sql, params);
     res.json({ success: true, data: rows });
   } catch (error) {
-    console.error("Search Error:", error);
+    console.error(error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
