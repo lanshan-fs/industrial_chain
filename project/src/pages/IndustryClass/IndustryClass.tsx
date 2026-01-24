@@ -15,6 +15,7 @@ import {
   message,
   Select,
   Badge,
+  Grid, // 引入 Grid 用于响应式
 } from "antd";
 import {
   BankOutlined,
@@ -30,6 +31,7 @@ import type { DataNode } from "antd/es/tree";
 
 const { Sider, Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
+const { useBreakpoint } = Grid; // 响应式钩子
 
 // --- 样式常量定义 ---
 const STAGE_COLORS: Record<string, string> = {
@@ -47,6 +49,7 @@ const STAGE_BG_COLORS: Record<string, string> = {
 const IndustryClass: React.FC = () => {
   const navigate = useNavigate();
   const { token } = theme.useToken();
+  const screens = useBreakpoint(); // 获取当前屏幕断点
 
   // State
   const [loadingTree, setLoadingTree] = useState(false);
@@ -148,15 +151,9 @@ const IndustryClass: React.FC = () => {
   };
 
   const findParentStageColor = (nodeKey: string): string => {
-    // 简单逻辑：遍历根节点，看当前key是否在某个根节点的子孙中
-    // 由于这里只有 treeData，且是扁平化渲染，更严谨的做法是遍历 treeData 查找路径
-    // 为了简化性能，我们尝试从顶级节点判断
     for (const root of treeData) {
       if (root.key === nodeKey) return STAGE_COLORS[root.key as string];
-      // 如果需要深度查找，这里可以扩展递归。目前仅对根节点着色，子节点保持统一或淡色
       if (root.children) {
-        // 简易检查：如果当前选中项在这个 root 下，返回该 root 的颜色
-        // (实际项目中可用更精准的树路径查找)
         const hasChild = (nodes: any[], targetKey: string): boolean => {
           return nodes.some(
             (n) =>
@@ -176,12 +173,10 @@ const IndustryClass: React.FC = () => {
     const isSelected = selectedKeys.includes(node.key);
     const isStage = String(node.key).startsWith("stage_");
 
-    // 确定颜色
     let activeColor = token.colorPrimary;
     if (isStage) {
       activeColor = STAGE_COLORS[node.key] || token.colorPrimary;
     } else if (isSelected) {
-      // 尝试继承 Stage 颜色，或者直接用主色
       activeColor = findParentStageColor(node.key as string);
     }
 
@@ -192,10 +187,9 @@ const IndustryClass: React.FC = () => {
           justifyContent: "space-between",
           alignItems: "center",
           width: "100%",
-          padding: isStage ? "14px 16px" : "10px 12px", // 增加内边距，更宽敞
+          padding: isStage ? "14px 16px" : "10px 12px",
           margin: "6px 0",
           borderRadius: 8,
-          // 选中态样式增强
           border: isSelected
             ? `1px solid ${activeColor}`
             : "1px solid transparent",
@@ -206,7 +200,6 @@ const IndustryClass: React.FC = () => {
             : isStage
               ? "#fafafa"
               : "transparent",
-          // 悬停效果在 CSS 中处理，这里只处理静态样式
           cursor: "pointer",
           transition: "all 0.3s",
           boxShadow:
@@ -219,7 +212,6 @@ const IndustryClass: React.FC = () => {
               style={{ color: activeColor, fontSize: 18 }}
             />
           ) : (
-            // 子节点使用小圆点，选中时变色
             <div
               style={{
                 width: 8,
@@ -241,7 +233,6 @@ const IndustryClass: React.FC = () => {
           </Text>
         </Space>
 
-        {/* 数量 Badge */}
         {node.count > 0 && (
           <Tag
             bordered={false}
@@ -262,16 +253,21 @@ const IndustryClass: React.FC = () => {
 
   return (
     <Layout style={{ height: "calc(100vh - 64px - 50px)", background: "#fff" }}>
-      {/* --- 左侧：宽敞的产业链树谱 (450px) --- */}
+      {/* --- 左侧：宽敞的产业链树谱 (自适应) --- */}
       <Sider
-        width={450}
+        width={450} // PC端宽度
+        breakpoint="lg" // 在小于 lg (992px) 时自动折叠
+        collapsedWidth="0" // 折叠后不占空间
         style={{
           background: "#fff",
           borderRight: "1px solid #f0f0f0",
           overflowY: "auto",
-          padding: "24px 20px", // 增加内边距
+          // 响应式内边距：PC端 24px/20px，移动端 12px
+          padding: screens.md ? "24px 20px" : "12px",
+          zIndex: 2, // 确保侧边栏层级
         }}
         theme="light"
+        zeroWidthTriggerStyle={{ top: 10, left: -45 }} // 调整触发器位置
       >
         <div style={{ marginBottom: 24, paddingLeft: 8 }}>
           <Title level={4} style={{ margin: "0 0 8px 0", color: "#1f1f1f" }}>
@@ -299,7 +295,7 @@ const IndustryClass: React.FC = () => {
             onSelect={onSelect}
             titleRender={titleRender}
             style={{ background: "transparent" }}
-            height={800} // 开启虚拟滚动优化性能
+            height={screens.md ? 800 : 600} // 移动端减小虚拟滚动高度
           />
         )}
       </Sider>
@@ -310,14 +306,14 @@ const IndustryClass: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           height: "100%",
-          background: "#f7f8fa", // 略微加深的背景色，提升白卡片的对比度
+          background: "#f7f8fa",
         }}
       >
-        {/* 1. 顶部：Hero 风格搜索区 */}
+        {/* 1. 顶部：Hero 风格搜索区 (自适应) */}
         <div
           style={{
-            padding: "48px 64px 40px",
-            // 渐变背景，增加质感
+            // 响应式 Padding：PC端大间距，移动端紧凑
+            padding: screens.md ? "48px 64px 40px" : "24px 20px",
             background: "linear-gradient(180deg, #ffffff 0%, #f0f5ff 100%)",
             borderBottom: "1px solid #e6ebf1",
             display: "flex",
@@ -327,7 +323,10 @@ const IndustryClass: React.FC = () => {
         >
           <div style={{ width: "100%", maxWidth: 800 }}>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
-              <Title level={3} style={{ color: "#262626", marginBottom: 8 }}>
+              <Title
+                level={screens.md ? 3 : 4} // 移动端标题字号减小
+                style={{ color: "#262626", marginBottom: 8 }}
+              >
                 {selectedNodeInfo ? (
                   <>
                     正在搜索{" "}
@@ -351,13 +350,23 @@ const IndustryClass: React.FC = () => {
               }}
             >
               <Input.Search
-                placeholder="输入企业名称、经营范围、产品关键词..."
+                placeholder={
+                  screens.md
+                    ? "输入企业名称、经营范围、产品关键词..."
+                    : "搜索企业..."
+                }
                 allowClear
                 enterButton={
                   <Button
                     type="primary"
                     size="large"
-                    style={{ padding: "0 40px", fontSize: 16, fontWeight: 500 }}
+                    style={{
+                      // FIX: 显式设置高度为 56px，与 input 样式保持一致
+                      height: 56,
+                      padding: screens.md ? "0 40px" : "0 20px",
+                      fontSize: 16,
+                      fontWeight: 500,
+                    }}
                   >
                     全局搜索
                   </Button>
@@ -365,16 +374,17 @@ const IndustryClass: React.FC = () => {
                 size="large"
                 onSearch={onSearch}
                 style={{ width: "100%", height: 56 }}
-                // 自定义 Input 样式
+                // 自定义 Input 样式，确保高度为 56px
                 styles={{ input: { height: 56, fontSize: 16 } }}
               />
             </div>
 
-            {/* 常用筛选 Tag 组 */}
+            {/* 常用筛选 Tag 组 (移动端换行) */}
             <div
               style={{
                 marginTop: 24,
                 display: "flex",
+                flexWrap: "wrap", // 允许换行
                 justifyContent: "center",
                 alignItems: "center",
                 gap: 16,
@@ -409,8 +419,14 @@ const IndustryClass: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. 底部：结果列表 */}
-        <div style={{ flex: 1, padding: "32px 64px", overflowY: "auto" }}>
+        {/* 2. 底部：结果列表 (自适应 Padding) */}
+        <div
+          style={{
+            flex: 1,
+            padding: screens.md ? "32px 64px" : "20px 16px",
+            overflowY: "auto",
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -467,7 +483,6 @@ const IndustryClass: React.FC = () => {
                     style={{
                       borderRadius: 12,
                       border: "none",
-                      // 增加卡片阴影
                       boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
                       overflow: "hidden",
                     }}
@@ -528,7 +543,6 @@ const IndustryClass: React.FC = () => {
                           {item.company_name}
                         </Text>
                         <Space size={6}>
-                          {/* 使用更生动的标签颜色 */}
                           <Tag
                             color="cyan"
                             style={{ margin: 0, fontSize: 11, border: "none" }}
