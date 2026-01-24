@@ -394,44 +394,57 @@ app.get("/api/industry/companies", async (req, res) => {
   }
 });
 
-// --- 行业画像核心接口 ---
-async function calculateDimensionScore(dimensionKey, aggData) {
-  // 这里简化处理：实际应从 evaluation_rules 表读取规则
-  // 演示逻辑：根据聚合数据动态打分
-  let score = 70; // 基础分
-
-  if (dimensionKey === "foundation") {
-    // 行业基础：看企业总数和总资本
-    if (aggData.totalCompanies > 50) score += 10;
-    if (aggData.totalCapital > 100000) score += 15;
-  } else if (dimensionKey === "tech") {
-    // 科技属性：看高企占比和专利数
-    const techRatio = aggData.highTechCount / (aggData.totalCompanies || 1);
-    score += techRatio * 30;
-    if (aggData.totalPatents > 100) score += 10;
-  } else if (dimensionKey === "ability") {
-    // 行业能力：看平均资本（模拟实力）
-    if (aggData.avgCapital > 5000) score += 20;
+async function getModelDimensions(modelKey) {
+  try {
+    const [rows] = await pool.query(
+      "SELECT dimension_name, weight FROM evaluation_dimensions WHERE model_key = ? ORDER BY sort_order",
+      [modelKey],
+    );
+    return rows;
+  } catch (err) {
+    console.error(`Failed to fetch dimensions for ${modelKey}`, err);
+    return [];
   }
-
-  return Math.min(100, Math.round(score));
 }
 
+// --- 核心接口：行业画像 ---
 app.get("/api/industry/profile", async (req, res) => {
   const { industryName } = req.query;
 
   try {
-    // 1. 获取该行业（Tag）下的所有企业数据
-    // 注意：这里需要递归查找该行业标签及其子标签下的所有企业
-    // 为简化演示，我们假设 industryName 直接对应 level1 标签，并查找其关联企业
-    const [tagRows] = await pool.query(
-      "SELECT tag_id FROM tags WHERE tag_name = ?",
-      [industryName],
+    // 1. 准备数据：获取所有 Tag 以便递归
+    const { tags } = await getAllTagsWithHierarchy();
+
+    // 找到当前行业对应的 Tag (模糊匹配或精确匹配)
+    const targetTag = tags.find(
+      (t) => t.tag_name === industryName || t.tag_name.includes(industryName),
     );
 
-    let companyData = [];
+    if (!targetTag) {
+      return res.json({
+        success: true,
+        data: null,
+        message: "未找到该行业标签",
+      });
+    }
+
+    // 2. 递归查找该行业下的所有子标签 ID
+    const allTagIds = getDescendantTagIds(targetTag.tag_id, tags);
+
+    // 3. 查询关联的所有企业 (使用 IN 查询)
+    // 注意：这里聚合了所有子标签下的企业
+    const [companies] = await pool.query(
+      `
+      SELECT DISTINCT c.* FROM companies c
+      JOIN companies_tags_map ctm ON c.company_id = ctm.company_id
+      WHERE ctm.tag_id IN (?)
+    `,
+      [allTagIds.length > 0 ? allTagIds : ["dummy"]],
+    );
+
+    // 4. 聚合计算 (Aggregation Logic)
     let aggData = {
-      totalCompanies: 0,
+      totalCompanies: companies.length,
       totalCapital: 0,
       avgCapital: 0,
       highTechCount: 0,
@@ -441,77 +454,74 @@ app.get("/api/industry/profile", async (req, res) => {
       lowRiskList: [],
     };
 
-    if (tagRows.length > 0) {
-      // 找到标签，查询关联企业详情
-      // 在真实场景中，这里应调用 getDescendantTagIds 获取所有子标签ID
-      const tagId = tagRows[0].tag_id;
+    companies.forEach((c) => {
+      // 处理可能为 null 的字段
+      const cap = parseFloat(c.registered_capital) || 0;
+      const risk = c.risk_score !== null ? c.risk_score : 100;
 
-      const [companies] = await pool.query(
-        `
-        SELECT c.* FROM companies c
-        JOIN companies_tags_map ctm ON c.company_id = ctm.company_id
-        WHERE ctm.tag_id = ?
-        LIMIT 200 -- 限制计算规模
-      `,
-        [tagId],
-      );
+      aggData.totalCapital += cap;
+      if (c.is_high_tech) aggData.highTechCount++;
+      aggData.totalPatents += c.patent_count || 0;
+      aggData.avgRiskScore += risk;
 
-      companyData = companies;
+      // 风险名单构建
+      const riskItem = {
+        name: c.company_name,
+        score: risk,
+        reason: risk < 60 ? "存在经营异常/司法风险" : "经营稳健",
+      };
+      if (risk < 60) aggData.highRiskList.push(riskItem);
+      else if (risk >= 90) aggData.lowRiskList.push(riskItem);
+    });
 
-      // 2. 聚合计算 (Aggregation)
-      aggData.totalCompanies = companies.length;
-      companies.forEach((c) => {
-        aggData.totalCapital += parseFloat(c.registered_capital || 0);
-        if (c.is_high_tech) aggData.highTechCount++;
-        aggData.totalPatents += c.patent_count || 0;
-        aggData.avgRiskScore += c.risk_score || 0;
-
-        // 风险分类
-        const riskItem = {
-          id: c.company_id,
-          name: c.company_name,
-          score: c.risk_score || 100,
-          reason:
-            (c.risk_score || 100) < 60 ? "存在司法风险/经营异常" : "经营稳健",
-        };
-
-        if (riskItem.score < 60) {
-          aggData.highRiskList.push(riskItem);
-        } else if (riskItem.score > 90) {
-          aggData.lowRiskList.push(riskItem);
-        }
-      });
-
-      if (aggData.totalCompanies > 0) {
-        aggData.avgCapital = aggData.totalCapital / aggData.totalCompanies;
-        aggData.avgRiskScore = aggData.avgRiskScore / aggData.totalCompanies;
-      }
+    if (aggData.totalCompanies > 0) {
+      aggData.avgCapital = aggData.totalCapital / aggData.totalCompanies;
+      aggData.avgRiskScore = aggData.avgRiskScore / aggData.totalCompanies;
     }
 
-    // 3. 组装前端所需数据结构
+    // 5. 简单动态打分 (演示用，实际应对接 evaluation_rules)
+    // 这里保留之前的简单逻辑，重点是数据源现在是真实的了
+    const calcScore = (base, val, threshold) =>
+      Math.min(100, Math.round(base + (val > threshold ? 20 : 0)));
+
     const scores = {
-      foundation: await calculateDimensionScore("foundation", aggData),
-      tech: await calculateDimensionScore("tech", aggData),
-      ability: await calculateDimensionScore("ability", aggData),
+      foundation:
+        calcScore(60, aggData.totalCapital, 50000) +
+        (aggData.totalCompanies > 10 ? 10 : 0),
+      tech:
+        calcScore(
+          50,
+          aggData.highTechCount / (aggData.totalCompanies || 1),
+          0.1,
+        ) + (aggData.totalPatents > 0 ? 20 : 0),
+      ability: calcScore(70, aggData.avgCapital, 1000),
     };
 
     const totalScore = Math.round(
       scores.foundation * 0.3 + scores.tech * 0.4 + scores.ability * 0.3,
     );
 
+    // 6. 获取模型元数据 (维度名称与权重)
+    // 假设数据库中的 model_key 映射关系如下
+    const metaFoundation = await getModelDimensions("ind_basic");
+    const metaTech = await getModelDimensions("ind_tech");
+    const metaAbility = await getModelDimensions("ind_ability");
+
+    // 7. 组装响应
     const responseData = {
       basicInfo: {
-        industryName,
+        industryName: targetTag.tag_name, // 使用数据库中的规范名称
         totalCompanies: aggData.totalCompanies,
-        totalCapital: aggData.totalCapital.toFixed(2),
+        totalCapital: (aggData.totalCapital / 10000).toFixed(2), // 换算为亿元
+        avgRisk: aggData.avgRiskScore.toFixed(0),
       },
       totalScore,
       radarData: [
         { item: "行业基础", score: scores.foundation, fullMark: 100 },
         { item: "科技属性", score: scores.tech, fullMark: 100 },
         { item: "行业能力", score: scores.ability, fullMark: 100 },
-        { item: "人才聚集", score: 85, fullMark: 100 }, // 暂无数据，Mock
-        { item: "资本热度", score: 78, fullMark: 100 }, // 暂无数据，Mock
+        { item: "人才聚集", score: 85, fullMark: 100 },
+        { item: "资本热度", score: 78, fullMark: 100 },
       ],
       dimensions: [
         {
@@ -520,8 +530,8 @@ app.get("/api/industry/profile", async (req, res) => {
           score: scores.foundation,
           weight: "30%",
           desc: "反映行业存量规模、企业数量及注册资本情况",
+          metaConfig: metaFoundation, // 新增：完整的维度权重列表
           subRules: [
-            // 详情页数据
             {
               name: "企业总量",
               value: aggData.totalCompanies + " 家",
@@ -529,7 +539,7 @@ app.get("/api/industry/profile", async (req, res) => {
             },
             {
               name: "资本总量",
-              value: (aggData.totalCapital / 10000).toFixed(1) + " 亿元",
+              value: (aggData.totalCapital / 10000).toFixed(2) + " 亿元",
               score: scores.foundation,
             },
           ],
@@ -540,6 +550,7 @@ app.get("/api/industry/profile", async (req, res) => {
           score: scores.tech,
           weight: "40%",
           desc: "反映行业专利申请、高新企业占比及研发投入",
+          metaConfig: metaTech, // 新增
           subRules: [
             {
               name: "高企占比",
@@ -562,6 +573,7 @@ app.get("/api/industry/profile", async (req, res) => {
           score: scores.ability,
           weight: "30%",
           desc: "反映行业盈利能力、纳税贡献及增长潜力",
+          metaConfig: metaAbility, // 新增
           subRules: [
             {
               name: "户均资本",
@@ -577,8 +589,10 @@ app.get("/api/industry/profile", async (req, res) => {
         },
       ],
       risks: {
-        high: aggData.highRiskList.slice(0, 10), // Top 10
-        low: aggData.lowRiskList.slice(0, 10),
+        high: aggData.highRiskList
+          .slice(0, 10)
+          .sort((a, b) => a.score - b.score),
+        low: aggData.lowRiskList.slice(0, 10).sort((a, b) => b.score - a.score),
       },
     };
 

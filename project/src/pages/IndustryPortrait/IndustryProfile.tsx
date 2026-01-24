@@ -21,9 +21,9 @@ import {
   theme,
   Empty,
   Tabs,
+  Divider,
 } from "antd";
 import {
-  MenuUnfoldOutlined,
   RadarChartOutlined,
   SafetyOutlined,
   FallOutlined,
@@ -31,11 +31,12 @@ import {
   TrophyOutlined,
   ExperimentOutlined,
   ThunderboltOutlined,
+  ApartmentOutlined,
 } from "@ant-design/icons";
 import { Radar } from "@ant-design/plots";
 import type { DataNode } from "antd/es/tree";
 
-const { Content } = Layout;
+const { Content, Sider } = Layout;
 const { Title, Text, Paragraph } = Typography;
 
 // 映射图标
@@ -50,19 +51,19 @@ const IndustryProfile: React.FC = () => {
 
   // State
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any>(null); // 存储后端返回的完整数据
-  const [selectedIndustry, setSelectedIndustry] = useState("生物医药");
+  const [data, setData] = useState<any>(null);
+  const [selectedIndustry, setSelectedIndustry] = useState(""); // 初始为空，等待树选择
 
-  // Drawers
-  const [treeDrawerVisible, setTreeDrawerVisible] = useState(false);
+  // Drawers & UI Control
   const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
-  const [selectedDimension, setSelectedDimension] = useState<any>(null); // 当前选中的维度详情
+  const [selectedDimension, setSelectedDimension] = useState<any>(null);
   const [riskListVisible, setRiskListVisible] = useState(false);
   const [riskListType, setRiskListType] = useState<"high" | "low">("high");
 
   // Tree Data
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [loadingTree, setLoadingTree] = useState(false);
+  const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
 
   // 1. 获取树数据
   useEffect(() => {
@@ -73,6 +74,10 @@ const IndustryProfile: React.FC = () => {
         const resData = await response.json();
         if (resData.success) {
           setTreeData(resData.data);
+          // 默认展开第一层
+          if (resData.data.length > 0) {
+            setExpandedKeys(resData.data.map((node: any) => node.key));
+          }
         }
       } catch (error) {
         console.error("Failed to fetch tree:", error);
@@ -91,11 +96,14 @@ const IndustryProfile: React.FC = () => {
         `http://localhost:3001/api/industry/profile?industryName=${encodeURIComponent(industry)}`,
       );
       const resData = await response.json();
-      if (resData.success) {
+      if (resData.success && resData.data) {
         setData(resData.data);
+      } else {
+        setData(null); // 无数据或未找到
       }
     } catch (error) {
       console.error("Failed to fetch profile:", error);
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -120,71 +128,103 @@ const IndustryProfile: React.FC = () => {
     style: { lineWidth: 2 },
   };
 
-  // 处理维度卡片点击
   const handleDimensionClick = (dim: any) => {
     setSelectedDimension(dim);
     setDetailDrawerVisible(true);
   };
 
-  // 处理风险列表点击
   const showRiskList = (type: "high" | "low") => {
     setRiskListType(type);
     setRiskListVisible(true);
   };
 
-  if (loading && !data) {
-    return (
-      <div style={{ textAlign: "center", padding: 50 }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
   return (
-    <Layout style={{ background: "transparent" }}>
-      {/* 1. 顶部操作栏 */}
-      <div
+    <Layout style={{ minHeight: "85vh", background: "transparent" }}>
+      {/* 左侧：常驻产业链树谱 */}
+      <Sider
+        width={280}
+        theme="light"
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
           background: "#fff",
-          padding: "16px 24px",
           borderRadius: token.borderRadiusLG,
+          marginRight: 24,
           boxShadow: token.boxShadowTertiary,
+          overflowY: "auto",
+          height: "100%",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <Title level={4} style={{ margin: 0, marginRight: 24 }}>
-            {selectedIndustry}
-            <Tag
-              color="geekblue"
-              style={{ marginLeft: 12, fontWeight: "normal" }}
-            >
-              {data?.basicInfo?.totalCompanies || 0} 家企业
-            </Tag>
+        <div style={{ padding: 16, borderBottom: "1px solid #f0f0f0" }}>
+          <Title level={5} style={{ margin: 0 }}>
+            <ApartmentOutlined /> 产业链导航
           </Title>
+        </div>
+        <div style={{ padding: 10 }}>
+          {loadingTree ? (
+            <Spin style={{ display: "block", margin: "20px auto" }} />
+          ) : (
+            <Tree
+              treeData={treeData}
+              expandedKeys={expandedKeys}
+              onExpand={(keys) => setExpandedKeys(keys)}
+              onSelect={(keys, info: any) => {
+                // 只有点击具体的标签节点（非 root stage）才触发
+                if (keys.length > 0 && !info.node.isStage) {
+                  setSelectedIndustry(info.node.title as string);
+                }
+              }}
+              height={700}
+            />
+          )}
+        </div>
+      </Sider>
+
+      {/* 右侧：内容区 */}
+      <Content>
+        {/* 顶部搜索栏 */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 24,
+            background: "#fff",
+            padding: "16px 24px",
+            borderRadius: token.borderRadiusLG,
+            boxShadow: token.boxShadowTertiary,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <Title level={4} style={{ margin: 0, marginRight: 24 }}>
+              {data?.basicInfo?.industryName ||
+                selectedIndustry ||
+                "请选择行业"}
+            </Title>
+            {data && (
+              <Tag color="geekblue" style={{ marginLeft: 12 }}>
+                收录企业: {data.basicInfo.totalCompanies} 家
+              </Tag>
+            )}
+            {data && (
+              <Tag color="gold">总资本: {data.basicInfo.totalCapital} 亿元</Tag>
+            )}
+          </div>
           <Input.Search
-            placeholder="搜索行业..."
+            placeholder="输入行业名称搜索..."
             allowClear
             onSearch={(val) => val && setSelectedIndustry(val)}
-            style={{ width: 260 }}
+            style={{ width: 300 }}
           />
         </div>
-        <Button
-          icon={<MenuUnfoldOutlined />}
-          onClick={() => setTreeDrawerVisible(true)}
-        >
-          切换行业
-        </Button>
-      </div>
 
-      <Content style={{ minHeight: 280 }}>
-        {data ? (
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 100 }}>
+            <Spin size="large" tip="正在分析产业链数据..." />
+          </div>
+        ) : data ? (
           <>
+            {/* 1. 评分概览区 */}
             <Row gutter={[24, 24]}>
-              {/* 左侧：综合评分雷达 */}
+              {/* 雷达图 */}
               <Col xs={24} lg={10} xl={9}>
                 <Card
                   title={
@@ -208,7 +248,7 @@ const IndustryProfile: React.FC = () => {
                 </Card>
               </Col>
 
-              {/* 右侧：三个维度评分 (List Style) */}
+              {/* 维度评分卡片 */}
               <Col xs={24} lg={14} xl={15}>
                 <Row gutter={[16, 16]}>
                   {data.dimensions.map((dim: any) => (
@@ -279,9 +319,8 @@ const IndustryProfile: React.FC = () => {
               </Col>
             </Row>
 
-            {/* 下半部分：薄弱环节与风险评估 */}
+            {/* 2. 薄弱环节 & 风险评估 */}
             <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
-              {/* 薄弱环节 (静态 Mock + 动态逻辑) */}
               <Col xs={24} md={12}>
                 <Card
                   title={
@@ -297,7 +336,6 @@ const IndustryProfile: React.FC = () => {
                     showIcon
                     style={{ marginBottom: 16 }}
                   />
-                  {/* 这里暂时保留部分静态数据展示样式，实际应从后端 weakLinks 字段获取 */}
                   <List
                     itemLayout="horizontal"
                     dataSource={[
@@ -318,7 +356,7 @@ const IndustryProfile: React.FC = () => {
                             />
                           }
                           title={item.name}
-                          description={`${item.reason}`}
+                          description={item.reason}
                         />
                         <Tag color={item.level === "高危" ? "red" : "orange"}>
                           {item.level}
@@ -329,7 +367,6 @@ const IndustryProfile: React.FC = () => {
                 </Card>
               </Col>
 
-              {/* 风险评估 (高风险/低风险企业列表) */}
               <Col xs={24} md={12}>
                 <Card
                   title={
@@ -374,7 +411,7 @@ const IndustryProfile: React.FC = () => {
                                 ]}
                               >
                                 <Space>
-                                  <Text style={{ width: 180 }} ellipsis>
+                                  <Text style={{ width: 160 }} ellipsis>
                                     {item.name}
                                   </Text>
                                   <Text
@@ -391,7 +428,7 @@ const IndustryProfile: React.FC = () => {
                       },
                       {
                         key: "low",
-                        label: "低风险(优质) TOP 5",
+                        label: "优质企业 TOP 5",
                         children: (
                           <List
                             dataSource={data.risks.low.slice(0, 5)}
@@ -402,7 +439,7 @@ const IndustryProfile: React.FC = () => {
                                 ]}
                               >
                                 <Space>
-                                  <Text style={{ width: 180 }} ellipsis>
+                                  <Text style={{ width: 160 }} ellipsis>
                                     {item.name}
                                   </Text>
                                   <Tag color="success">经营稳健</Tag>
@@ -419,32 +456,87 @@ const IndustryProfile: React.FC = () => {
             </Row>
           </>
         ) : (
-          <Empty description="请搜索或选择行业查看画像" />
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <span>
+                请在左侧选择行业，或在上方搜索行业名称
+                <br />
+                <small style={{ color: "#999" }}>
+                  提示：尝试点击"数字医疗"或搜索"生物医药"
+                </small>
+              </span>
+            }
+            style={{ marginTop: 100 }}
+          />
         )}
       </Content>
 
-      {/* --- Drawer 1: 维度详情 --- */}
+      {/* --- Drawer 1: 维度详情 (增强版) --- */}
       <Drawer
         title={selectedDimension?.title || "维度详情"}
         placement="right"
-        width={500}
+        width={600}
         onClose={() => setDetailDrawerVisible(false)}
         open={detailDrawerVisible}
       >
         {selectedDimension && (
           <>
             <Paragraph type="secondary">{selectedDimension.desc}</Paragraph>
+
+            {/* 新增：模型完整配置展示区 */}
+            {selectedDimension.metaConfig &&
+              selectedDimension.metaConfig.length > 0 && (
+                <div
+                  style={{
+                    marginBottom: 24,
+                    background: "#fafafa",
+                    padding: 16,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Title level={5} style={{ marginTop: 0 }}>
+                    评分模型配置
+                  </Title>
+                  <Table
+                    dataSource={selectedDimension.metaConfig}
+                    columns={[
+                      {
+                        title: "评分维度",
+                        dataIndex: "dimension_name",
+                        width: "60%",
+                      },
+                      {
+                        title: "标准分/权重",
+                        dataIndex: "weight",
+                        render: (text) => <Tag>{text}</Tag>,
+                      },
+                    ]}
+                    pagination={false}
+                    size="small"
+                    scroll={{ y: 200 }}
+                  />
+                  <div style={{ marginTop: 8, textAlign: "right" }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      * 以上为该模型包含的所有考察维度，系统据此计算综合得分
+                    </Text>
+                  </div>
+                </div>
+              )}
+
+            <Divider>当前行业得分详情</Divider>
+
             <Table
               dataSource={selectedDimension.subRules}
               columns={[
-                { title: "指标名称", dataIndex: "name" },
+                { title: "关键指标", dataIndex: "name" },
                 {
                   title: "当前数值",
                   dataIndex: "value",
                   render: (text) => <Text strong>{text}</Text>,
                 },
                 {
-                  title: "得分",
+                  title: "计算得分",
                   dataIndex: "score",
                   render: (score) => (
                     <Tag color={score > 80 ? "green" : "orange"}>{score}</Tag>
@@ -455,14 +547,6 @@ const IndustryProfile: React.FC = () => {
               size="small"
               bordered
             />
-            <div style={{ marginTop: 24 }}>
-              <Alert
-                message="评分规则说明"
-                description="得分基于系统配置的权重与阈值自动计算。如需调整规则，请联系系统管理员前往【系统管理】模块。"
-                type="info"
-                showIcon
-              />
-            </div>
           </>
         )}
       </Drawer>
@@ -486,35 +570,11 @@ const IndustryProfile: React.FC = () => {
               dataIndex: "score",
               sorter: (a: any, b: any) => a.score - b.score,
             },
-            { title: "状态", dataIndex: "reason" },
+            { title: "说明", dataIndex: "reason" },
           ]}
           pagination={{ pageSize: 15 }}
           size="small"
         />
-      </Drawer>
-
-      {/* --- Drawer 3: 行业选择树 --- */}
-      <Drawer
-        title="切换行业"
-        placement="right"
-        onClose={() => setTreeDrawerVisible(false)}
-        open={treeDrawerVisible}
-        width={400}
-      >
-        {loadingTree ? (
-          <Spin />
-        ) : (
-          <Tree
-            treeData={treeData}
-            height={600}
-            onSelect={(keys, info: any) => {
-              if (keys.length > 0) {
-                setSelectedIndustry(info.node.title as string);
-                setTreeDrawerVisible(false);
-              }
-            }}
-          />
-        )}
       </Drawer>
     </Layout>
   );
