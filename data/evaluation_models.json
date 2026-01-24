@@ -1,0 +1,6 @@
+[{"id":1, "model_key":"ent_basic", "model_name":"\u4f01\u4e1a\u57fa\u7840\u8bc4\u5206\u6a21\u578b", "target_type":"ENTERPRISE", "description":"", "created_at":"2026-01-24 17:09:18"},
+ {"id":2, "model_key":"ent_tech", "model_name":"\u4f01\u4e1a\u79d1\u6280\u5c5e\u6027\u8bc4\u5206\u6a21\u578b", "target_type":"ENTERPRISE", "description":"", "created_at":"2026-01-24 17:09:18"},
+ {"id":3, "model_key":"ent_ability", "model_name":"\u4f01\u4e1a\u4e13\u4e1a\u80fd\u529b\u8bc4\u5206\u6a21\u578b", "target_type":"ENTERPRISE", "description":"", "created_at":"2026-01-24 17:09:18"},
+ {"id":4, "model_key":"ind_basic", "model_name":"\u884c\u4e1a\u57fa\u7840\u8bc4\u5206\u6a21\u578b", "target_type":"INDUSTRY", "description":"", "created_at":"2026-01-24 17:09:18"},
+ {"id":5, "model_key":"ind_tech", "model_name":"\u884c\u4e1a\u79d1\u6280\u5c5e\u6027\u8bc4\u5206\u6a21\u578b", "target_type":"INDUSTRY", "description":"", "created_at":"2026-01-24 17:09:18"},
+ {"id":6, "model_key":"ind_ability", "model_name":"\u884c\u4e1a\u80fd\u529b\u8bc4\u5206\u6a21\u578b", "target_type":"INDUSTRY", "description":"", "created_at":"2026-01-24 17:09:18"}]
