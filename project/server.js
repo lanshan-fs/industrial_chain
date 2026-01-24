@@ -394,6 +394,201 @@ app.get("/api/industry/companies", async (req, res) => {
   }
 });
 
+// --- 行业画像核心接口 ---
+async function calculateDimensionScore(dimensionKey, aggData) {
+  // 这里简化处理：实际应从 evaluation_rules 表读取规则
+  // 演示逻辑：根据聚合数据动态打分
+  let score = 70; // 基础分
+
+  if (dimensionKey === "foundation") {
+    // 行业基础：看企业总数和总资本
+    if (aggData.totalCompanies > 50) score += 10;
+    if (aggData.totalCapital > 100000) score += 15;
+  } else if (dimensionKey === "tech") {
+    // 科技属性：看高企占比和专利数
+    const techRatio = aggData.highTechCount / (aggData.totalCompanies || 1);
+    score += techRatio * 30;
+    if (aggData.totalPatents > 100) score += 10;
+  } else if (dimensionKey === "ability") {
+    // 行业能力：看平均资本（模拟实力）
+    if (aggData.avgCapital > 5000) score += 20;
+  }
+
+  return Math.min(100, Math.round(score));
+}
+
+app.get("/api/industry/profile", async (req, res) => {
+  const { industryName } = req.query;
+
+  try {
+    // 1. 获取该行业（Tag）下的所有企业数据
+    // 注意：这里需要递归查找该行业标签及其子标签下的所有企业
+    // 为简化演示，我们假设 industryName 直接对应 level1 标签，并查找其关联企业
+    const [tagRows] = await pool.query(
+      "SELECT tag_id FROM tags WHERE tag_name = ?",
+      [industryName],
+    );
+
+    let companyData = [];
+    let aggData = {
+      totalCompanies: 0,
+      totalCapital: 0,
+      avgCapital: 0,
+      highTechCount: 0,
+      totalPatents: 0,
+      avgRiskScore: 0,
+      highRiskList: [],
+      lowRiskList: [],
+    };
+
+    if (tagRows.length > 0) {
+      // 找到标签，查询关联企业详情
+      // 在真实场景中，这里应调用 getDescendantTagIds 获取所有子标签ID
+      const tagId = tagRows[0].tag_id;
+
+      const [companies] = await pool.query(
+        `
+        SELECT c.* FROM companies c
+        JOIN companies_tags_map ctm ON c.company_id = ctm.company_id
+        WHERE ctm.tag_id = ?
+        LIMIT 200 -- 限制计算规模
+      `,
+        [tagId],
+      );
+
+      companyData = companies;
+
+      // 2. 聚合计算 (Aggregation)
+      aggData.totalCompanies = companies.length;
+      companies.forEach((c) => {
+        aggData.totalCapital += parseFloat(c.registered_capital || 0);
+        if (c.is_high_tech) aggData.highTechCount++;
+        aggData.totalPatents += c.patent_count || 0;
+        aggData.avgRiskScore += c.risk_score || 0;
+
+        // 风险分类
+        const riskItem = {
+          id: c.company_id,
+          name: c.company_name,
+          score: c.risk_score || 100,
+          reason:
+            (c.risk_score || 100) < 60 ? "存在司法风险/经营异常" : "经营稳健",
+        };
+
+        if (riskItem.score < 60) {
+          aggData.highRiskList.push(riskItem);
+        } else if (riskItem.score > 90) {
+          aggData.lowRiskList.push(riskItem);
+        }
+      });
+
+      if (aggData.totalCompanies > 0) {
+        aggData.avgCapital = aggData.totalCapital / aggData.totalCompanies;
+        aggData.avgRiskScore = aggData.avgRiskScore / aggData.totalCompanies;
+      }
+    }
+
+    // 3. 组装前端所需数据结构
+    const scores = {
+      foundation: await calculateDimensionScore("foundation", aggData),
+      tech: await calculateDimensionScore("tech", aggData),
+      ability: await calculateDimensionScore("ability", aggData),
+    };
+
+    const totalScore = Math.round(
+      scores.foundation * 0.3 + scores.tech * 0.4 + scores.ability * 0.3,
+    );
+
+    const responseData = {
+      basicInfo: {
+        industryName,
+        totalCompanies: aggData.totalCompanies,
+        totalCapital: aggData.totalCapital.toFixed(2),
+      },
+      totalScore,
+      radarData: [
+        { item: "行业基础", score: scores.foundation, fullMark: 100 },
+        { item: "科技属性", score: scores.tech, fullMark: 100 },
+        { item: "行业能力", score: scores.ability, fullMark: 100 },
+        { item: "人才聚集", score: 85, fullMark: 100 }, // 暂无数据，Mock
+        { item: "资本热度", score: 78, fullMark: 100 }, // 暂无数据，Mock
+      ],
+      dimensions: [
+        {
+          key: "foundation",
+          title: "行业基础",
+          score: scores.foundation,
+          weight: "30%",
+          desc: "反映行业存量规模、企业数量及注册资本情况",
+          subRules: [
+            // 详情页数据
+            {
+              name: "企业总量",
+              value: aggData.totalCompanies + " 家",
+              score: 85,
+            },
+            {
+              name: "资本总量",
+              value: (aggData.totalCapital / 10000).toFixed(1) + " 亿元",
+              score: scores.foundation,
+            },
+          ],
+        },
+        {
+          key: "tech",
+          title: "科技属性",
+          score: scores.tech,
+          weight: "40%",
+          desc: "反映行业专利申请、高新企业占比及研发投入",
+          subRules: [
+            {
+              name: "高企占比",
+              value:
+                (
+                  (aggData.highTechCount / aggData.totalCompanies || 0) * 100
+                ).toFixed(1) + "%",
+              score: scores.tech,
+            },
+            {
+              name: "专利总数",
+              value: aggData.totalPatents + " 件",
+              score: 80,
+            },
+          ],
+        },
+        {
+          key: "ability",
+          title: "行业能力",
+          score: scores.ability,
+          weight: "30%",
+          desc: "反映行业盈利能力、纳税贡献及增长潜力",
+          subRules: [
+            {
+              name: "户均资本",
+              value: aggData.avgCapital.toFixed(0) + " 万元",
+              score: scores.ability,
+            },
+            {
+              name: "平均风控分",
+              value: aggData.avgRiskScore.toFixed(0) + " 分",
+              score: 90,
+            },
+          ],
+        },
+      ],
+      risks: {
+        high: aggData.highRiskList.slice(0, 10), // Top 10
+        low: aggData.lowRiskList.slice(0, 10),
+      },
+    };
+
+    res.json({ success: true, data: responseData });
+  } catch (error) {
+    console.error("Industry Profile Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`http://localhost:${PORT}`);
 });

@@ -332,3 +332,32 @@ FROM `evaluation_dimensions` WHERE model_key = 'ent_basic';
 -- 实际开发中，如果行业与企业规则完全相同，可共享配置。
 -- 但鉴于文档区分了章节，建议保持独立性。
 -- (此处省略行业规则的重复INSERT语句，逻辑同上)
+
+USE `industrial_chain`;
+
+-- 为 companies 表增加画像计算所需字段
+ALTER TABLE `companies`
+ADD COLUMN `registered_capital` DECIMAL(20, 2) DEFAULT 1000.00 COMMENT '注册资本(万)',
+ADD COLUMN `establishment_date` DATE DEFAULT '2020-01-01' COMMENT '成立日期',
+ADD COLUMN `is_high_tech` TINYINT(1) DEFAULT 0 COMMENT '是否高新技术企业',
+ADD COLUMN `risk_score` INT DEFAULT 100 COMMENT '风控评分(0-100)',
+ADD COLUMN `patent_count` INT DEFAULT 0 COMMENT '专利数量';
+
+-- 1. 先临时关闭安全更新模式
+SET SQL_SAFE_UPDATES = 0;
+
+-- 2. 执行批量更新 (生成模拟画像数据)
+UPDATE companies 
+SET 
+    registered_capital = FLOOR(RAND() * 10000), 
+    risk_score = FLOOR(60 + RAND() * 40), 
+    is_high_tech = IF(RAND() > 0.7, 1, 0)
+WHERE company_id IS NOT NULL; -- 加上非空判断作为保险
+
+-- 3. 制造几个“高风险”企业 (用于演示红色预警)
+UPDATE companies 
+SET risk_score = 40 
+WHERE company_id LIKE '%9%';
+
+-- 4. 恢复安全更新模式 (好习惯)
+SET SQL_SAFE_UPDATES = 1;
