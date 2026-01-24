@@ -10,6 +10,9 @@ import Register from "./pages/Auth/Register";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 
 import Overview from "./pages/Home/Overview";
+
+import IndustryClass from "./pages/IndustryClass/IndustryClass";
+
 import IndustryScore from "./pages/IndustryScore/Index";
 import SmartDiag from "./pages/IndustryDiag/SmartDiag";
 
@@ -59,12 +62,7 @@ const App: React.FC = () => {
           <Route path="home" element={<Overview />} />
 
           {/* 2. 产业分类 */}
-          <Route
-            path="industry-class"
-            element={
-              <PlaceholderPage title="产业分类" desc="高级搜索 | 产业链树" />
-            }
-          />
+          <Route path="industry-class" element={<IndustryClass />} />
 
           {/* 3. 产业画像 */}
           <Route path="industry-portrait">
