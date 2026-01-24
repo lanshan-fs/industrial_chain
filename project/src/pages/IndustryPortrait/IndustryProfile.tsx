@@ -3,7 +3,6 @@ import {
   Layout,
   Input,
   Button,
-  Drawer,
   Tree,
   Typography,
   Card,
@@ -16,54 +15,56 @@ import {
   List,
   Progress,
   Badge,
-  Alert,
   Spin,
-  theme,
   Empty,
   Tabs,
   Divider,
+  Grid,
 } from "antd";
 import {
-  RadarChartOutlined,
   SafetyOutlined,
   FallOutlined,
-  RightOutlined,
-  TrophyOutlined,
-  ExperimentOutlined,
-  ThunderboltOutlined,
-  ApartmentOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 import { Radar } from "@ant-design/plots";
 import type { DataNode } from "antd/es/tree";
 
 const { Content, Sider } = Layout;
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
+const { useBreakpoint } = Grid;
 
-// 映射图标
-const DIMENSION_ICONS: Record<string, React.ReactNode> = {
-  foundation: <TrophyOutlined style={{ fontSize: 24, color: "#faad14" }} />,
-  tech: <ExperimentOutlined style={{ fontSize: 24, color: "#1890ff" }} />,
-  ability: <ThunderboltOutlined style={{ fontSize: 24, color: "#52c41a" }} />,
+// --- 样式常量 ---
+const COLORS = {
+  primary: "#1677ff",
+  success: "#52c41a",
+  warning: "#faad14",
+  error: "#f5222d",
+  bgGray: "#f5f5f5", // 背景灰
+};
+
+// 紧凑型卡片样式
+const COMPACT_CARD_STYLE = {
+  body: { padding: "12px 16px" },
+  header: { padding: "0 16px", minHeight: "40px" }, // 压缩标题高度
 };
 
 const IndustryProfile: React.FC = () => {
-  const { token } = theme.useToken();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   // State
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
-  const [selectedIndustry, setSelectedIndustry] = useState(""); // 初始为空，等待树选择
+  const [selectedIndustry, setSelectedIndustry] = useState("");
 
-  // Drawers & UI Control
-  const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
-  const [selectedDimension, setSelectedDimension] = useState<any>(null);
-  const [riskListVisible, setRiskListVisible] = useState(false);
+  // UI Control
   const [riskListType, setRiskListType] = useState<"high" | "low">("high");
 
   // Tree Data
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [loadingTree, setLoadingTree] = useState(false);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
+  const [autoExpandParent, setAutoExpandParent] = useState(true);
 
   // 1. 获取树数据
   useEffect(() => {
@@ -74,7 +75,6 @@ const IndustryProfile: React.FC = () => {
         const resData = await response.json();
         if (resData.success) {
           setTreeData(resData.data);
-          // 默认展开第一层
           if (resData.data.length > 0) {
             setExpandedKeys(resData.data.map((node: any) => node.key));
           }
@@ -99,7 +99,7 @@ const IndustryProfile: React.FC = () => {
       if (resData.success && resData.data) {
         setData(resData.data);
       } else {
-        setData(null); // 无数据或未找到
+        setData(null);
       }
     } catch (error) {
       console.error("Failed to fetch profile:", error);
@@ -115,467 +115,452 @@ const IndustryProfile: React.FC = () => {
     }
   }, [selectedIndustry]);
 
-  // 雷达图配置
+  // 雷达图配置 (紧凑版)
   const radarConfig = {
     data: data?.radarData || [],
     xField: "item",
     yField: "score",
-    area: { style: { fillOpacity: 0.2 } },
-    scale: { y: { min: 0, max: 100 } },
-    axis: {
-      x: { grid: { line: { style: { stroke: "#d9d9d9", lineDash: [4, 4] } } } },
+    area: {
+      style: {
+        fill: `l(90) 0:${COLORS.primary} 1:rgba(255,255,255,0.2)`,
+        fillOpacity: 0.3,
+      },
     },
-    style: { lineWidth: 2 },
+    line: { style: { stroke: COLORS.primary, lineWidth: 2 } },
+    point: { size: 3, shape: "circle" },
+    scale: { y: { min: 0, max: 100, tickCount: 5 } },
+    axis: {
+      x: { grid: { line: { style: { stroke: "#eee" } } } },
+      y: { grid: { line: { style: { stroke: "#eee" } } } },
+    },
+    legend: false,
+    height: 200, // 限制高度
   };
 
-  const handleDimensionClick = (dim: any) => {
-    setSelectedDimension(dim);
-    setDetailDrawerVisible(true);
-  };
-
-  const showRiskList = (type: "high" | "low") => {
-    setRiskListType(type);
-    setRiskListVisible(true);
-  };
+  // 渲染左侧树
+  const renderTree = () => (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid #f0f0f0" }}>
+        <Input.Search placeholder="搜索产业链节点" size="small" />
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+        {loadingTree ? (
+          <Spin style={{ display: "block", margin: "20px auto" }} />
+        ) : (
+          <Tree
+            treeData={treeData}
+            expandedKeys={expandedKeys}
+            autoExpandParent={autoExpandParent}
+            onExpand={(keys) => {
+              setExpandedKeys(keys);
+              setAutoExpandParent(false);
+            }}
+            onSelect={(keys, info: any) => {
+              if (keys.length > 0 && !info.node.isStage) {
+                setSelectedIndustry(info.node.title as string);
+              }
+            }}
+            blockNode
+            style={{ fontSize: "13px" }}
+          />
+        )}
+      </div>
+    </div>
+  );
 
   return (
-    <Layout style={{ minHeight: "85vh", background: "transparent" }}>
-      {/* 左侧：常驻产业链树谱 */}
+    <Layout style={{ minHeight: "85vh", background: COLORS.bgGray }}>
+      {/* 1. 左侧常驻产业链树谱 (复用产业分类样式) */}
       <Sider
-        width={280}
+        width={260}
         theme="light"
         style={{
-          background: "#fff",
-          borderRadius: token.borderRadiusLG,
-          marginRight: 24,
-          boxShadow: token.boxShadowTertiary,
-          overflowY: "auto",
+          borderRight: "1px solid #e8e8e8",
+          position: isMobile ? "absolute" : "static",
+          zIndex: 10,
           height: "100%",
         }}
+        breakpoint="lg"
+        collapsedWidth="0"
       >
-        <div style={{ padding: 16, borderBottom: "1px solid #f0f0f0" }}>
-          <Title level={5} style={{ margin: 0 }}>
-            <ApartmentOutlined /> 产业链导航
-          </Title>
-        </div>
-        <div style={{ padding: 10 }}>
-          {loadingTree ? (
-            <Spin style={{ display: "block", margin: "20px auto" }} />
-          ) : (
-            <Tree
-              treeData={treeData}
-              expandedKeys={expandedKeys}
-              onExpand={(keys) => setExpandedKeys(keys)}
-              onSelect={(keys, info: any) => {
-                // 只有点击具体的标签节点（非 root stage）才触发
-                if (keys.length > 0 && !info.node.isStage) {
-                  setSelectedIndustry(info.node.title as string);
-                }
-              }}
-              height={700}
-            />
-          )}
-        </div>
+        {renderTree()}
       </Sider>
 
-      {/* 右侧：内容区 */}
-      <Content>
-        {/* 顶部搜索栏 */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
-            background: "#fff",
-            padding: "16px 24px",
-            borderRadius: token.borderRadiusLG,
-            boxShadow: token.boxShadowTertiary,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <Title level={4} style={{ margin: 0, marginRight: 24 }}>
-              {data?.basicInfo?.industryName ||
-                selectedIndustry ||
-                "请选择行业"}
-            </Title>
-            {data && (
-              <Tag color="geekblue" style={{ marginLeft: 12 }}>
-                收录企业: {data.basicInfo.totalCompanies} 家
-              </Tag>
-            )}
-            {data && (
-              <Tag color="gold">总资本: {data.basicInfo.totalCapital} 亿元</Tag>
-            )}
-          </div>
-          <Input.Search
-            placeholder="输入行业名称搜索..."
-            allowClear
-            onSearch={(val) => val && setSelectedIndustry(val)}
-            style={{ width: 300 }}
-          />
-        </div>
+      {/* 2. 右侧内容区 */}
+      <Content style={{ padding: "12px", overflowY: "auto" }}>
+        {/* 顶部简易面包屑/标题栏 (极简) */}
+        {!data && !loading && (
+          <Empty description="请在左侧选择行业" style={{ marginTop: 100 }} />
+        )}
 
         {loading ? (
           <div style={{ textAlign: "center", padding: 100 }}>
-            <Spin size="large" tip="正在分析产业链数据..." />
+            <Spin size="large" />
           </div>
-        ) : data ? (
-          <>
-            {/* 1. 评分概览区 */}
-            <Row gutter={[24, 24]}>
-              {/* 雷达图 */}
-              <Col xs={24} lg={10} xl={9}>
-                <Card
-                  title={
-                    <Space>
-                      <RadarChartOutlined /> 行业综合评分
-                    </Space>
-                  }
-                  style={{ height: "100%" }}
-                  extra={
-                    <Text
-                      strong
-                      style={{ fontSize: 24, color: token.colorPrimary }}
-                    >
-                      {data.totalScore}
-                    </Text>
-                  }
-                >
-                  <div style={{ height: 320 }}>
-                    <Radar {...radarConfig} />
-                  </div>
-                </Card>
-              </Col>
-
-              {/* 维度评分卡片 */}
-              <Col xs={24} lg={14} xl={15}>
-                <Row gutter={[16, 16]}>
-                  {data.dimensions.map((dim: any) => (
-                    <Col span={24} key={dim.key}>
-                      <Card
-                        hoverable
-                        onClick={() => handleDimensionClick(dim)}
-                        bodyStyle={{ padding: "20px 24px" }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <div
-                            style={{ display: "flex", alignItems: "center" }}
-                          >
-                            <div
-                              style={{
-                                width: 56,
-                                height: 56,
-                                borderRadius: "50%",
-                                background: "#f5f5f5",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                marginRight: 24,
-                              }}
-                            >
-                              {DIMENSION_ICONS[dim.key] || <TrophyOutlined />}
-                            </div>
-                            <div>
-                              <Title level={5} style={{ margin: 0 }}>
-                                {dim.title}
-                              </Title>
-                              <Text type="secondary" style={{ fontSize: 13 }}>
-                                {dim.desc}
-                              </Text>
-                              <div style={{ marginTop: 4 }}>
-                                <Tag color="blue">权重: {dim.weight}</Tag>
-                              </div>
-                            </div>
-                          </div>
-                          <div style={{ textAlign: "right", minWidth: 120 }}>
-                            <Statistic
-                              value={dim.score}
-                              suffix="/ 100"
-                              valueStyle={{ fontSize: 22, fontWeight: "bold" }}
-                            />
-                            <Progress
-                              percent={dim.score}
-                              showInfo={false}
-                              size="small"
-                              strokeColor={token.colorPrimary}
-                            />
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              点击查看详情{" "}
-                              <RightOutlined style={{ fontSize: 10 }} />
-                            </Text>
-                          </div>
-                        </div>
-                      </Card>
-                    </Col>
-                  ))}
-                </Row>
-              </Col>
-            </Row>
-
-            {/* 2. 薄弱环节 & 风险评估 */}
-            <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
-              <Col xs={24} md={12}>
-                <Card
-                  title={
-                    <Space>
-                      <FallOutlined /> 薄弱环节识别
-                    </Space>
-                  }
-                  style={{ height: "100%" }}
-                >
-                  <Alert
-                    message="基于产业链数据的自动分析结果"
-                    type="info"
-                    showIcon
-                    style={{ marginBottom: 16 }}
-                  />
-                  <List
-                    itemLayout="horizontal"
-                    dataSource={[
-                      {
-                        name: "核心原材料",
-                        level: "高危",
-                        reason: "本地配套率 < 10%",
-                      },
-                      { name: "高端设备", level: "中危", reason: "依赖进口" },
-                    ]}
-                    renderItem={(item, index) => (
-                      <List.Item>
-                        <List.Item.Meta
-                          avatar={
-                            <Badge
-                              count={index + 1}
-                              color={item.level === "高危" ? "red" : "orange"}
-                            />
-                          }
-                          title={item.name}
-                          description={item.reason}
-                        />
-                        <Tag color={item.level === "高危" ? "red" : "orange"}>
-                          {item.level}
-                        </Tag>
-                      </List.Item>
-                    )}
-                  />
-                </Card>
-              </Col>
-
-              <Col xs={24} md={12}>
-                <Card
-                  title={
-                    <Space>
-                      <SafetyOutlined /> 风险评估
-                    </Space>
-                  }
-                  style={{ height: "100%" }}
-                  extra={
-                    <Space>
-                      <Button
-                        size="small"
-                        danger
-                        onClick={() => showRiskList("high")}
-                      >
-                        高风险名单
-                      </Button>
-                      <Button
-                        size="small"
-                        type="primary"
-                        ghost
-                        onClick={() => showRiskList("low")}
-                      >
-                        优质企业名单
-                      </Button>
-                    </Space>
-                  }
-                >
-                  <Tabs
-                    defaultActiveKey="high"
-                    items={[
-                      {
-                        key: "high",
-                        label: "高风险企业 TOP 5",
-                        children: (
-                          <List
-                            dataSource={data.risks.high.slice(0, 5)}
-                            renderItem={(item: any) => (
-                              <List.Item
-                                actions={[
-                                  <Tag color="red">{item.score}分</Tag>,
-                                ]}
-                              >
-                                <Space>
-                                  <Text style={{ width: 160 }} ellipsis>
-                                    {item.name}
-                                  </Text>
-                                  <Text
-                                    type="secondary"
-                                    style={{ fontSize: 12 }}
-                                  >
-                                    {item.reason}
-                                  </Text>
-                                </Space>
-                              </List.Item>
-                            )}
-                          />
-                        ),
-                      },
-                      {
-                        key: "low",
-                        label: "优质企业 TOP 5",
-                        children: (
-                          <List
-                            dataSource={data.risks.low.slice(0, 5)}
-                            renderItem={(item: any) => (
-                              <List.Item
-                                actions={[
-                                  <Tag color="green">{item.score}分</Tag>,
-                                ]}
-                              >
-                                <Space>
-                                  <Text style={{ width: 160 }} ellipsis>
-                                    {item.name}
-                                  </Text>
-                                  <Tag color="success">经营稳健</Tag>
-                                </Space>
-                              </List.Item>
-                            )}
-                          />
-                        ),
-                      },
-                    ]}
-                  />
-                </Card>
-              </Col>
-            </Row>
-          </>
         ) : (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <span>
-                请在左侧选择行业，或在上方搜索行业名称
-                <br />
-                <small style={{ color: "#999" }}>
-                  提示：尝试点击"数字医疗"或搜索"生物医药"
-                </small>
-              </span>
-            }
-            style={{ marginTop: 100 }}
-          />
-        )}
-      </Content>
-
-      {/* --- Drawer 1: 维度详情 (增强版) --- */}
-      <Drawer
-        title={selectedDimension?.title || "维度详情"}
-        placement="right"
-        width={600}
-        onClose={() => setDetailDrawerVisible(false)}
-        open={detailDrawerVisible}
-      >
-        {selectedDimension && (
-          <>
-            <Paragraph type="secondary">{selectedDimension.desc}</Paragraph>
-
-            {/* 新增：模型完整配置展示区 */}
-            {selectedDimension.metaConfig &&
-              selectedDimension.metaConfig.length > 0 && (
+          data && (
+            <Space direction="vertical" size={12} style={{ width: "100%" }}>
+              {/* 顶部标题栏 */}
+              <Card size="small" bodyStyle={{ padding: "12px 16px" }}>
                 <div
                   style={{
-                    marginBottom: 24,
-                    background: "#fafafa",
-                    padding: 16,
-                    borderRadius: 8,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
-                  <Title level={5} style={{ marginTop: 0 }}>
-                    评分模型配置
-                  </Title>
-                  <Table
-                    dataSource={selectedDimension.metaConfig}
-                    columns={[
-                      {
-                        title: "评分维度",
-                        dataIndex: "dimension_name",
-                        width: "60%",
-                      },
-                      {
-                        title: "标准分/权重",
-                        dataIndex: "weight",
-                        render: (text) => <Tag>{text}</Tag>,
-                      },
-                    ]}
-                    pagination={false}
-                    size="small"
-                    scroll={{ y: 200 }}
-                  />
-                  <div style={{ marginTop: 8, textAlign: "right" }}>
+                  <Space>
+                    <Title level={4} style={{ margin: 0 }}>
+                      {data.basicInfo.industryName}
+                    </Title>
+                    <Tag color="blue">
+                      {data.basicInfo.totalCompanies} 家企业
+                    </Tag>
+                  </Space>
+                  <Space>
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                      * 以上为该模型包含的所有考察维度，系统据此计算综合得分
+                      数据更新于：2026-01-24
                     </Text>
-                  </div>
+                    <Button size="small" type="primary" ghost>
+                      导出报告
+                    </Button>
+                  </Space>
                 </div>
-              )}
+              </Card>
 
-            <Divider>当前行业得分详情</Divider>
+              {/* 第一行：评分 + 雷达 + 核心维度 (高密度布局) */}
+              <Row gutter={[12, 12]}>
+                {/* 区块 1: 综合评分 */}
+                <Col xs={24} md={6} lg={5} xl={4}>
+                  <Card
+                    title="行业综合评分"
+                    size="small"
+                    headStyle={COMPACT_CARD_STYLE.header}
+                    bodyStyle={{
+                      ...COMPACT_CARD_STYLE.body,
+                      textAlign: "center",
+                      height: 240,
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Statistic
+                      value={data.totalScore}
+                      valueStyle={{
+                        fontSize: 48,
+                        fontWeight: "bold",
+                        color: COLORS.primary,
+                      }}
+                    />
+                    <div style={{ marginTop: 8 }}>
+                      <Tag
+                        color={data.totalScore >= 80 ? "green" : "orange"}
+                        style={{ fontSize: 14, padding: "4px 12px" }}
+                      >
+                        评级：
+                        {data.totalScore >= 85
+                          ? "AAA"
+                          : data.totalScore >= 70
+                            ? "AA"
+                            : "B"}
+                      </Tag>
+                    </div>
+                    <Divider style={{ margin: "16px 0" }} />
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-around",
+                        width: "100%",
+                      }}
+                    >
+                      <Statistic
+                        title="排名"
+                        value={3}
+                        valueStyle={{ fontSize: 16 }}
+                      />
+                      <Statistic
+                        title="击败"
+                        value="92%"
+                        valueStyle={{ fontSize: 16 }}
+                      />
+                    </div>
+                  </Card>
+                </Col>
 
-            <Table
-              dataSource={selectedDimension.subRules}
-              columns={[
-                { title: "关键指标", dataIndex: "name" },
-                {
-                  title: "当前数值",
-                  dataIndex: "value",
-                  render: (text) => <Text strong>{text}</Text>,
-                },
-                {
-                  title: "计算得分",
-                  dataIndex: "score",
-                  render: (score) => (
-                    <Tag color={score > 80 ? "green" : "orange"}>{score}</Tag>
-                  ),
-                },
-              ]}
-              pagination={false}
-              size="small"
-              bordered
-            />
-          </>
+                {/* 区块 2: 多维雷达 */}
+                <Col xs={24} md={8} lg={7} xl={6}>
+                  <Card
+                    title="多维能力模型"
+                    size="small"
+                    headStyle={COMPACT_CARD_STYLE.header}
+                    bodyStyle={{
+                      ...COMPACT_CARD_STYLE.body,
+                      height: 240,
+                      padding: 0,
+                    }}
+                  >
+                    <div style={{ height: "100%", padding: "10px" }}>
+                      <Radar {...radarConfig} />
+                    </div>
+                  </Card>
+                </Col>
+
+                {/* 区块 3: 核心指标矩阵 (高密度表格) */}
+                <Col xs={24} md={10} lg={12} xl={14}>
+                  <Card
+                    title="核心维度拆解"
+                    size="small"
+                    headStyle={COMPACT_CARD_STYLE.header}
+                    bodyStyle={{
+                      ...COMPACT_CARD_STYLE.body,
+                      height: 240,
+                      overflowY: "auto",
+                      padding: 0,
+                    }}
+                  >
+                    <Table
+                      dataSource={data.dimensions.flatMap((d: any) =>
+                        d.subRules.map((rule: any) => ({
+                          ...rule,
+                          category: d.title,
+                          key: d.key + rule.name,
+                        })),
+                      )}
+                      pagination={false}
+                      size="small"
+                      columns={[
+                        {
+                          title: "维度",
+                          dataIndex: "category",
+                          width: 100,
+                          onCell: (_, index) => {
+                            // 简单的合并行逻辑，为了Demo效果先固定
+                            if (index === 0) return { rowSpan: 2 };
+                            if (index === 1) return { rowSpan: 0 };
+                            if (index === 2) return { rowSpan: 2 };
+                            if (index === 3) return { rowSpan: 0 };
+                            if (index === 4) return { rowSpan: 2 };
+                            if (index === 5) return { rowSpan: 0 };
+                            return {};
+                          },
+                          render: (text) => <Tag>{text}</Tag>,
+                        },
+                        {
+                          title: "指标项",
+                          dataIndex: "name",
+                          width: 120,
+                          render: (text) => (
+                            <Text type="secondary">{text}</Text>
+                          ),
+                        },
+                        {
+                          title: "当前数值",
+                          dataIndex: "value",
+                          render: (text) => <Text strong>{text}</Text>,
+                        },
+                        {
+                          title: "得分",
+                          dataIndex: "score",
+                          width: 80,
+                          render: (score) => (
+                            <Progress
+                              percent={score}
+                              size="small"
+                              showInfo={false}
+                              strokeColor={
+                                score > 80 ? COLORS.success : COLORS.warning
+                              }
+                            />
+                          ),
+                        },
+                        {
+                          title: "",
+                          dataIndex: "score",
+                          width: 40,
+                          render: (s) => (
+                            <span style={{ fontSize: 12 }}>{s}</span>
+                          ),
+                        },
+                      ]}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+
+              {/* 第二行：风险与薄弱环节 (并列) */}
+              <Row gutter={[12, 12]}>
+                <Col xs={24} md={12}>
+                  <Card
+                    size="small"
+                    title={
+                      <Space>
+                        <FallOutlined style={{ color: COLORS.warning }} />{" "}
+                        薄弱环节识别
+                      </Space>
+                    }
+                    headStyle={COMPACT_CARD_STYLE.header}
+                  >
+                    <List
+                      size="small"
+                      dataSource={[
+                        {
+                          name: "核心原材料",
+                          level: "高危",
+                          reason: "本地配套率 < 10%",
+                          icon: <SafetyOutlined />,
+                        },
+                        {
+                          name: "高端设备",
+                          level: "中危",
+                          reason: "依赖进口",
+                          icon: <InfoCircleOutlined />,
+                        },
+                        {
+                          name: "专业人才",
+                          level: "中危",
+                          reason: "缺口约 500 人",
+                          icon: <InfoCircleOutlined />,
+                        },
+                      ]}
+                      renderItem={(item) => (
+                        <List.Item>
+                          <List.Item.Meta
+                            title={
+                              <span style={{ fontSize: 13 }}>{item.name}</span>
+                            }
+                            description={
+                              <span style={{ fontSize: 12, color: "#999" }}>
+                                {item.reason}
+                              </span>
+                            }
+                          />
+                          <Tag color={item.level === "高危" ? "red" : "orange"}>
+                            {item.level}
+                          </Tag>
+                        </List.Item>
+                      )}
+                    />
+                  </Card>
+                </Col>
+
+                <Col xs={24} md={12}>
+                  <Card
+                    size="small"
+                    title={
+                      <Space>
+                        <SafetyOutlined style={{ color: COLORS.error }} />{" "}
+                        企业风险监控
+                      </Space>
+                    }
+                    headStyle={COMPACT_CARD_STYLE.header}
+                    extra={
+                      <Tabs
+                        size="small"
+                        activeKey={riskListType}
+                        onChange={(k) => setRiskListType(k as any)}
+                        items={[
+                          { key: "high", label: "高风险" },
+                          { key: "low", label: "优质企业" },
+                        ]}
+                        tabBarStyle={{ marginBottom: 0 }}
+                      />
+                    }
+                  >
+                    <List
+                      size="small"
+                      dataSource={
+                        riskListType === "high"
+                          ? data.risks.high.slice(0, 3)
+                          : data.risks.low.slice(0, 3)
+                      }
+                      renderItem={(item: any) => (
+                        <List.Item>
+                          <div
+                            style={{
+                              width: "100%",
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <Space>
+                              <Badge
+                                status={
+                                  riskListType === "high" ? "error" : "success"
+                                }
+                              />
+                              <Text style={{ fontSize: 13 }} ellipsis>
+                                {item.name}
+                              </Text>
+                            </Space>
+                            <Space size="small">
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {item.reason}
+                              </Text>
+                              <Tag
+                                bordered={false}
+                                color={
+                                  riskListType === "high" ? "red" : "green"
+                                }
+                              >
+                                {item.score}分
+                              </Tag>
+                            </Space>
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+
+              {/* 第三行：行业 Top 企业列表 (增加信息密度) */}
+              <Card
+                title="行业重点企业一览"
+                size="small"
+                headStyle={COMPACT_CARD_STYLE.header}
+              >
+                <Table
+                  size="small"
+                  dataSource={data.risks.low.slice(0, 5)} // 复用优质企业数据作为Top企业
+                  pagination={false}
+                  columns={[
+                    { title: "排名", render: (_, __, i) => i + 1, width: 60 },
+                    {
+                      title: "企业名称",
+                      dataIndex: "name",
+                      render: (t) => <a href="#">{t}</a>,
+                    },
+                    {
+                      title: "注册资本",
+                      dataIndex: "score",
+                      render: (s) => `${(s * 120).toFixed(0)} 万`,
+                    }, // Mock数据
+                    {
+                      title: "综合评分",
+                      dataIndex: "score",
+                      render: (s) => (
+                        <Text strong style={{ color: COLORS.primary }}>
+                          {s}
+                        </Text>
+                      ),
+                    },
+                    {
+                      title: "企业标签",
+                      render: () => (
+                        <Space size={4}>
+                          <Tag style={{ fontSize: 10 }}>高新</Tag>
+                          <Tag style={{ fontSize: 10 }}>专精特新</Tag>
+                        </Space>
+                      ),
+                    },
+                  ]}
+                />
+              </Card>
+            </Space>
+          )
         )}
-      </Drawer>
-
-      {/* --- Drawer 2: 完整企业名单 --- */}
-      <Drawer
-        title={riskListType === "high" ? "高风险企业名单" : "优质企业名单"}
-        placement="right"
-        width={500}
-        onClose={() => setRiskListVisible(false)}
-        open={riskListVisible}
-      >
-        <Table
-          dataSource={
-            riskListType === "high" ? data?.risks.high : data?.risks.low
-          }
-          columns={[
-            { title: "企业名称", dataIndex: "name" },
-            {
-              title: "评分",
-              dataIndex: "score",
-              sorter: (a: any, b: any) => a.score - b.score,
-            },
-            { title: "说明", dataIndex: "reason" },
-          ]}
-          pagination={{ pageSize: 15 }}
-          size="small"
-        />
-      </Drawer>
+      </Content>
     </Layout>
   );
 };
