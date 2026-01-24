@@ -13,6 +13,8 @@ import Overview from "./pages/Home/Overview";
 
 import IndustryClass from "./pages/IndustryClass/IndustryClass";
 
+import IndustryProfile from "./pages/IndustryPortrait/IndustryProfile";
+
 import IndustryScore from "./pages/IndustryScore/Index";
 import SmartDiag from "./pages/IndustryDiag/SmartDiag";
 
@@ -67,10 +69,7 @@ const App: React.FC = () => {
           {/* 3. 产业画像 */}
           <Route path="industry-portrait">
             <Route index element={<Navigate to="industry-profile" replace />} />
-            <Route
-              path="industry-profile"
-              element={<PlaceholderPage title="行业画像" desc="行业多维分析" />}
-            />
+            <Route path="industry-profile" element={<IndustryProfile />} />
             <Route
               path="enterprise-profile"
               element={<PlaceholderPage title="企业画像" desc="企业全景视图" />}
