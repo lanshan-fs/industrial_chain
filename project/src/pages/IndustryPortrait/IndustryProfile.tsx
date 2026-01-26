@@ -329,7 +329,7 @@ const IndustryProfile: React.FC = () => {
             placeholder="请输入行业名称或企业关键词..."
             enterButton={
               <Button type="primary" icon={<SearchOutlined />}>
-                画像搜索
+                行业画像搜索
               </Button>
             }
             size="large"
