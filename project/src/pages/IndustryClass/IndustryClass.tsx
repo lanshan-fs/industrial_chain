@@ -15,7 +15,11 @@ import {
   message,
   Select,
   Badge,
-  Grid, // 引入 Grid 用于响应式
+  Grid,
+  Modal,
+  Form,
+  Row,
+  Col,
 } from "antd";
 import {
   BankOutlined,
@@ -25,13 +29,16 @@ import {
   AppstoreOutlined,
   BarsOutlined,
   NodeIndexOutlined,
+  SearchOutlined,
+  PlusOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import type { DataNode } from "antd/es/tree";
 
 const { Sider, Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
-const { useBreakpoint } = Grid; // 响应式钩子
+const { useBreakpoint } = Grid;
 
 // --- 样式常量定义 ---
 const STAGE_COLORS: Record<string, string> = {
@@ -46,10 +53,19 @@ const STAGE_BG_COLORS: Record<string, string> = {
   stage_下游: "#fff7e6",
 };
 
+// 搜索主题选项
+const SEARCH_SUBJECTS = [
+  { label: "企业名称", value: "company_name" },
+  { label: "行业标签", value: "tag" },
+  { label: "企业信用代码", value: "credit_code" },
+  { label: "法定代表人", value: "legal_person" },
+  { label: "经营范围", value: "business_scope" },
+];
+
 const IndustryClass: React.FC = () => {
   const navigate = useNavigate();
   const { token } = theme.useToken();
-  const screens = useBreakpoint(); // 获取当前屏幕断点
+  const screens = useBreakpoint();
 
   // State
   const [loadingTree, setLoadingTree] = useState(false);
@@ -63,8 +79,15 @@ const IndustryClass: React.FC = () => {
     title: string;
     key: string;
   } | null>(null);
+
+  // Search State
   const [searchText, setSearchText] = useState("");
+  const [searchType, setSearchType] = useState("company_name"); // 默认搜索主题
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
+
+  // Advanced Search Modal State
+  const [isAdvancedModalVisible, setIsAdvancedModalVisible] = useState(false);
+  const [advancedForm] = Form.useForm();
 
   useEffect(() => {
     const fetchTree = async () => {
@@ -91,6 +114,7 @@ const IndustryClass: React.FC = () => {
 
   const fetchCompanies = async (params: {
     keyword?: string;
+    searchType?: string; // 新增搜索类型参数
     tagId?: string;
     stageKey?: string;
   }) => {
@@ -98,6 +122,7 @@ const IndustryClass: React.FC = () => {
     try {
       const query = new URLSearchParams();
       if (params.keyword) query.append("keyword", params.keyword);
+      if (params.searchType) query.append("type", params.searchType); // 传递给后端的类型参数
       if (params.stageKey) query.append("stageKey", params.stageKey);
       if (params.tagId) query.append("tagId", params.tagId);
 
@@ -125,28 +150,42 @@ const IndustryClass: React.FC = () => {
 
     if (!key) {
       setSelectedNodeInfo(null);
-      fetchCompanies({ keyword: searchText });
+      fetchCompanies({ keyword: searchText, searchType });
       return;
     }
 
     setSelectedNodeInfo({ title: node.title as string, key: key });
 
     if (String(key).startsWith("stage_")) {
-      fetchCompanies({ keyword: searchText, stageKey: key });
+      fetchCompanies({ keyword: searchText, searchType, stageKey: key });
     } else {
-      fetchCompanies({ keyword: searchText, tagId: key });
+      fetchCompanies({ keyword: searchText, searchType, tagId: key });
     }
   };
 
-  const onSearch = (value: string) => {
-    setSearchText(value);
+  // 普通搜索触发
+  const handleSearch = () => {
     const currentKey = selectedKeys[0] as string;
     const isStage = currentKey?.startsWith("stage_");
 
     fetchCompanies({
-      keyword: value,
+      keyword: searchText,
+      searchType: searchType,
       stageKey: isStage ? currentKey : undefined,
-      tagId: !isStage ? currentKey : undefined,
+      tagId: !isStage && currentKey ? currentKey : undefined,
+    });
+  };
+
+  // 高级搜索提交
+  const handleAdvancedSearch = () => {
+    advancedForm.validateFields().then((values) => {
+      console.log("Advanced Search Values:", values);
+      // 这里构建复杂查询逻辑，暂时仅演示 UI 交互并关闭弹窗
+      // 实际开发中会将 values 序列化传给后端接口
+      setIsAdvancedModalVisible(false);
+      message.loading("正在执行高级逻辑检索...", 1).then(() => {
+        fetchCompanies({ keyword: values.conditions?.[0]?.value || "" }); // 简单回落演示
+      });
     });
   };
 
@@ -256,18 +295,17 @@ const IndustryClass: React.FC = () => {
       {/* --- 左侧：宽敞的产业链树谱 (自适应) --- */}
       <Sider
         width={450} // PC端宽度
-        breakpoint="lg" // 在小于 lg (992px) 时自动折叠
-        collapsedWidth="0" // 折叠后不占空间
+        breakpoint="lg"
+        collapsedWidth="0"
         style={{
           background: "#fff",
           borderRight: "1px solid #f0f0f0",
           overflowY: "auto",
-          // 响应式内边距：PC端 24px/20px，移动端 12px
           padding: screens.md ? "24px 20px" : "12px",
-          zIndex: 2, // 确保侧边栏层级
+          zIndex: 2,
         }}
         theme="light"
-        zeroWidthTriggerStyle={{ top: 10, left: -45 }} // 调整触发器位置
+        zeroWidthTriggerStyle={{ top: 10, left: -45 }}
       >
         <div style={{ marginBottom: 24, paddingLeft: 8 }}>
           <Title level={4} style={{ margin: "0 0 8px 0", color: "#1f1f1f" }}>
@@ -295,7 +333,7 @@ const IndustryClass: React.FC = () => {
             onSelect={onSelect}
             titleRender={titleRender}
             style={{ background: "transparent" }}
-            height={screens.md ? 800 : 600} // 移动端减小虚拟滚动高度
+            height={screens.md ? 800 : 600}
           />
         )}
       </Sider>
@@ -309,10 +347,9 @@ const IndustryClass: React.FC = () => {
           background: "#f7f8fa",
         }}
       >
-        {/* 1. 顶部：Hero 风格搜索区 (自适应) */}
+        {/* 1. 顶部：Hero 风格搜索区 (改造后) */}
         <div
           style={{
-            // 响应式 Padding：PC端大间距，移动端紧凑
             padding: screens.md ? "48px 64px 40px" : "24px 20px",
             background: "linear-gradient(180deg, #ffffff 0%, #f0f5ff 100%)",
             borderBottom: "1px solid #e6ebf1",
@@ -321,10 +358,10 @@ const IndustryClass: React.FC = () => {
             alignItems: "center",
           }}
         >
-          <div style={{ width: "100%", maxWidth: 800 }}>
+          <div style={{ width: "100%", maxWidth: 900 }}>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
               <Title
-                level={screens.md ? 3 : 4} // 移动端标题字号减小
+                level={screens.md ? 3 : 4}
                 style={{ color: "#262626", marginBottom: 8 }}
               >
                 {selectedNodeInfo ? (
@@ -339,52 +376,71 @@ const IndustryClass: React.FC = () => {
                   "全产业链企业数据库搜索"
                 )}
               </Title>
-              <Text type="secondary">已收录朝阳区数据，支持多维度高级筛选</Text>
+              <Text type="secondary">
+                已收录朝阳区数据，支持组合逻辑高级筛选
+              </Text>
             </div>
 
-            {/* 搜索框主体 */}
+            {/* --- 核心改造：组合式搜索栏 (参考 CNKI Overseas) --- */}
             <div
               style={{
-                boxShadow: "0 8px 24px rgba(22, 119, 255, 0.12)",
-                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              <Input.Search
-                placeholder={
-                  screens.md
-                    ? "输入企业名称、经营范围、产品关键词..."
-                    : "搜索企业..."
-                }
-                allowClear
-                enterButton={
-                  <Button
-                    type="primary"
-                    size="large"
-                    style={{
-                      // FIX: 显式设置高度为 56px，与 input 样式保持一致
-                      height: 56,
-                      padding: screens.md ? "0 40px" : "0 20px",
-                      fontSize: 16,
-                      fontWeight: 500,
-                    }}
-                  >
-                    全局搜索
-                  </Button>
-                }
+              <Space.Compact
                 size="large"
-                onSearch={onSearch}
-                style={{ width: "100%", height: 56 }}
-                // 自定义 Input 样式，确保高度为 56px
-                styles={{ input: { height: 56, fontSize: 16 } }}
-              />
+                style={{
+                  width: "100%",
+                  maxWidth: 700,
+                  boxShadow: "0 8px 24px rgba(22, 119, 255, 0.12)",
+                  borderRadius: 8,
+                }}
+              >
+                <Select
+                  defaultValue="company_name"
+                  options={SEARCH_SUBJECTS}
+                  value={searchType}
+                  onChange={setSearchType}
+                  style={{ width: 140 }}
+                  // 强制左侧圆角
+                  suffixIcon={<FilterOutlined />}
+                />
+                <Input
+                  placeholder="请输入检索词..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  onPressEnter={handleSearch}
+                  allowClear
+                  style={{ width: "calc(100% - 240px)" }}
+                />
+                <Button
+                  type="primary"
+                  onClick={handleSearch}
+                  icon={<SearchOutlined />}
+                  style={{ width: 100 }}
+                >
+                  搜索
+                </Button>
+              </Space.Compact>
+
+              {/* 高级搜索入口 */}
+              <Button
+                type="link"
+                onClick={() => setIsAdvancedModalVisible(true)}
+                style={{ marginLeft: 16, fontSize: 14 }}
+              >
+                高级搜索
+              </Button>
             </div>
 
-            {/* 常用筛选 Tag 组 (移动端换行) */}
+            {/* 常用筛选 Tag 组 */}
             <div
               style={{
                 marginTop: 24,
                 display: "flex",
-                flexWrap: "wrap", // 允许换行
+                flexWrap: "wrap",
                 justifyContent: "center",
                 alignItems: "center",
                 gap: 16,
@@ -412,14 +468,11 @@ const IndustryClass: React.FC = () => {
                 <Select.Option value="all_status">全部状态</Select.Option>
                 <Select.Option value="active">在业/存续</Select.Option>
               </Select>
-              <Button type="link" icon={<FilterOutlined />}>
-                更多高级选项
-              </Button>
             </div>
           </div>
         </div>
 
-        {/* 2. 底部：结果列表 (自适应 Padding) */}
+        {/* 2. 底部：结果列表 */}
         <div
           style={{
             flex: 1,
@@ -493,7 +546,6 @@ const IndustryClass: React.FC = () => {
                       flexDirection: "column",
                     }}
                   >
-                    {/* 卡片顶部彩色装饰条 */}
                     <div
                       style={{
                         position: "absolute",
@@ -604,6 +656,111 @@ const IndustryClass: React.FC = () => {
           )}
         </div>
       </Content>
+
+      {/* --- 高级搜索模态框 --- */}
+      <Modal
+        title="高级检索 (Advanced Search)"
+        open={isAdvancedModalVisible}
+        onCancel={() => setIsAdvancedModalVisible(false)}
+        onOk={handleAdvancedSearch}
+        width={800}
+        okText="执行检索"
+        cancelText="取消"
+      >
+        <div style={{ marginBottom: 16, color: "#666" }}>
+          支持使用 AND、OR、NOT 逻辑运算符构建复杂的检索表达式。
+        </div>
+        <Form
+          form={advancedForm}
+          name="advanced_search"
+          initialValues={{
+            conditions: [{ logic: "AND", field: "company_name", value: "" }],
+          }}
+        >
+          <Form.List name="conditions">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }, index) => (
+                  <Row
+                    key={key}
+                    gutter={12}
+                    align="middle"
+                    style={{ marginBottom: 12 }}
+                  >
+                    <Col span={4}>
+                      {index === 0 ? (
+                        <div
+                          style={{
+                            textAlign: "center",
+                            fontWeight: "bold",
+                            color: "#999",
+                          }}
+                        >
+                          基准条件
+                        </div>
+                      ) : (
+                        <Form.Item
+                          {...restField}
+                          name={[name, "logic"]}
+                          noStyle
+                          initialValue="AND"
+                        >
+                          <Select style={{ width: "100%" }}>
+                            <Select.Option value="AND">AND (与)</Select.Option>
+                            <Select.Option value="OR">OR (或)</Select.Option>
+                            <Select.Option value="NOT">NOT (非)</Select.Option>
+                          </Select>
+                        </Form.Item>
+                      )}
+                    </Col>
+                    <Col span={6}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "field"]}
+                        noStyle
+                        initialValue="company_name"
+                      >
+                        <Select
+                          style={{ width: "100%" }}
+                          options={SEARCH_SUBJECTS}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item {...restField} name={[name, "value"]} noStyle>
+                        <Input placeholder="输入检索词" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={2}>
+                      {index > 0 && (
+                        <DeleteOutlined
+                          onClick={() => remove(name)}
+                          style={{
+                            color: "#ff4d4f",
+                            cursor: "pointer",
+                            fontSize: 16,
+                          }}
+                        />
+                      )}
+                    </Col>
+                  </Row>
+                ))}
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => add()}
+                    block
+                    icon={<PlusOutlined />}
+                    style={{ marginTop: 8 }}
+                  >
+                    添加检索条件
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+        </Form>
+      </Modal>
     </Layout>
   );
 };
