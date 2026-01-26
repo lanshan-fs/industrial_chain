@@ -191,8 +191,8 @@ const MainLayout: React.FC = () => {
           width: "100%",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", minWidth: 160 }}>
-          <div
+        <div style={{ display: "flex", alignItems: "center", minWidth: 200 }}>
+          {/* <div
             style={{
               width: 24,
               height: 24,
@@ -207,8 +207,8 @@ const MainLayout: React.FC = () => {
             }}
           >
             P
-          </div>
-          <span style={{ color: "white", fontSize: "18px", fontWeight: 600 }}>
+          </div> */}
+          <span style={{ color: "white", fontSize: "20px", fontWeight: 600 }}>
             朝阳区产业链洞察平台
           </span>
         </div>
