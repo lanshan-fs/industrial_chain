@@ -17,8 +17,6 @@ import {
   Divider,
   Input,
   Progress,
-  Badge,
-  Tooltip,
   Timeline,
   Alert,
   Spin,
@@ -29,21 +27,15 @@ import {
   ShareAltOutlined,
   GlobalOutlined,
   EnvironmentOutlined,
-  SafetyCertificateOutlined,
-  RiseOutlined,
   BankOutlined,
-  TrophyOutlined,
   ExperimentOutlined,
   ThunderboltOutlined,
   ClusterOutlined,
   UserOutlined,
-  FileProtectOutlined,
-  InfoCircleOutlined,
   ApartmentOutlined,
-  ArrowRightOutlined,
 } from "@ant-design/icons";
-import { Radar, Gauge } from "@ant-design/plots";
-import { useNavigate } from "react-router-dom";
+import { Radar } from "@ant-design/plots";
+// import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
 // --- 引入本地数据 ---
@@ -51,7 +43,7 @@ import companiesData from "../../assets/data/companies.json";
 import tagsData from "../../assets/data/tags.json";
 
 const { Content } = Layout;
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 // --- 视觉风格定义 (保持与 IndustryProfile 一致) ---
 const COLORS = {
@@ -132,7 +124,7 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
   const matchedTag =
     allTags.find((t) => company.raw_variants?.includes(t.tag_name)) ||
     allTags[0];
-  const establishYear = dayjs(company.establishment_date).year();
+  // const establishYear = dayjs(company.establishment_date).year();
 
   // 通用维度生成器
   const generateDimensions = (base: number) => [
@@ -236,15 +228,15 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
 const EnterpriseProfile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
-  const [searchText, setSearchText] = useState("");
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   // 初始化加载
   useEffect(() => {
     handleSearch("init");
   }, []);
 
-  const handleSearch = (value: string) => {
+  // 修复：将 value 重命名为 _value，消除未使用变量警告
+  const handleSearch = (_value: string) => {
     setLoading(true);
     setTimeout(() => {
       // 模拟搜索，这里随机取一个数据
