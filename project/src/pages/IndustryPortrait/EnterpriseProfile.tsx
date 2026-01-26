@@ -124,7 +124,9 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
   const matchedTag =
     allTags.find((t) => company.raw_variants?.includes(t.tag_name)) ||
     allTags[0];
-  // const establishYear = dayjs(company.establishment_date).year();
+
+  // 模拟一些扩展字段
+  const creditCode = "91110105MA01XXXXXX";
 
   // 通用维度生成器
   const generateDimensions = (base: number) => [
@@ -132,6 +134,8 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
     { name: "持续经营时长", weight: 20, score: Math.min(base + 5, 100) },
     { name: "纳税信用等级", weight: 20, score: Math.min(base + 15, 100) },
     { name: "社保缴纳人数", weight: 30, score: Math.min(base - 5, 100) },
+    { name: "企业人员规模", weight: 10, score: Math.min(base, 100) }, // 凑够5个，便于测试滚动
+    { name: "分支机构数量", weight: 10, score: Math.min(base - 10, 100) },
   ];
 
   return {
@@ -142,10 +146,12 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
       status: "在业",
       establishDate: company.establishment_date,
       regCapital: company.registered_capital,
+      paidInCapital: company.registered_capital, // 模拟实缴
       address: `北京市朝阳区产业园 ${Math.floor(Math.random() * 20)} 号楼`,
       website: `www.${company.company_id.substring(0, 6)}.com`,
       type: "有限责任公司(自然人投资或控股)",
-      creditCode: "91110105MA01XXXXXX",
+      creditCode: creditCode,
+      taxId: creditCode, // 通常与统一社会信用代码一致
       industry: matchedTag?.path?.split(" / ")[0] || "科技推广和应用服务业",
       scope:
         "技术开发、技术推广、技术转让、技术咨询、技术服务；销售自行开发的产品；计算机系统服务；基础软件服务；应用软件服务。",
@@ -183,13 +189,16 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
           { item: "团队", score: 95 },
         ],
         dimensions: [
-          { name: "发明专利数量", weight: 40, score: 90 },
-          { name: "研发人员占比", weight: 30, score: 85 },
+          { name: "发明专利数量", weight: 30, score: 90 },
+          { name: "研发人员占比", weight: 20, score: 85 },
           {
             name: "高新企业认证",
-            weight: 30,
+            weight: 20,
             score: company.is_high_tech ? 100 : 0,
           },
+          { name: "研发投入强度", weight: 15, score: 88 },
+          { name: "科技奖项数量", weight: 15, score: 75 },
+          { name: "产学研合作", weight: 10, score: 80 },
         ],
       },
       ability: {
@@ -201,9 +210,11 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
           { item: "品牌", score: 85 },
         ],
         dimensions: [
-          { name: "专精特新认证", weight: 50, score: 80 },
-          { name: "行业标准制定", weight: 30, score: 70 },
+          { name: "专精特新认证", weight: 40, score: 80 },
+          { name: "行业标准制定", weight: 20, score: 70 },
           { name: "政府奖项", weight: 20, score: 85 },
+          { name: "品牌知名度", weight: 10, score: 75 },
+          { name: "市场占有率", weight: 10, score: 82 },
         ],
       },
     },
@@ -235,7 +246,6 @@ const EnterpriseProfile: React.FC = () => {
     handleSearch("init");
   }, []);
 
-  // 修复：将 value 重命名为 _value，消除未使用变量警告
   const handleSearch = (_value: string) => {
     setLoading(true);
     setTimeout(() => {
@@ -252,7 +262,7 @@ const EnterpriseProfile: React.FC = () => {
     }, 600);
   };
 
-  // 渲染子模型卡片 (复用 IndustryProfile 逻辑)
+  // 渲染子模型卡片
   const renderSubModelCard = (
     title: string,
     icon: React.ReactNode,
@@ -290,7 +300,8 @@ const EnterpriseProfile: React.FC = () => {
             pagination={false}
             size="small"
             bordered={false}
-            scroll={{ y: 110 }}
+            // V1.26需求：默认显示5个，大于5个用scroll。此处高度适配约5行
+            scroll={{ y: 150 }}
             columns={[
               { title: "维度", dataIndex: "name", ellipsis: true },
               {
@@ -331,23 +342,24 @@ const EnterpriseProfile: React.FC = () => {
           width: "100%",
         }}
       >
-        {/* 0. 顶部搜索 (V1.9要求) */}
+        {/* 0. 顶部搜索 (优化：样式与 IndustryProfile 保持一致) */}
         <div
           style={{
             marginBottom: 24,
             display: "flex",
             justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
           <Input.Search
-            placeholder="请输入企业名称 (如：XX科技)"
+            placeholder="请输入企业名称"
             enterButton={
               <Button type="primary" icon={<SearchOutlined />}>
                 企业画像搜索
               </Button>
             }
             size="large"
-            style={{ maxWidth: 600 }}
+            style={{ maxWidth: 500, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
             onSearch={handleSearch}
           />
           <Space>
@@ -364,81 +376,167 @@ const EnterpriseProfile: React.FC = () => {
           </div>
         ) : (
           <Space direction="vertical" size={24} style={{ width: "100%" }}>
-            {/* 1. 公司名片 (V1.9要求: 独占一行) */}
-            <Card bodyStyle={{ padding: 24 }} bordered={false}>
-              <Row gutter={24} align="middle">
-                <Col flex="100px">
-                  <Avatar
-                    shape="square"
-                    size={88}
-                    style={{ backgroundColor: COLORS.primary, fontSize: 32 }}
+            {/* 区块一：企业名片 + 工商信息全景 (V1.26需求: 统一区块) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {/* 1.1 企业名片 (Row 1) */}
+              <Card bodyStyle={{ padding: 24 }} bordered={false}>
+                <Row gutter={24} align="middle">
+                  <Col flex="100px">
+                    <Avatar
+                      shape="square"
+                      size={88}
+                      style={{ backgroundColor: COLORS.primary, fontSize: 32 }}
+                    >
+                      {profile.baseInfo.name[0]}
+                    </Avatar>
+                  </Col>
+                  <Col flex="auto">
+                    <Space
+                      direction="vertical"
+                      size={6}
+                      style={{ width: "100%" }}
+                    >
+                      <Space align="center">
+                        <Title level={3} style={{ margin: 0 }}>
+                          {profile.baseInfo.name}
+                        </Title>
+                        <Tag color="success">在业</Tag>
+                        <Tag color="blue">{profile.baseInfo.type}</Tag>
+                      </Space>
+                      <Space size={24} style={{ color: COLORS.textSecondary }}>
+                        <span>
+                          <UserOutlined /> 法人：{profile.baseInfo.legalPerson}
+                        </span>
+                        <span>
+                          <EnvironmentOutlined /> 地址：
+                          {profile.baseInfo.address}
+                        </span>
+                        <span>
+                          <GlobalOutlined /> 官网：{profile.baseInfo.website}
+                        </span>
+                      </Space>
+                      <Space style={{ marginTop: 8 }}>
+                        {profile.tags.map((t: string) => (
+                          <Tag key={t} color="geekblue">
+                            {t}
+                          </Tag>
+                        ))}
+                      </Space>
+                    </Space>
+                  </Col>
+                  <Col
+                    flex="200px"
+                    style={{
+                      textAlign: "right",
+                      borderLeft: "1px solid #f0f0f0",
+                      paddingLeft: 24,
+                    }}
                   >
-                    {profile.baseInfo.name[0]}
-                  </Avatar>
+                    <Statistic
+                      title="综合健康分"
+                      value={profile.metrics.totalScore}
+                      valueStyle={{
+                        color: COLORS.primary,
+                        fontSize: 36,
+                        fontWeight: "bold",
+                      }}
+                      suffix={
+                        <span style={{ fontSize: 14, color: "#999" }}>
+                          / 100
+                        </span>
+                      }
+                    />
+                    <div style={{ marginTop: 8 }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        更新于：{dayjs().format("YYYY-MM-DD")}
+                      </Text>
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
+
+              {/* 1.2 工商信息全景 (Row 2, Split Left/Right) */}
+              <Row gutter={24} style={{ alignItems: "stretch" }}>
+                <Col xs={24} lg={16}>
+                  <Card
+                    title="工商信息全景"
+                    bordered={false}
+                    style={{ height: "100%" }}
+                  >
+                    <Descriptions
+                      column={2}
+                      bordered
+                      size="small"
+                      labelStyle={{ width: 160, background: "#fafafa" }}
+                    >
+                      <Descriptions.Item label="统一社会信用代码">
+                        {profile.baseInfo.creditCode}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="纳税人识别号">
+                        {profile.baseInfo.taxId}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="注册资本">
+                        {profile.baseInfo.regCapital} 万元
+                      </Descriptions.Item>
+                      <Descriptions.Item label="实缴资本">
+                        {profile.baseInfo.paidInCapital} 万元
+                      </Descriptions.Item>
+                      <Descriptions.Item label="成立日期">
+                        {profile.baseInfo.establishDate}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="企业类型">
+                        {profile.baseInfo.type}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="所属行业">
+                        {profile.baseInfo.industry}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="参保人数">
+                        124 人
+                      </Descriptions.Item>
+                      <Descriptions.Item label="注册地址" span={2}>
+                        {profile.baseInfo.address}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="经营范围" span={2}>
+                        {profile.baseInfo.scope}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
                 </Col>
-                <Col flex="auto">
-                  <Space
-                    direction="vertical"
-                    size={6}
-                    style={{ width: "100%" }}
+                <Col xs={24} lg={8}>
+                  <Card
+                    title="资质与荣誉"
+                    bordered={false}
+                    style={{ height: "100%" }}
+                    extra={<a href="#">更多</a>}
                   >
-                    <Space align="center">
-                      <Title level={3} style={{ margin: 0 }}>
-                        {profile.baseInfo.name}
-                      </Title>
-                      <Tag color="success">在业</Tag>
-                      <Tag color="blue">{profile.baseInfo.type}</Tag>
-                    </Space>
-                    <Space size={24} style={{ color: COLORS.textSecondary }}>
-                      <span>
-                        <UserOutlined /> 法人：{profile.baseInfo.legalPerson}
-                      </span>
-                      <span>
-                        <EnvironmentOutlined /> 地址：{profile.baseInfo.address}
-                      </span>
-                      <span>
-                        <GlobalOutlined /> 官网：{profile.baseInfo.website}
-                      </span>
-                    </Space>
-                    <Space style={{ marginTop: 8 }}>
+                    <Timeline
+                      items={profile.honors.map((h: any) => ({
+                        color: "blue",
+                        children: (
+                          <>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {h.year}
+                            </Text>
+                            <div style={{ fontWeight: 500 }}>{h.name}</div>
+                          </>
+                        ),
+                      }))}
+                    />
+                    <Divider style={{ margin: "12px 0" }} />
+                    <Title level={5} style={{ fontSize: 14, marginBottom: 8 }}>
+                      行业标签
+                    </Title>
+                    <Space size={[0, 8]} wrap>
                       {profile.tags.map((t: string) => (
-                        <Tag key={t} color="geekblue">
-                          {t}
-                        </Tag>
+                        <Tag key={t}>{t}</Tag>
                       ))}
                     </Space>
-                  </Space>
-                </Col>
-                <Col
-                  flex="200px"
-                  style={{
-                    textAlign: "right",
-                    borderLeft: "1px solid #f0f0f0",
-                    paddingLeft: 24,
-                  }}
-                >
-                  <Statistic
-                    title="综合健康分"
-                    value={profile.metrics.totalScore}
-                    valueStyle={{
-                      color: COLORS.primary,
-                      fontSize: 36,
-                      fontWeight: "bold",
-                    }}
-                    suffix={
-                      <span style={{ fontSize: 14, color: "#999" }}>/ 100</span>
-                    }
-                  />
-                  <div style={{ marginTop: 8 }}>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      更新于：{dayjs().format("YYYY-MM-DD")}
-                    </Text>
-                  </div>
+                  </Card>
                 </Col>
               </Row>
-            </Card>
+            </div>
 
-            {/* 2. 综合评分与雷达 (V1.9要求: 独占一行) */}
+            {/* 区块二：综合评分与雷达 (独占一行) */}
             <Row gutter={24}>
               <Col span={24}>
                 <Card bordered={false} title="企业综合能力评估">
@@ -482,7 +580,7 @@ const EnterpriseProfile: React.FC = () => {
               </Col>
             </Row>
 
-            {/* 3. 三大评分模型 (V1.9要求: 并排三列) */}
+            {/* 区块三：三大评分模型 (并排三列) */}
             <Row gutter={20}>
               <Col xs={24} md={8}>
                 {renderSubModelCard(
@@ -510,87 +608,7 @@ const EnterpriseProfile: React.FC = () => {
               </Col>
             </Row>
 
-            {/* 4. 企业工商信息全景 (V1.9要求: 独占一行，分左右) */}
-            <Row gutter={24} style={{ alignItems: "stretch" }}>
-              <Col xs={24} lg={16}>
-                <Card
-                  title="工商信息全景"
-                  bordered={false}
-                  style={{ height: "100%" }}
-                >
-                  <Descriptions
-                    column={2}
-                    bordered
-                    size="small"
-                    labelStyle={{ width: 120, background: "#fafafa" }}
-                  >
-                    <Descriptions.Item label="统一社会信用代码">
-                      {profile.baseInfo.creditCode}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="法定代表人">
-                      {profile.baseInfo.legalPerson}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="注册资本">
-                      {profile.baseInfo.regCapital} 万元
-                    </Descriptions.Item>
-                    <Descriptions.Item label="实缴资本">
-                      {profile.baseInfo.regCapital} 万元
-                    </Descriptions.Item>
-                    <Descriptions.Item label="成立日期">
-                      {profile.baseInfo.establishDate}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="企业类型">
-                      {profile.baseInfo.type}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="所属行业">
-                      {profile.baseInfo.industry}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="参保人数">
-                      124 人
-                    </Descriptions.Item>
-                    <Descriptions.Item label="注册地址" span={2}>
-                      {profile.baseInfo.address}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="经营范围" span={2}>
-                      {profile.baseInfo.scope}
-                    </Descriptions.Item>
-                  </Descriptions>
-                </Card>
-              </Col>
-              <Col xs={24} lg={8}>
-                <Card
-                  title="资质与荣誉"
-                  bordered={false}
-                  style={{ height: "100%" }}
-                  extra={<a href="#">更多</a>}
-                >
-                  <Timeline
-                    items={profile.honors.map((h: any) => ({
-                      color: "blue",
-                      children: (
-                        <>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {h.year}
-                          </Text>
-                          <div style={{ fontWeight: 500 }}>{h.name}</div>
-                        </>
-                      ),
-                    }))}
-                  />
-                  <Divider style={{ margin: "12px 0" }} />
-                  <Title level={5} style={{ fontSize: 14, marginBottom: 8 }}>
-                    行业标签
-                  </Title>
-                  <Space size={[0, 8]} wrap>
-                    {profile.tags.map((t: string) => (
-                      <Tag key={t}>{t}</Tag>
-                    ))}
-                  </Space>
-                </Card>
-              </Col>
-            </Row>
-
-            {/* 5. 企业关联族谱与股权穿透 (V1.9要求) */}
+            {/* 区块四：企业关联族谱与股权穿透 */}
             <Card
               title={
                 <Space>
@@ -699,7 +717,7 @@ const EnterpriseProfile: React.FC = () => {
   );
 };
 
-// 简单的 Tab 组件模拟 (避免过多嵌套)
+// 简单的 Tab 组件模拟
 const TabsMock = ({ items }: { items: any[] }) => {
   const [active, setActive] = useState(items[0].key);
   return (
