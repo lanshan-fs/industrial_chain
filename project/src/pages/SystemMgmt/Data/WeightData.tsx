@@ -6,17 +6,15 @@ import {
   Button,
   Radio,
   Slider,
-  Statistic,
-  Progress,
   Table,
   InputNumber,
   Typography,
   Space,
   Tag,
-  Divider,
   message,
   Popconfirm,
   Empty,
+  Divider,
 } from "antd";
 import {
   SaveOutlined,
@@ -27,6 +25,7 @@ import {
   ExperimentOutlined,
   BankOutlined,
   ApartmentOutlined,
+  MinusCircleOutlined,
 } from "@ant-design/icons";
 import { Pie } from "@ant-design/plots";
 
@@ -46,6 +45,7 @@ interface Dimension {
   model_key: string;
   dimension_name: string;
   weight: number;
+  is_deduction?: number;
   rules: Rule[];
   [key: string]: any;
 }
@@ -57,6 +57,20 @@ interface EvaluationModel {
   target_type: "ENTERPRISE" | "INDUSTRY";
   description?: string;
 }
+
+// 预定义色盘
+const PALETTE = [
+  "#5B8FF9",
+  "#5AD8A6",
+  "#5D7092",
+  "#F6BD16",
+  "#E8684A",
+  "#6DC8EC",
+  "#9270CA",
+  "#FF9D4D",
+  "#269A99",
+  "#FF99C3",
+];
 
 const WeightData: React.FC = () => {
   // --- State ---
@@ -71,8 +85,6 @@ const WeightData: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   // --- Fetch Data ---
-
-  // 1. 获取所有模型
   useEffect(() => {
     const fetchModels = async () => {
       setLoadingModels(true);
@@ -81,7 +93,6 @@ const WeightData: React.FC = () => {
         const data = await res.json();
         if (data.success) {
           setAllModels(data.data);
-          // 默认选中第一个
           if (data.data.length > 0) {
             const first = data.data.find(
               (m: any) => m.target_type === "ENTERPRISE",
@@ -98,7 +109,6 @@ const WeightData: React.FC = () => {
     fetchModels();
   }, []);
 
-  // 2. 获取选中模型的详情（维度+规则）
   const fetchModelDetails = async (key: string) => {
     if (!key) return;
     setLoadingDetails(true);
@@ -124,27 +134,40 @@ const WeightData: React.FC = () => {
   }, [selectedModelKey]);
 
   // --- Computations ---
-
-  // 根据 TargetType 筛选当前显示的 Models
   const displayedModels = useMemo(() => {
     return allModels.filter((m) => m.target_type === targetType);
   }, [allModels, targetType]);
 
-  // 计算总权重
+  // 计算总权重 (排除扣分项)
   const totalWeight = useMemo(() => {
-    return dimensions.reduce((acc, cur) => acc + (cur.weight || 0), 0);
+    return dimensions
+      .filter((d) => !d.is_deduction)
+      .reduce((acc, cur) => acc + (cur.weight || 0), 0);
   }, [dimensions]);
 
-  // 环形图数据
+  // 环形图数据构造
   const chartData = useMemo(() => {
-    return dimensions.map((d) => ({
-      type: d.dimension_name,
-      value: d.weight,
-    }));
-  }, [dimensions]);
+    // 1. 正常数据
+    const data = dimensions
+      .filter((d) => !d.is_deduction)
+      .map((d) => ({
+        type: d.dimension_name,
+        value: d.weight,
+        isPlaceholder: false,
+      }));
 
-  // 将维度和规则展平，用于表格展示
-  // 使用 rowSpan 实现合并单元格
+    // 2. 占位数据 (如果不足100%)
+    if (totalWeight < 100) {
+      data.push({
+        type: "未分配 (剩余)",
+        value: 100 - totalWeight,
+        isPlaceholder: true,
+      });
+    }
+    return data;
+  }, [dimensions, totalWeight]);
+
+  // 表格数据
   const tableDataSource = useMemo(() => {
     const rows: any[] = [];
     dimensions.forEach((dim) => {
@@ -155,6 +178,7 @@ const WeightData: React.FC = () => {
             dimId: dim.id,
             dimName: dim.dimension_name,
             dimWeight: dim.weight,
+            isDeduction: dim.is_deduction,
             ruleId: rule.id,
             ruleLabel: rule.rule_label,
             score: rule.score,
@@ -162,12 +186,12 @@ const WeightData: React.FC = () => {
           });
         });
       } else {
-        // 如果没有规则，也显示一行维度信息
         rows.push({
           key: `${dim.id}-no-rule`,
           dimId: dim.id,
           dimName: dim.dimension_name,
           dimWeight: dim.weight,
+          isDeduction: dim.is_deduction,
           ruleId: null,
           ruleLabel: "暂无规则",
           score: 0,
@@ -179,7 +203,6 @@ const WeightData: React.FC = () => {
   }, [dimensions]);
 
   // --- Handlers ---
-
   const handleTargetTypeChange = (e: any) => {
     const newType = e.target.value;
     setTargetType(newType);
@@ -229,7 +252,6 @@ const WeightData: React.FC = () => {
       const data = await res.json();
       if (data.success) {
         message.success("规则删除成功");
-        // 刷新数据
         fetchModelDetails(selectedModelKey);
       } else {
         message.error("删除失败：" + data.message);
@@ -241,10 +263,11 @@ const WeightData: React.FC = () => {
 
   const handleSave = async () => {
     if (totalWeight !== 100) {
-      message.warning(`当前总权重为 ${totalWeight}%，请调整至 100% 后保存`);
+      message.warning(
+        `当前评分维度的总权重为 ${totalWeight}%，请调整至 100% 后保存`,
+      );
       return;
     }
-
     setSaving(true);
     try {
       const res = await fetch("http://localhost:3001/api/evaluation/save", {
@@ -274,45 +297,93 @@ const WeightData: React.FC = () => {
   };
 
   // --- Render Helpers ---
-
   const currentModelName = allModels.find(
     (m) => m.model_key === selectedModelKey,
   )?.model_name;
 
-  // Chart Config
+  // 修复后的 PieConfig
   const pieConfig = {
     data: chartData,
     angleField: "value",
     colorField: "type",
-    innerRadius: 0.6,
-    radius: 0.8,
+    innerRadius: 0.55, // 增加圆环厚度
+    radius: 0.85,
+    autoFit: true, // 确保自适应容器
+    // 颜色映射逻辑
+    color: (datum: any) => {
+      if (datum.isPlaceholder) return "#f0f0f0"; // 占位符颜色
+
+      // 找到当前数据在真实维度中的索引，以分配固定的颜色
+      const realDims = chartData.filter((d) => !d.isPlaceholder);
+      const idx = realDims.findIndex((d) => d.type === datum.type);
+      return PALETTE[idx % PALETTE.length];
+    },
+    // 标签配置：使用 content 或 formatter，避免使用 render
     label: {
       text: "value",
       style: {
         fontWeight: "bold",
+        fontSize: 12,
       },
       position: "spider",
+      formatter: (text: string, item: any) => {
+        if (item.isPlaceholder) return ""; // 隐藏占位符标签
+        return `${text}%`;
+      },
     },
     legend: {
       color: {
         title: false,
         position: "right",
         rowPadding: 5,
+        itemMarker: (_: string, _idx: number, item: any) => {
+          return { symbol: "circle", style: { fill: item.color } };
+        },
       },
     },
+    // 提示信息配置
+    tooltip: {
+      formatter: (datum: any) => {
+        return { name: datum.type, value: datum.value + "%" };
+      },
+    },
+    // 中心文本配置
     annotations: [
       {
         type: "text",
         style: {
-          text: "Total\n100",
+          text: `Total\n${totalWeight}`,
           x: "50%",
           y: "50%",
           textAlign: "center",
-          fontSize: 24,
-          fontStyle: "bold",
+          fontSize: 28,
+          fontWeight: "bold",
+          fill:
+            totalWeight === 100
+              ? "#333"
+              : totalWeight > 100
+                ? "#cf1322"
+                : "#faad14",
+        },
+      },
+      {
+        type: "text",
+        style: {
+          text:
+            totalWeight > 100
+              ? "已溢出"
+              : totalWeight < 100
+                ? "未分配"
+                : "完美",
+          x: "50%",
+          y: "60%",
+          textAlign: "center",
+          fontSize: 12,
+          fill: "#999",
         },
       },
     ],
+    interactions: [{ type: "element-active" }],
   };
 
   const columns = [
@@ -326,8 +397,17 @@ const WeightData: React.FC = () => {
       }),
       render: (text: string, record: any) => (
         <Space direction="vertical" size={2}>
-          <Text strong>{text}</Text>
-          <Tag color="blue">权重 {record.dimWeight}%</Tag>
+          <Space>
+            {record.isDeduction === 1 && (
+              <Tag color="error" icon={<MinusCircleOutlined />}>
+                扣分项
+              </Tag>
+            )}
+            <Text delete={record.isDeduction === 1}>{text}</Text>
+          </Space>
+          <Tag color={record.isDeduction === 1 ? "default" : "blue"}>
+            权重 {record.dimWeight}%
+          </Tag>
         </Space>
       ),
     },
@@ -481,7 +561,6 @@ const WeightData: React.FC = () => {
               </Col>
             );
           })}
-          {/* 当不处于加载状态且没有模型时才显示 Empty */}
           {!loadingModels && displayedModels.length === 0 && (
             <Empty description="暂无该类型模型" />
           )}
@@ -505,62 +584,65 @@ const WeightData: React.FC = () => {
                 >
                   <div
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Statistic
-                      title="当前总权重"
-                      value={totalWeight}
-                      suffix="/ 100%"
-                      valueStyle={{
-                        color: totalWeight === 100 ? "#3f8600" : "#cf1322",
-                      }}
-                    />
-                    <Progress
-                      percent={totalWeight}
-                      status={totalWeight === 100 ? "success" : "exception"}
-                      style={{ width: 200 }}
-                    />
-                  </div>
-                  <Divider />
-                  <div
-                    style={{
                       maxHeight: 350,
                       overflowY: "auto",
                       paddingRight: 10,
                     }}
                   >
-                    {dimensions.map((dim) => (
-                      <Row
-                        key={dim.id}
-                        align="middle"
-                        style={{ marginBottom: 12 }}
-                      >
-                        <Col span={6}>
-                          <Text>{dim.dimension_name}</Text>
-                        </Col>
-                        <Col span={14}>
-                          <Slider
-                            min={0}
-                            max={100}
-                            value={dim.weight}
-                            onChange={(v) => handleWeightChange(dim.id, v)}
-                          />
-                        </Col>
-                        <Col span={4} style={{ textAlign: "right" }}>
-                          <Tag color="blue">{dim.weight}%</Tag>
-                        </Col>
-                      </Row>
-                    ))}
+                    {dimensions.map((dim) => {
+                      const isDeduction = dim.is_deduction === 1;
+                      return (
+                        <Row
+                          key={dim.id}
+                          align="middle"
+                          style={{
+                            marginBottom: 12,
+                            opacity: isDeduction ? 0.6 : 1,
+                          }}
+                        >
+                          <Col span={6}>
+                            <Space>
+                              {isDeduction && (
+                                <Tag
+                                  color="error"
+                                  style={{ margin: 0, fontSize: 10 }}
+                                >
+                                  扣分
+                                </Tag>
+                              )}
+                              <Text delete={isDeduction}>
+                                {dim.dimension_name}
+                              </Text>
+                            </Space>
+                          </Col>
+                          <Col span={14}>
+                            <Slider
+                              min={0}
+                              max={100}
+                              value={dim.weight}
+                              onChange={(v) => handleWeightChange(dim.id, v)}
+                              trackStyle={{
+                                backgroundColor: isDeduction
+                                  ? "#ffccc7"
+                                  : "#1890ff",
+                              }}
+                            />
+                          </Col>
+                          <Col span={4} style={{ textAlign: "right" }}>
+                            <Tag color={isDeduction ? "volcano" : "blue"}>
+                              {dim.weight}%
+                            </Tag>
+                          </Col>
+                        </Row>
+                      );
+                    })}
                   </div>
                 </Space>
               </Card>
             </Col>
             <Col span={10}>
               <Card
-                title="权重分布实时预览"
+                title="权重分布预览 (正向指标)"
                 bordered={false}
                 style={{ height: "100%" }}
               >
