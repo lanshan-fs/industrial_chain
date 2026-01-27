@@ -584,6 +584,109 @@ app.get("/api/industry/profile", async (req, res) => {
   }
 });
 
+app.get("/api/evaluation/models", async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT * FROM evaluation_models ORDER BY id",
+    );
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get("/api/evaluation/model-details", async (req, res) => {
+  const { modelKey } = req.query;
+  if (!modelKey) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing modelKey" });
+  }
+
+  try {
+    // 获取维度
+    const [dims] = await pool.query(
+      "SELECT * FROM evaluation_dimensions WHERE model_key = ? ORDER BY sort_order",
+      [modelKey],
+    );
+
+    if (dims.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const dimIds = dims.map((d) => d.id);
+
+    // 获取规则
+    // 注意：如果 dimIds 为空会导致 sql 错误，但上面已判断 length === 0
+    const [rules] = await pool.query(
+      "SELECT * FROM evaluation_rules WHERE dimension_id IN (?) ORDER BY id",
+      [dimIds],
+    );
+
+    // 组装数据结构：Dimension -> Rules
+    const result = dims.map((d) => ({
+      ...d,
+      rules: rules.filter((r) => r.dimension_id === d.id),
+    }));
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post("/api/evaluation/save", async (req, res) => {
+  const { dimensions } = req.body;
+
+  if (!dimensions || !Array.isArray(dimensions)) {
+    return res.status(400).json({ success: false, message: "Invalid data" });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    for (const dim of dimensions) {
+      // 1. 更新维度权重
+      await connection.query(
+        "UPDATE evaluation_dimensions SET weight = ? WHERE id = ?",
+        [dim.weight, dim.id],
+      );
+
+      // 2. 更新规则得分
+      if (dim.rules && dim.rules.length > 0) {
+        for (const rule of dim.rules) {
+          await connection.query(
+            "UPDATE evaluation_rules SET score = ? WHERE id = ?",
+            [rule.score, rule.id],
+          );
+        }
+      }
+    }
+
+    await connection.commit();
+    res.json({ success: true, message: "配置已保存" });
+  } catch (err) {
+    await connection.rollback();
+    console.error("Save Error:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "保存失败: " + err.message });
+  } finally {
+    connection.release();
+  }
+});
+
+app.delete("/api/evaluation/rule/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query("DELETE FROM evaluation_rules WHERE id = ?", [id]);
+    res.json({ success: true, message: "规则已删除" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`http://localhost:${PORT}`);
 });

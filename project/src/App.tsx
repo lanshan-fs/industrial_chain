@@ -20,6 +20,7 @@ import IndustryScore from "./pages/IndustryScore/Index";
 import SmartDiag from "./pages/IndustryDiag/SmartDiag";
 
 import EnterpriseData from "./pages/SystemMgmt/Data/EnterpriseData";
+import WeightData from "./pages/SystemMgmt/Data/WeightData";
 
 import AutoTag from "./pages/SystemMgmt/Data/Tag/AutoTag";
 import EnterpriseTag from "./pages/SystemMgmt/Data/Tag/EnterpriseTag";
@@ -98,12 +99,7 @@ const App: React.FC = () => {
               }
             />
             {/* 评分权重 */}
-            <Route
-              path="weight-data"
-              element={
-                <PlaceholderPage title="评分权重管理" desc="模型与权重配置" />
-              }
-            />
+            <Route path="weight-data" element={<WeightData />} />
 
             {/* 6.2 标签数据管理 (归属于数据管理) */}
             {/* 注意：路由 Path 依然保持扁平，方便 MainLayout 跳转 */}
