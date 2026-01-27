@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Card,
   Row,
@@ -27,7 +27,7 @@ import {
   ApartmentOutlined,
   MinusCircleOutlined,
 } from "@ant-design/icons";
-import { Pie } from "@ant-design/plots";
+import * as echarts from "echarts";
 
 const { Title, Text } = Typography;
 
@@ -83,6 +83,10 @@ const WeightData: React.FC = () => {
   const [loadingModels, setLoadingModels] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // ECharts Ref
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstance = useRef<echarts.ECharts | null>(null);
 
   // --- Fetch Data ---
   useEffect(() => {
@@ -140,34 +144,163 @@ const WeightData: React.FC = () => {
 
   // 计算总权重 (排除扣分项)
   const totalWeight = useMemo(() => {
-    return dimensions
+    const sum = dimensions
       .filter((d) => !d.is_deduction)
-      .reduce((acc, cur) => acc + (cur.weight || 0), 0);
+      // 核心修复：强制转为 Number 类型进行累加，防止字符串拼接
+      .reduce((acc, cur) => acc + Number(cur.weight || 0), 0);
+
+    // 解决浮点数精度问题 (如 99.99999999 -> 100)
+    return parseFloat(sum.toFixed(2));
   }, [dimensions]);
 
   // 环形图数据构造
   const chartData = useMemo(() => {
-    // 1. 正常数据
+    // 1. 真实数据
     const data = dimensions
       .filter((d) => !d.is_deduction)
       .map((d) => ({
-        type: d.dimension_name,
-        value: d.weight,
+        name: d.dimension_name,
+        value: Number(d.weight), // 核心修复：确保每项也是数字
         isPlaceholder: false,
       }));
 
-    // 2. 占位数据 (如果不足100%)
+    // 2. 缺口逻辑：如果总权重 < 100，补充透明数据
+    // 只有当 totalWeight 是真正的数字时，这里的比较才有效
     if (totalWeight < 100) {
-      data.push({
-        type: "未分配 (剩余)",
-        value: 100 - totalWeight,
-        isPlaceholder: true,
-      });
+      const remaining = parseFloat((100 - totalWeight).toFixed(2));
+      if (remaining > 0) {
+        data.push({
+          name: "__placeholder__",
+          value: remaining,
+          isPlaceholder: true,
+        });
+      }
     }
+
     return data;
   }, [dimensions, totalWeight]);
 
-  // 表格数据
+  // --- ECharts Effect ---
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    if (!chartInstance.current) {
+      chartInstance.current = echarts.init(chartRef.current);
+    }
+
+    const instance = chartInstance.current;
+
+    const option: echarts.EChartsOption = {
+      tooltip: {
+        trigger: "item",
+        formatter: (params: any) => {
+          if (params.data.isPlaceholder) return "";
+          return `${params.marker} ${params.name}: <b>${params.value}%</b>`;
+        },
+        showContent: true,
+      },
+      legend: {
+        top: "middle",
+        right: "0%",
+        orient: "vertical",
+        // 过滤掉占位符
+        data: chartData.filter((d) => !d.isPlaceholder).map((d) => d.name),
+        itemWidth: 10,
+        itemHeight: 10,
+        textStyle: { fontSize: 12 },
+      },
+      title: {
+        text: `{label|Total}\n{val|${totalWeight}}`,
+        left: "35%",
+        top: "center",
+        textAlign: "center",
+        subtext: "",
+        textStyle: {
+          rich: {
+            label: {
+              fontSize: 14,
+              color: "#999",
+              padding: [0, 0, 4, 0],
+            },
+            val: {
+              fontSize: 36,
+              fontWeight: "bold",
+              // 根据权重状态变色
+              color:
+                totalWeight === 100
+                  ? "#333"
+                  : totalWeight > 100
+                    ? "#ff4d4f"
+                    : "#faad14",
+            },
+          },
+        },
+      },
+      series: [
+        {
+          name: "权重分布",
+          type: "pie",
+          radius: ["60%", "85%"],
+          center: ["35%", "50%"],
+          avoidLabelOverlap: false,
+          label: { show: false },
+          itemStyle: {
+            borderRadius: 4,
+            borderColor: "#fff",
+            borderWidth: 2,
+          },
+          emphasis: {
+            scale: true,
+            scaleSize: 5,
+          },
+          data: chartData.map((d) => {
+            if (d.isPlaceholder) {
+              return {
+                value: d.value,
+                name: d.name,
+                isPlaceholder: true,
+                itemStyle: {
+                  color: "rgba(0,0,0,0)", // 完全透明
+                  borderWidth: 0,
+                },
+                tooltip: { show: false },
+                cursor: "default",
+                emphasis: { disabled: true },
+                silent: true,
+              };
+            }
+
+            // 真实数据分配颜色
+            const realIndex = dimensions
+              .filter((dim) => !dim.is_deduction)
+              .findIndex((dim) => dim.dimension_name === d.name);
+            const itemColor = PALETTE[realIndex % PALETTE.length];
+
+            return {
+              value: d.value,
+              name: d.name,
+              isPlaceholder: false,
+              itemStyle: { color: itemColor },
+            };
+          }),
+        },
+      ],
+    };
+
+    // 强制完全重绘，清除旧配置
+    instance.setOption(option, true);
+
+    const handleResize = () => instance.resize();
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      instance.dispose();
+      chartInstance.current = null;
+    };
+  }, [chartData, totalWeight, dimensions]);
+
+  // 表格数据源
   const tableDataSource = useMemo(() => {
     const rows: any[] = [];
     dimensions.forEach((dim) => {
@@ -301,97 +434,12 @@ const WeightData: React.FC = () => {
     (m) => m.model_key === selectedModelKey,
   )?.model_name;
 
-  // 修复后的 PieConfig
-  const pieConfig = {
-    data: chartData,
-    angleField: "value",
-    colorField: "type",
-    innerRadius: 0.55, // 增加圆环厚度
-    radius: 0.85,
-    autoFit: true, // 确保自适应容器
-    // 颜色映射逻辑
-    color: (datum: any) => {
-      if (datum.isPlaceholder) return "#f0f0f0"; // 占位符颜色
-
-      // 找到当前数据在真实维度中的索引，以分配固定的颜色
-      const realDims = chartData.filter((d) => !d.isPlaceholder);
-      const idx = realDims.findIndex((d) => d.type === datum.type);
-      return PALETTE[idx % PALETTE.length];
-    },
-    // 标签配置：使用 content 或 formatter，避免使用 render
-    label: {
-      text: "value",
-      style: {
-        fontWeight: "bold",
-        fontSize: 12,
-      },
-      position: "spider",
-      formatter: (text: string, item: any) => {
-        if (item.isPlaceholder) return ""; // 隐藏占位符标签
-        return `${text}%`;
-      },
-    },
-    legend: {
-      color: {
-        title: false,
-        position: "right",
-        rowPadding: 5,
-        itemMarker: (_: string, _idx: number, item: any) => {
-          return { symbol: "circle", style: { fill: item.color } };
-        },
-      },
-    },
-    // 提示信息配置
-    tooltip: {
-      formatter: (datum: any) => {
-        return { name: datum.type, value: datum.value + "%" };
-      },
-    },
-    // 中心文本配置
-    annotations: [
-      {
-        type: "text",
-        style: {
-          text: `Total\n${totalWeight}`,
-          x: "50%",
-          y: "50%",
-          textAlign: "center",
-          fontSize: 28,
-          fontWeight: "bold",
-          fill:
-            totalWeight === 100
-              ? "#333"
-              : totalWeight > 100
-                ? "#cf1322"
-                : "#faad14",
-        },
-      },
-      {
-        type: "text",
-        style: {
-          text:
-            totalWeight > 100
-              ? "已溢出"
-              : totalWeight < 100
-                ? "未分配"
-                : "完美",
-          x: "50%",
-          y: "60%",
-          textAlign: "center",
-          fontSize: 12,
-          fill: "#999",
-        },
-      },
-    ],
-    interactions: [{ type: "element-active" }],
-  };
-
   const columns = [
     {
       title: "评分维度",
       dataIndex: "dimName",
       key: "dimName",
-      width: 200,
+      width: 300,
       onCell: (record: any) => ({
         rowSpan: record.rowSpan,
       }),
@@ -573,7 +621,7 @@ const WeightData: React.FC = () => {
           <Row gutter={16} style={{ marginBottom: 16 }}>
             <Col span={14}>
               <Card
-                title="权重配置"
+                title="评分权重配置"
                 bordered={false}
                 style={{ height: "100%" }}
               >
@@ -642,14 +690,11 @@ const WeightData: React.FC = () => {
             </Col>
             <Col span={10}>
               <Card
-                title="权重分布预览 (正向指标)"
+                title="正向权重分布预览"
                 bordered={false}
                 style={{ height: "100%" }}
               >
-                <div style={{ height: 350 }}>
-                  {/* @ts-ignore */}
-                  <Pie {...pieConfig} />
-                </div>
+                <div ref={chartRef} style={{ height: 350, width: "100%" }} />
               </Card>
             </Col>
           </Row>
