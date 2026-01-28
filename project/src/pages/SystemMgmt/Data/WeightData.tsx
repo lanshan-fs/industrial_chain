@@ -4,7 +4,6 @@ import {
   Row,
   Col,
   Button,
-  Radio,
   Slider,
   Table,
   InputNumber,
@@ -20,11 +19,8 @@ import {
   SaveOutlined,
   ReloadOutlined,
   DeleteOutlined,
-  BarChartOutlined,
   SafetyCertificateOutlined,
   ExperimentOutlined,
-  BankOutlined,
-  ApartmentOutlined,
   MinusCircleOutlined,
 } from "@ant-design/icons";
 import * as echarts from "echarts";
@@ -74,9 +70,7 @@ const PALETTE = [
 
 const WeightData: React.FC = () => {
   // --- State ---
-  const [targetType, setTargetType] = useState<"ENTERPRISE" | "INDUSTRY">(
-    "ENTERPRISE",
-  );
+  // 移除 targetType 状态，固定为企业模型
   const [allModels, setAllModels] = useState<EvaluationModel[]>([]);
   const [selectedModelKey, setSelectedModelKey] = useState<string>("");
   const [dimensions, setDimensions] = useState<Dimension[]>([]);
@@ -96,12 +90,14 @@ const WeightData: React.FC = () => {
         const res = await fetch("http://localhost:3001/api/evaluation/models");
         const data = await res.json();
         if (data.success) {
-          setAllModels(data.data);
-          if (data.data.length > 0) {
-            const first = data.data.find(
-              (m: any) => m.target_type === "ENTERPRISE",
-            );
-            if (first) setSelectedModelKey(first.model_key);
+          // 核心逻辑修改：仅筛选并展示 target_type 为 'ENTERPRISE' 的模型
+          const enterpriseModels = data.data.filter(
+            (m: any) => m.target_type === "ENTERPRISE",
+          );
+          setAllModels(enterpriseModels);
+
+          if (enterpriseModels.length > 0) {
+            setSelectedModelKey(enterpriseModels[0].model_key);
           }
         }
       } catch (error) {
@@ -138,34 +134,27 @@ const WeightData: React.FC = () => {
   }, [selectedModelKey]);
 
   // --- Computations ---
-  const displayedModels = useMemo(() => {
-    return allModels.filter((m) => m.target_type === targetType);
-  }, [allModels, targetType]);
+  // 不再依赖 targetType 过滤，allModels 已经是过滤后的数据
+  const displayedModels = allModels;
 
   // 计算总权重 (排除扣分项)
   const totalWeight = useMemo(() => {
     const sum = dimensions
       .filter((d) => !d.is_deduction)
-      // 核心修复：强制转为 Number 类型进行累加，防止字符串拼接
       .reduce((acc, cur) => acc + Number(cur.weight || 0), 0);
-
-    // 解决浮点数精度问题 (如 99.99999999 -> 100)
     return parseFloat(sum.toFixed(2));
   }, [dimensions]);
 
   // 环形图数据构造
   const chartData = useMemo(() => {
-    // 1. 真实数据
     const data = dimensions
       .filter((d) => !d.is_deduction)
       .map((d) => ({
         name: d.dimension_name,
-        value: Number(d.weight), // 核心修复：确保每项也是数字
+        value: Number(d.weight),
         isPlaceholder: false,
       }));
 
-    // 2. 缺口逻辑：如果总权重 < 100，补充透明数据
-    // 只有当 totalWeight 是真正的数字时，这里的比较才有效
     if (totalWeight < 100) {
       const remaining = parseFloat((100 - totalWeight).toFixed(2));
       if (remaining > 0) {
@@ -203,7 +192,6 @@ const WeightData: React.FC = () => {
         top: "middle",
         right: "0%",
         orient: "vertical",
-        // 过滤掉占位符
         data: chartData.filter((d) => !d.isPlaceholder).map((d) => d.name),
         itemWidth: 10,
         itemHeight: 10,
@@ -214,7 +202,6 @@ const WeightData: React.FC = () => {
         left: "35%",
         top: "center",
         textAlign: "center",
-        subtext: "",
         textStyle: {
           rich: {
             label: {
@@ -225,7 +212,6 @@ const WeightData: React.FC = () => {
             val: {
               fontSize: 36,
               fontWeight: "bold",
-              // 根据权重状态变色
               color:
                 totalWeight === 100
                   ? "#333"
@@ -260,7 +246,7 @@ const WeightData: React.FC = () => {
                 name: d.name,
                 isPlaceholder: true,
                 itemStyle: {
-                  color: "rgba(0,0,0,0)", // 完全透明
+                  color: "rgba(0,0,0,0)",
                   borderWidth: 0,
                 },
                 tooltip: { show: false },
@@ -270,7 +256,6 @@ const WeightData: React.FC = () => {
               };
             }
 
-            // 真实数据分配颜色
             const realIndex = dimensions
               .filter((dim) => !dim.is_deduction)
               .findIndex((dim) => dim.dimension_name === d.name);
@@ -287,7 +272,6 @@ const WeightData: React.FC = () => {
       ],
     };
 
-    // 强制完全重绘，清除旧配置
     instance.setOption(option, true);
 
     const handleResize = () => instance.resize();
@@ -336,18 +320,6 @@ const WeightData: React.FC = () => {
   }, [dimensions]);
 
   // --- Handlers ---
-  const handleTargetTypeChange = (e: any) => {
-    const newType = e.target.value;
-    setTargetType(newType);
-    const firstModel = allModels.find((m) => m.target_type === newType);
-    if (firstModel) {
-      setSelectedModelKey(firstModel.model_key);
-    } else {
-      setSelectedModelKey("");
-      setDimensions([]);
-    }
-  };
-
   const handleWeightChange = (dimId: number, val: number) => {
     setDimensions((prev) =>
       prev.map((d) => (d.id === dimId ? { ...d, weight: val } : d)),
@@ -507,28 +479,17 @@ const WeightData: React.FC = () => {
           }}
         >
           <Space size="large">
-            <Radio.Group
-              value={targetType}
-              onChange={handleTargetTypeChange}
-              buttonStyle="solid"
-            >
-              <Radio.Button value="ENTERPRISE">
-                <Space>
-                  <BankOutlined /> 企业评分模型
-                </Space>
-              </Radio.Button>
-              <Radio.Button value="INDUSTRY">
-                <Space>
-                  <ApartmentOutlined /> 行业评分模型
-                </Space>
-              </Radio.Button>
-            </Radio.Group>
-
-            <Divider type="vertical" />
-
+            {/* 移除 Radio.Group 切换 */}
             <Title level={4} style={{ margin: 0 }}>
-              {currentModelName || "请选择模型"}
+              <SafetyCertificateOutlined
+                style={{ marginRight: 8, color: "#1890ff" }}
+              />
+              配置企业评分模型的评分权重
             </Title>
+            <Divider type="vertical" />
+            <Text type="secondary">
+              配置各模型的评分维度及权重，当前选中：{currentModelName}
+            </Text>
           </Space>
 
           <Space>
@@ -554,7 +515,7 @@ const WeightData: React.FC = () => {
         loading={loadingModels}
       >
         <Title level={5} style={{ marginBottom: 16 }}>
-          模型切换
+          选择评分模型
         </Title>
         <Row gutter={[16, 16]}>
           {displayedModels.map((model) => {
@@ -583,21 +544,13 @@ const WeightData: React.FC = () => {
                     align="center"
                     style={{ width: "100%" }}
                   >
-                    {model.target_type === "ENTERPRISE" ? (
-                      <SafetyCertificateOutlined
-                        style={{
-                          fontSize: 24,
-                          color: isSelected ? "#1890ff" : "#8c8c8c",
-                        }}
-                      />
-                    ) : (
-                      <BarChartOutlined
-                        style={{
-                          fontSize: 24,
-                          color: isSelected ? "#1890ff" : "#8c8c8c",
-                        }}
-                      />
-                    )}
+                    {/* 统一使用 SafetyCertificateOutlined 或根据业务需要添加图标 */}
+                    <SafetyCertificateOutlined
+                      style={{
+                        fontSize: 24,
+                        color: isSelected ? "#1890ff" : "#8c8c8c",
+                      }}
+                    />
                     <Text
                       strong
                       style={{ color: isSelected ? "#1890ff" : undefined }}
@@ -610,7 +563,7 @@ const WeightData: React.FC = () => {
             );
           })}
           {!loadingModels && displayedModels.length === 0 && (
-            <Empty description="暂无该类型模型" />
+            <Empty description="暂无评分模型" />
           )}
         </Row>
       </Card>
@@ -621,7 +574,7 @@ const WeightData: React.FC = () => {
           <Row gutter={16} style={{ marginBottom: 16 }}>
             <Col span={14}>
               <Card
-                title="评分权重配置"
+                title="评分维度权重分配"
                 bordered={false}
                 style={{ height: "100%" }}
               >
@@ -690,7 +643,7 @@ const WeightData: React.FC = () => {
             </Col>
             <Col span={10}>
               <Card
-                title="正向权重分布预览"
+                title="权重分布预览"
                 bordered={false}
                 style={{ height: "100%" }}
               >
@@ -703,7 +656,7 @@ const WeightData: React.FC = () => {
           <Card
             title={
               <Space>
-                <ExperimentOutlined /> 评分规则管理
+                <ExperimentOutlined /> 详细规则管理
               </Space>
             }
             bordered={false}

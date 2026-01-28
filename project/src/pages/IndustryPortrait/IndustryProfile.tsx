@@ -39,18 +39,17 @@ import {
   WarningOutlined,
   DoubleRightOutlined,
   ContainerOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { Radar } from "@ant-design/plots";
 import type { DataNode } from "antd/es/tree";
 
-// 引入组件
 import ReportActionButtons from "../../components/ReportActionButtons";
 
 const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 
-// --- 视觉风格定义 ---
 const COLORS = {
   primary: "#1890ff",
   gold: "#faad14",
@@ -62,42 +61,46 @@ const COLORS = {
 
 const CARD_HEAD_STYLE = { minHeight: 48, borderBottom: "1px solid #f0f0f0" };
 
-// ... (Radar配置保持不变，省略以节省篇幅) ...
+// 优化后的主雷达图配置：支持时间维度层叠
 const MAIN_RADAR_CONFIG = (data: any[]) => ({
   data,
   xField: "item",
   yField: "score",
-  area: {
-    style: { fill: "l(90) 0:#1890ff 1:rgba(24,144,255,0.1)", fillOpacity: 0.4 },
+  seriesField: "date",
+  meta: {
+    score: { min: 0, max: 100 },
   },
+  area: {
+    style: { fillOpacity: 0.1 },
+  },
+  line: {
+    style: { lineWidth: 2 },
+  },
+  point: {
+    size: 2,
+    shape: "circle",
+  },
+  color: ["#d9d9d9", "#bfbfbf", "#8c8c8c", "#595959", "#434343", "#1890ff"],
+  legend: {
+    position: "bottom" as const,
+  },
+  height: 320,
+});
+
+// 详情弹窗中的小雷达配置
+const DETAIL_RADAR_CONFIG = (data: any[]) => ({
+  data,
+  xField: "name",
+  yField: "score",
+  area: { style: { fill: "#1890ff", fillOpacity: 0.2 } },
   line: { style: { stroke: "#1890ff", lineWidth: 2 } },
   point: {
     size: 3,
     shape: "circle",
-    style: { fill: "#fff", stroke: "#1890ff", lineWidth: 2 },
+    style: { fill: "#fff", stroke: "#1890ff" },
   },
-  scale: { y: { min: 0, max: 100, tickCount: 5 } },
-  axis: { x: { grid: { line: { style: { stroke: "#eee" } } } } },
-  height: 240,
-});
-
-const MINI_RADAR_CONFIG = (data: any[], color: string) => ({
-  data,
-  xField: "item",
-  yField: "score",
-  area: { style: { fill: color, fillOpacity: 0.3 } },
-  line: { style: { stroke: color, lineWidth: 1 } },
-  scale: { y: { min: 0, max: 100, tickCount: 3 } },
-  axis: {
-    x: {
-      grid: { line: { style: { stroke: "#f0f0f0" } } },
-      label: { style: { fontSize: 10, fill: "#666" } },
-    },
-    y: false,
-  },
-  legend: false,
-  height: 160,
-  padding: [10, 10, 10, 10],
+  scale: { y: { min: 0, max: 100 } },
+  height: 300,
 });
 
 const MOCK_OPTIONS = [
@@ -116,13 +119,19 @@ const IndustryProfile: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [selectedIndustry, setSelectedIndustry] = useState("");
   const [searchOptions, setSearchOptions] = useState<{ value: string }[]>([]);
+
+  // 风险弹窗状态
   const [riskModalVisible, setRiskModalVisible] = useState(false);
   const [riskModalType, setRiskModalType] = useState<"high" | "low">("high");
+
+  // 详情弹窗状态
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [currentDetail, setCurrentDetail] = useState<any>(null);
+
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [loadingTree, setLoadingTree] = useState(false);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
 
-  // 1. 获取树数据
   useEffect(() => {
     const fetchTree = async () => {
       setLoadingTree(true);
@@ -148,7 +157,6 @@ const IndustryProfile: React.FC = () => {
     fetchTree();
   }, []);
 
-  // 2. 获取行业画像
   const fetchProfile = async (industry: string) => {
     setLoading(true);
     try {
@@ -193,6 +201,100 @@ const IndustryProfile: React.FC = () => {
     else
       setSearchOptions(MOCK_OPTIONS.filter((opt) => opt.value.includes(value)));
   };
+
+  const showCompanyDetail = (record: any, modelTitle: string) => {
+    setCurrentDetail({
+      name: record.name,
+      score: record.score,
+      modelName: modelTitle,
+      details: record.details,
+    });
+    setDetailModalVisible(true);
+  };
+
+  const renderSubModelCard = (
+    title: string,
+    icon: React.ReactNode,
+    modelData: any,
+    color: string,
+  ) => (
+    <Card
+      title={
+        <Space>
+          {icon}
+          {title}
+        </Space>
+      }
+      size="small"
+      bordered={false}
+      headStyle={CARD_HEAD_STYLE}
+      bodyStyle={{ padding: 0 }}
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}
+    >
+      <div
+        style={{
+          padding: "16px 24px",
+          background: `${color}08`,
+          borderBottom: "1px solid #f0f0f0",
+        }}
+      >
+        <Statistic
+          title="行业平均得分"
+          value={modelData.score}
+          valueStyle={{ color: color, fontWeight: "bold" }}
+          suffix="分"
+        />
+      </div>
+      <div style={{ flex: 1, overflow: "hidden" }}>
+        <Table
+          dataSource={modelData.companies}
+          rowKey="name"
+          pagination={false}
+          size="small"
+          scroll={{ y: 200 }}
+          columns={[
+            {
+              title: "企业名称",
+              dataIndex: "name",
+              // width: 180,
+              ellipsis: true,
+              align: "center",
+              render: (t) => <Text style={{ fontSize: 13 }}>{t}</Text>,
+            },
+            {
+              title: "评分",
+              dataIndex: "score",
+              width: 120,
+              // ellipsis: true,
+              align: "center",
+              render: (s) => (
+                <Text strong style={{ color: s < 60 ? "red" : color }}>
+                  {s}
+                </Text>
+              ),
+            },
+            {
+              title: "评分详情",
+              key: "action",
+              width: 120,
+              // ellipsis: true,
+              align: "center",
+              render: (_, record) => (
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<EyeOutlined />}
+                  onClick={() => showCompanyDetail(record, title)}
+                >
+                  详情
+                </Button>
+              ),
+            },
+          ]}
+        />
+      </div>
+    </Card>
+  );
 
   const renderSider = () => (
     <Sider
@@ -243,81 +345,6 @@ const IndustryProfile: React.FC = () => {
     </Sider>
   );
 
-  const renderSubModelCard = (
-    title: string,
-    icon: React.ReactNode,
-    modelData: any,
-    color: string,
-  ) => (
-    <Card
-      title={
-        <Space>
-          {icon}
-          {title}
-        </Space>
-      }
-      size="small"
-      bordered={false}
-      headStyle={CARD_HEAD_STYLE}
-      bodyStyle={{ padding: 12 }}
-      extra={
-        <Tag color={color} style={{ marginRight: 0 }}>
-          {modelData.score} 分
-        </Tag>
-      }
-      style={{ height: "100%" }}
-    >
-      <div style={{ height: 160, marginBottom: 12 }}>
-        <Radar {...MINI_RADAR_CONFIG(modelData.radar, color)} />
-      </div>
-      <Table
-        dataSource={modelData.dimensions}
-        rowKey="name"
-        pagination={false}
-        size="small"
-        bordered={false}
-        scroll={{ y: 150 }}
-        columns={[
-          {
-            title: "维度名称",
-            dataIndex: "name",
-            width: "45%",
-            ellipsis: true,
-            render: (t) => <Text style={{ fontSize: 12 }}>{t}</Text>,
-          },
-          {
-            title: "权重",
-            dataIndex: "weight",
-            width: "20%",
-            align: "center",
-            render: (t) => (
-              <Tag style={{ fontSize: 10, marginRight: 0 }}>{t}%</Tag>
-            ),
-          },
-          {
-            title: "得分",
-            dataIndex: "score",
-            width: "35%",
-            align: "center",
-            render: (s) => (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <b style={{ color: s < 60 ? "red" : color, fontSize: 12 }}>
-                  {s}
-                </b>
-              </div>
-            ),
-          },
-        ]}
-      />
-    </Card>
-  );
-
   return (
     <Layout style={{ minHeight: "85vh", background: COLORS.bg }}>
       {renderSider()}
@@ -330,7 +357,6 @@ const IndustryProfile: React.FC = () => {
         }}
       >
         <div style={{ maxWidth: 1600, margin: "0 auto", width: "100%" }}>
-          {/* 搜索栏 */}
           <div
             style={{
               marginBottom: 24,
@@ -353,12 +379,10 @@ const IndustryProfile: React.FC = () => {
                     行业画像搜索
                   </Button>
                 }
-                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
                 onSearch={handleSearch}
               />
             </AutoComplete>
 
-            {/* 修改处：使用 targetId 指向下方内容，移除 onDownload 以启用 PDF 功能 */}
             {data && (
               <ReportActionButtons
                 reportTitle={`${data.basicInfo.industryName}行业分析报告`}
@@ -378,7 +402,6 @@ const IndustryProfile: React.FC = () => {
               style={{ marginTop: 100 }}
             />
           ) : (
-            // 修改处：添加 id="industry-report-content" 包裹主要内容
             <div id="industry-report-content">
               <Space direction="vertical" size={24} style={{ width: "100%" }}>
                 {/* 行业概览 */}
@@ -500,11 +523,16 @@ const IndustryProfile: React.FC = () => {
                           display: "flex",
                           flexDirection: "column",
                           justifyContent: "center",
-                          minHeight: 280,
+                          minHeight: 320,
                         }}
                       >
                         <div style={{ textAlign: "center", marginBottom: 8 }}>
-                          <Text strong>产业多维能力雷达</Text>
+                          <Text strong style={{ fontSize: 16 }}>
+                            {data.basicInfo.industryName}行业多维能力
+                          </Text>
+                          <div style={{ fontSize: 12, color: "#999" }}>
+                            （近6个月动态评估）
+                          </div>
                         </div>
                         <Radar {...MAIN_RADAR_CONFIG(data.overallRadar)} />
                       </div>
@@ -513,7 +541,7 @@ const IndustryProfile: React.FC = () => {
                 </Card>
 
                 {/* 评分模型 */}
-                <Row gutter={20}>
+                <Row gutter={20} align="stretch">
                   <Col xs={24} md={8}>
                     {renderSubModelCard(
                       "行业基础评分",
@@ -540,97 +568,93 @@ const IndustryProfile: React.FC = () => {
                   </Col>
                 </Row>
 
-                {/* 薄弱环节 */}
-                <Card
-                  title={
-                    <Space>
-                      <FallOutlined /> 薄弱环节识别
-                    </Space>
-                  }
-                  size="small"
-                  bordered={false}
-                  headStyle={CARD_HEAD_STYLE}
-                >
-                  <List
-                    grid={{ gutter: 16, column: 2 }}
-                    dataSource={data.weakLinks}
-                    renderItem={(item: any) => (
-                      <List.Item>
-                        <Alert
-                          message={
-                            <Text strong style={{ fontSize: 15 }}>
-                              {item.name}
-                            </Text>
-                          }
-                          description={
-                            <div style={{ marginTop: 4 }}>
-                              <Tag
-                                color={item.level === "高危" ? "red" : "orange"}
-                              >
-                                {item.level}
-                              </Tag>
-                              <Text type="secondary">{item.reason}</Text>
-                            </div>
-                          }
-                          type={item.level === "高危" ? "error" : "warning"}
-                          showIcon
-                          icon={
-                            item.level === "高危" ? (
-                              <WarningOutlined />
-                            ) : (
-                              <InfoCircleOutlined />
-                            )
-                          }
-                          style={{
-                            border:
-                              item.level === "高危"
-                                ? "1px solid #ffa39e"
-                                : "1px solid #ffe58f",
-                          }}
-                        />
-                      </List.Item>
-                    )}
-                  />
-                </Card>
-
-                {/* 风险评估 */}
-                <Card
-                  title={
-                    <Space>
-                      <SafetyOutlined /> 风险评估监控
-                    </Space>
-                  }
-                  size="small"
-                  bordered={false}
-                  headStyle={CARD_HEAD_STYLE}
-                >
-                  <Row gutter={48}>
-                    <Col span={12} style={{ borderRight: "1px solid #f0f0f0" }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: 16,
-                        }}
-                      >
-                        <Title
-                          level={5}
-                          style={{ color: COLORS.riskHigh, margin: 0 }}
-                        >
-                          <WarningOutlined /> 高风险企业 Top5
-                        </Title>
-                        <Button
-                          type="link"
-                          size="small"
-                          onClick={() => {
-                            setRiskModalType("high");
-                            setRiskModalVisible(true);
-                          }}
-                        >
-                          查看更多 <DoubleRightOutlined />
-                        </Button>
-                      </div>
+                {/* 薄弱环节 & 风险 */}
+                <Row gutter={24}>
+                  <Col span={12}>
+                    <Card
+                      title={
+                        <Space>
+                          <FallOutlined /> 薄弱环节识别
+                        </Space>
+                      }
+                      size="small"
+                      bordered={false}
+                      headStyle={CARD_HEAD_STYLE}
+                      style={{ height: "100%" }}
+                    >
+                      <List
+                        dataSource={data.weakLinks}
+                        renderItem={(item: any) => (
+                          <List.Item>
+                            <Alert
+                              message={<Text strong>{item.name}</Text>}
+                              description={
+                                <div style={{ marginTop: 4 }}>
+                                  <Tag
+                                    color={
+                                      item.level === "高危" ? "red" : "orange"
+                                    }
+                                  >
+                                    {item.level}
+                                  </Tag>{" "}
+                                  <Text type="secondary">{item.reason}</Text>
+                                </div>
+                              }
+                              type={item.level === "高危" ? "error" : "warning"}
+                              showIcon
+                              style={{ width: "100%" }}
+                            />
+                          </List.Item>
+                        )}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={12}>
+                    <Card
+                      title={
+                        <Space>
+                          <SafetyOutlined /> 风险评估监控
+                        </Space>
+                      }
+                      size="small"
+                      bordered={false}
+                      headStyle={CARD_HEAD_STYLE}
+                      style={{ height: "100%" }}
+                      extra={
+                        <Space>
+                          <Tooltip title="查看高风险企业名单">
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={
+                                <WarningOutlined
+                                  style={{ color: COLORS.riskHigh }}
+                                />
+                              }
+                              onClick={() => {
+                                setRiskModalType("high");
+                                setRiskModalVisible(true);
+                              }}
+                            />
+                          </Tooltip>
+                          <Tooltip title="查看优质企业名单">
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={
+                                <CheckCircleOutlined
+                                  style={{ color: COLORS.green }}
+                                />
+                              }
+                              onClick={() => {
+                                setRiskModalType("low");
+                                setRiskModalVisible(true);
+                              }}
+                            />
+                          </Tooltip>
+                        </Space>
+                      }
+                    >
                       <List
                         size="small"
                         dataSource={data.risks.high}
@@ -645,77 +669,36 @@ const IndustryProfile: React.FC = () => {
                                   boxShadow: "0 0 0 1px #d9d9d9 inset",
                                 }}
                               />
-                              <Text style={{ width: 140 }} ellipsis>
+                              <Text style={{ width: 100 }} ellipsis>
                                 {item.name}
                               </Text>
                             </Space>
                             <Space>
-                              <Tag color="red" bordered={false}>
-                                {item.score}分
-                              </Tag>
+                              <Tag color="red">{item.score}分</Tag>
                               <Tooltip title={item.reason}>
-                                <InfoCircleOutlined style={{ color: "#ccc" }} />
+                                <InfoCircleOutlined
+                                  style={{ color: "#ccc", cursor: "help" }}
+                                />
                               </Tooltip>
                             </Space>
                           </List.Item>
                         )}
                       />
-                    </Col>
-                    <Col span={12}>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: 16,
-                        }}
-                      >
-                        <Title
-                          level={5}
-                          style={{ color: COLORS.riskLow, margin: 0 }}
-                        >
-                          <CheckCircleOutlined /> 优质稳健企业 Top5
-                        </Title>
+                      <div style={{ textAlign: "center", marginTop: 8 }}>
                         <Button
                           type="link"
                           size="small"
                           onClick={() => {
-                            setRiskModalType("low");
+                            setRiskModalType("high");
                             setRiskModalVisible(true);
                           }}
                         >
-                          查看更多 <DoubleRightOutlined />
+                          查看更多高风险企业 <DoubleRightOutlined />
                         </Button>
                       </div>
-                      <List
-                        size="small"
-                        dataSource={data.risks.low}
-                        renderItem={(item: any, idx: number) => (
-                          <List.Item>
-                            <Space>
-                              <Badge
-                                count={idx + 1}
-                                style={{
-                                  backgroundColor: "#e6f7ff",
-                                  color: "#1890ff",
-                                }}
-                              />
-                              <Text style={{ width: 140 }} ellipsis strong>
-                                {item.name}
-                              </Text>
-                            </Space>
-                            <Space>
-                              <Tag color="green" bordered={false}>
-                                {item.score}分
-                              </Tag>
-                              <Tag color="success">经营稳健</Tag>
-                            </Space>
-                          </List.Item>
-                        )}
-                      />
-                    </Col>
-                  </Row>
-                </Card>
+                    </Card>
+                  </Col>
+                </Row>
 
                 {/* 重点企业 */}
                 <Card
@@ -797,6 +780,7 @@ const IndustryProfile: React.FC = () => {
                   />
                 </Card>
               </Space>
+
               <div
                 style={{
                   textAlign: "center",
@@ -809,6 +793,54 @@ const IndustryProfile: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* 详情弹窗 */}
+          <Modal
+            title={
+              currentDetail
+                ? `${currentDetail.name} - ${currentDetail.modelName}详情`
+                : "评分详情"
+            }
+            open={detailModalVisible}
+            onCancel={() => setDetailModalVisible(false)}
+            footer={null}
+            width={700}
+            centered
+          >
+            {currentDetail && (
+              <Row gutter={24}>
+                <Col span={12}>
+                  <Title level={5}>评分概览</Title>
+                  <div style={{ height: 300 }}>
+                    <Radar {...DETAIL_RADAR_CONFIG(currentDetail.details)} />
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <Title level={5}>维度明细</Title>
+                  <Table
+                    dataSource={currentDetail.details}
+                    pagination={false}
+                    size="small"
+                    rowKey="name"
+                    scroll={{ y: 240 }}
+                    columns={[
+                      { title: "指标", dataIndex: "name" },
+                      {
+                        title: "权重",
+                        dataIndex: "weight",
+                        render: (w) => <Tag>{w}%</Tag>,
+                      },
+                      {
+                        title: "得分",
+                        dataIndex: "score",
+                        render: (s) => <b>{s}</b>,
+                      },
+                    ]}
+                  />
+                </Col>
+              </Row>
+            )}
+          </Modal>
 
           <Modal
             title={
@@ -824,7 +856,7 @@ const IndustryProfile: React.FC = () => {
             <Table
               dataSource={data?.risks[riskModalType]}
               size="small"
-              rowKey="id"
+              rowKey="name"
               pagination={{ pageSize: 10 }}
               columns={[
                 {

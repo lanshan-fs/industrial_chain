@@ -391,10 +391,8 @@ async function getModelDimensions(modelKey) {
   }
 }
 
-// --- 核心接口：行业画像 ---
 app.get("/api/industry/profile", async (req, res) => {
   const { industryName } = req.query;
-  // 处理可能传入的 "数字医疗 (123)" 格式，提取真实名称
   const cleanIndustryName = industryName ? industryName.split(" (")[0] : "";
 
   try {
@@ -415,172 +413,205 @@ app.get("/api/industry/profile", async (req, res) => {
 
     const allTagIds = getDescendantTagIds(targetTag.tag_id, tags);
 
-    // 1. 聚合统计
+    // 1. 获取该行业下所有企业 (Limit 100 for demo performance)
     const [companies] = await pool.query(
       `
       SELECT DISTINCT c.* FROM companies c
       JOIN companies_tags_map ctm ON c.company_id = ctm.company_id
       WHERE ctm.tag_id IN (?)
+      LIMIT 100
     `,
       [allTagIds.length > 0 ? allTagIds : ["dummy"]],
     );
 
-    let aggData = {
-      totalCompanies: companies.length,
-      totalCapital: 0,
-      highTechCount: 0,
-      totalPatents: 0,
-      avgRiskScore: 0,
-      highRiskList: [],
-      lowRiskList: [],
+    // 2. 为每个企业计算/模拟三个模型的分数
+    let totalBasic = 0,
+      totalTech = 0,
+      totalAbility = 0;
+    let totalCapital = 0,
+      highTechCount = 0;
+    const companyScores = [];
+
+    // Helper: 模拟生成维度详情
+    const genDetails = (baseScore) => {
+      const d = [];
+      // 简单的随机生成 3-4 个维度
+      d.push({
+        name: "核心指标A",
+        weight: 40,
+        score: Math.min(100, baseScore + Math.floor(Math.random() * 10 - 5)),
+      });
+      d.push({
+        name: "核心指标B",
+        weight: 30,
+        score: Math.min(100, baseScore + Math.floor(Math.random() * 20 - 10)),
+      });
+      d.push({
+        name: "辅助指标C",
+        weight: 30,
+        score: Math.min(100, baseScore + Math.floor(Math.random() * 15 - 5)),
+      });
+      return d;
     };
 
     companies.forEach((c) => {
-      const cap = parseFloat(c.registered_capital) || 0;
-      const risk = c.risk_score !== null ? c.risk_score : 100;
+      totalCapital += parseFloat(c.registered_capital) || 0;
+      if (c.is_high_tech) highTechCount++;
 
-      aggData.totalCapital += cap;
-      if (c.is_high_tech) aggData.highTechCount++;
-      aggData.totalPatents += c.patent_count || 0;
-      aggData.avgRiskScore += risk;
+      // 模拟评分：基于注册资本和是否高新做一点区分，让数据看起来真实点
+      const capScore = Math.min(
+        100,
+        60 + parseFloat(c.registered_capital) / 1000,
+      );
+      const techBase = c.is_high_tech ? 80 : 50;
 
-      const riskItem = {
+      const basicScore = Math.floor(capScore);
+      const techScore = Math.floor(techBase + Math.random() * 20);
+      const abilityScore = c.risk_score || 70; // 假设 risk_score 代表能力/稳健度
+
+      totalBasic += basicScore;
+      totalTech += techScore;
+      totalAbility += abilityScore;
+
+      companyScores.push({
         id: c.company_id,
         name: c.company_name,
-        capital: cap,
-        score: risk,
-        tags: c.is_high_tech ? ["高新企业"] : [],
-        reason: risk < 60 ? "存在经营异常/司法风险" : "经营稳健",
-      };
-
-      if (risk < 60) aggData.highRiskList.push(riskItem);
-      else if (risk >= 85) aggData.lowRiskList.push(riskItem);
+        basicScore,
+        techScore,
+        abilityScore,
+        // 生成详情用于弹窗
+        details: {
+          basic: genDetails(basicScore),
+          tech: genDetails(techScore),
+          ability: genDetails(abilityScore),
+        },
+      });
     });
 
-    if (aggData.totalCompanies > 0) {
-      aggData.avgRiskScore = aggData.avgRiskScore / aggData.totalCompanies;
+    const count = companies.length || 1;
+    const avgBasic = Math.round(totalBasic / count);
+    const avgTech = Math.round(totalTech / count);
+    const avgAbility = Math.round(totalAbility / count);
+
+    // 3. 构造历史雷达数据 (6个月层叠)
+    // 模拟趋势：假设数据在稳步增长
+    const historyRadar = [];
+    const months = [];
+    // 生成过去6个月的月份标签
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      months.push(
+        `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`,
+      );
     }
 
-    // 2. 动态计算三大模型得分 (Mock Calculation based on Real Aggregation)
+    months.forEach((m, idx) => {
+      // 越近的时间，分数越接近当前平均分 (idx 0 -> 5)
+      // 模拟一个 0.85 -> 1.0 的增长曲线
+      const ratio = 0.85 + idx * 0.03;
 
-    // Helper: 模拟维度得分
-    const getDimScore = (val, target) =>
-      Math.min(100, Math.round(60 + (val / target) * 40));
+      historyRadar.push({
+        item: "行业基础",
+        score: Math.round(avgBasic * ratio),
+        date: m,
+      });
+      historyRadar.push({
+        item: "科技属性",
+        score: Math.round(avgTech * ratio),
+        date: m,
+      });
+      historyRadar.push({
+        item: "行业能力",
+        score: Math.round(avgAbility * ratio),
+        date: m,
+      });
+      // 额外两个维度固定一下，丰富雷达图
+      historyRadar.push({
+        item: "人才聚集",
+        score: Math.round(75 * ratio),
+        date: m,
+      });
+      historyRadar.push({
+        item: "资本热度",
+        score: Math.round(65 * ratio),
+        date: m,
+      });
+    });
 
-    // (A) 行业基础模型
-    const basicScore = getDimScore(aggData.totalCapital, 100000);
-    const basicDims = [
-      {
-        name: "产业规模",
-        weight: 40,
-        score: getDimScore(aggData.totalCompanies, 50),
-        value: aggData.totalCompanies + " 家",
-      },
-      {
-        name: "资本沉淀",
-        weight: 30,
-        score: getDimScore(aggData.totalCapital, 100000),
-        value: (aggData.totalCapital / 10000).toFixed(1) + " 亿元",
-      },
-      { name: "成熟度", weight: 30, score: 85, value: "成长均值 5年+" },
-    ];
-
-    // (B) 科技属性模型
-    const techScore = getDimScore(
-      aggData.highTechCount,
-      aggData.totalCompanies * 0.3,
-    );
-    const techDims = [
-      {
-        name: "创新主体",
-        weight: 40,
-        score: getDimScore(aggData.highTechCount, 10),
-        value: aggData.highTechCount + " 家高新",
-      },
-      {
-        name: "知识产权",
-        weight: 30,
-        score: getDimScore(aggData.totalPatents, 500),
-        value: aggData.totalPatents + " 件专利",
-      },
-      { name: "研发强度", weight: 30, score: 78, value: "平均占比 4.2%" },
-    ];
-
-    // (C) 行业能力模型
-    const abilityScore = getDimScore(aggData.avgRiskScore, 100);
-    const abilityDims = [
-      { name: "盈利能力", weight: 30, score: 75, value: "毛利 15%+" },
-      { name: "营商环境", weight: 30, score: 90, value: "政策支持 A级" },
-      {
-        name: "风险控制",
-        weight: 40,
-        score: aggData.avgRiskScore.toFixed(0),
-        value: "平均分 " + aggData.avgRiskScore.toFixed(0),
-      },
-    ];
-
-    // 3. 组装响应数据
+    // 4. 组装响应
     const responseData = {
       basicInfo: {
         industryName: targetTag.tag_name,
-        totalCompanies: aggData.totalCompanies,
-        totalCapital: (aggData.totalCapital / 10000).toFixed(2),
+        totalCompanies: count,
+        totalCapital: (totalCapital / 10000).toFixed(2),
         updateTime: new Date().toISOString().split("T")[0],
       },
-      // 总体评分
-      totalScore: Math.round(
-        basicScore * 0.3 + techScore * 0.4 + abilityScore * 0.3,
-      ),
-      // 总体雷达
-      overallRadar: [
-        { item: "行业基础", score: basicScore },
-        { item: "科技属性", score: techScore },
-        { item: "行业能力", score: abilityScore },
-        { item: "人才聚集", score: 82 },
-        { item: "资本热度", score: 70 },
-      ],
-      // 三大模型详情
+      // 总体评分 (加权)
+      totalScore: Math.round(avgBasic * 0.3 + avgTech * 0.4 + avgAbility * 0.3),
+
+      // 主雷达图数据 (带时间维度的层叠数据)
+      overallRadar: historyRadar,
+
+      // 三大模型详情 (含企业列表)
       models: {
         basic: {
           title: "行业基础评分模型",
-          score: basicScore,
-          radar: basicDims.map((d) => ({ item: d.name, score: d.score })), // 小雷达数据
-          dimensions: basicDims,
+          score: avgBasic, // 行业均值
+          companies: companyScores.map((c) => ({
+            name: c.name,
+            score: c.basicScore,
+            details: c.details.basic,
+          })),
         },
         tech: {
           title: "行业科技属性评分模型",
-          score: techScore,
-          radar: techDims.map((d) => ({ item: d.name, score: d.score })),
-          dimensions: techDims,
+          score: avgTech,
+          companies: companyScores.map((c) => ({
+            name: c.name,
+            score: c.techScore,
+            details: c.details.tech,
+          })),
         },
         ability: {
           title: "行业能力评分模型",
-          score: abilityScore,
-          radar: abilityDims.map((d) => ({ item: d.name, score: d.score })),
-          dimensions: abilityDims,
+          score: avgAbility,
+          companies: companyScores.map((c) => ({
+            name: c.name,
+            score: c.abilityScore,
+            details: c.details.ability,
+          })),
         },
       },
-      // 风险与薄弱环节
+      // 风险与薄弱环节 (保持原有逻辑)
       weakLinks: [
         { name: "关键原材料", level: "高危", reason: "对外依存度 > 80%" },
         { name: "高端制程设备", level: "中危", reason: "国产替代率低" },
       ],
       risks: {
-        high: aggData.highRiskList
-          .sort((a, b) => a.score - b.score)
-          .slice(0, 5),
-        low: aggData.lowRiskList.sort((a, b) => b.score - a.score).slice(0, 5),
+        high: companyScores
+          .filter((c) => c.abilityScore < 60)
+          .slice(0, 5)
+          .map((c) => ({
+            name: c.name,
+            score: c.abilityScore,
+            reason: "经营风险高",
+          })),
+        low: companyScores
+          .filter((c) => c.abilityScore > 85)
+          .slice(0, 5)
+          .map((c) => ({
+            name: c.name,
+            score: c.abilityScore,
+            reason: "经营稳健",
+          })),
       },
-      // 重点企业 (Top 10 by Capital)
-      topCompanies: companies
-        .sort((a, b) => b.registered_capital - a.registered_capital)
-        .slice(0, 10)
-        .map((c) => ({
-          name: c.company_name,
-          capital: c.registered_capital,
-          score: c.risk_score || 80,
-          tags: c.is_high_tech ? ["高新技术", "专精特新"] : ["中小企业"],
-        })),
+      topCompanies: companies.slice(0, 10).map((c) => ({
+        name: c.company_name,
+        capital: c.registered_capital,
+        score: c.risk_score || 80,
+        tags: c.is_high_tech ? ["高新技术"] : ["中小企业"],
+      })),
     };
 
     res.json({ success: true, data: responseData });
