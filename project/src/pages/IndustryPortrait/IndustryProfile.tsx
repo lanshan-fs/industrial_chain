@@ -169,10 +169,10 @@ const IndustryProfile: React.FC = () => {
           ...resData.data,
           basicInfo: {
             ...resData.data.basicInfo,
-            department: "朝阳区科学技术委员会",
+            department: "XXXXXXXX",
             policyCount: 12,
             growthRate: "18.5%",
-            chainLink: "研发 - 制造 - 服务",
+            chainLink: "上游 - 中游 - 下游",
             description:
               "聚焦数字化技术在医疗健康全流程的应用，涵盖数字诊疗设备、医疗大数据、远程医疗等关键领域。",
           },
@@ -398,7 +398,7 @@ const IndustryProfile: React.FC = () => {
           ) : !data ? (
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="请搜索行业名称..."
+              description="请搜索行业名称"
               style={{ marginTop: 100 }}
             />
           ) : (
@@ -416,7 +416,7 @@ const IndustryProfile: React.FC = () => {
                           >
                             {data.basicInfo.industryName}
                           </Title>
-                          <Tag color="geekblue">朝阳区重点产业</Tag>{" "}
+                          <Tag color="geekblue">朝阳区重点行业</Tag>{" "}
                           <Tag color="success">AAA级</Tag>
                         </Space>
                         <Descriptions
@@ -435,7 +435,7 @@ const IndustryProfile: React.FC = () => {
                               {data.totalScore}
                             </span>
                           </Descriptions.Item>
-                          <Descriptions.Item label="同比增长">
+                          <Descriptions.Item label="同比上月增长">
                             <span style={{ color: COLORS.riskHigh }}>
                               <RiseOutlined /> {data.basicInfo.growthRate}
                             </span>
@@ -457,7 +457,7 @@ const IndustryProfile: React.FC = () => {
                                 ))}
                             </Space>
                           </Descriptions.Item>
-                          <Descriptions.Item label="产业描述" span={2}>
+                          <Descriptions.Item label="行业描述" span={2}>
                             <Text
                               type="secondary"
                               style={{ maxWidth: 600 }}
@@ -528,7 +528,7 @@ const IndustryProfile: React.FC = () => {
                       >
                         <div style={{ textAlign: "center", marginBottom: 8 }}>
                           <Text strong style={{ fontSize: 16 }}>
-                            {data.basicInfo.industryName}行业多维能力
+                            {data.basicInfo.industryName}行业 多维能力雷达图
                           </Text>
                           <div style={{ fontSize: 12, color: "#999" }}>
                             （近6个月动态评估）
