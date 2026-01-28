@@ -31,13 +31,19 @@ pool
 app.get("/api/companies", async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT company_id, company_name, raw_variants FROM companies LIMIT 200",
+      "SELECT company_id, company_name, raw_variants, registered_capital, establishment_date FROM companies LIMIT 200",
     );
 
     const formattedData = rows.map((row) => ({
       key: row.company_id,
       name: row.company_name,
       variants: row.raw_variants || "",
+      // 数据库中可能存的是数字，格式化为带单位的字符串给前端，或者前端处理，这里示例直接透传
+      registeredCapital: row.registered_capital,
+      // 模拟法定代表人数据 (随机生成一个姓氏+总)
+      legalPerson:
+        ["张", "王", "李", "赵", "刘"][Math.floor(Math.random() * 5)] + "总",
+      establishmentDate: row.establishment_date,
       updateTime: "2026-01-22",
     }));
 
