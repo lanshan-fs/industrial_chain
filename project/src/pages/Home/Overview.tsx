@@ -248,7 +248,7 @@ const Overview: React.FC = () => {
                 <Statistic
                   title={
                     <span style={{ color: "rgba(255,255,255,0.7)" }}>
-                      健康评分
+                      综合评分
                     </span>
                   }
                   value={85.2}
@@ -322,7 +322,7 @@ const Overview: React.FC = () => {
                     <span
                       style={{ float: "right", color: "#999", fontSize: 12 }}
                     >
-                      2026-01-26
+                      2026-01-28
                     </span>
                   </div>
                 ))}
@@ -363,7 +363,11 @@ const Overview: React.FC = () => {
                           }}
                         >
                           <span
-                            style={{ fontWeight: 600, fontSize: 15, width: 80 }}
+                            style={{
+                              fontWeight: 600,
+                              fontSize: 15,
+                              width: 150,
+                            }}
                           >
                             {category.title}
                           </span>

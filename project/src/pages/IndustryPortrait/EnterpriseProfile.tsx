@@ -538,7 +538,7 @@ const EnterpriseProfile: React.FC = () => {
                         level={5}
                         style={{ fontSize: 14, marginBottom: 8 }}
                       >
-                        行业标签
+                        企业标签
                       </Title>
                       <Space size={[0, 8]} wrap>
                         {profile.tags.map((t: string) => (

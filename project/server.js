@@ -724,6 +724,178 @@ app.delete("/api/evaluation/rule/:id", async (req, res) => {
   }
 });
 
+// --- 辅助函数：将数据库 domain 映射到前端 5 大维度 ---
+function mapDomainToDimension(domain) {
+  // 简单的关键词映射逻辑
+  if (!domain) return "basic";
+  if (
+    domain.includes("科技") ||
+    domain.includes("技术") ||
+    domain.includes("专利")
+  )
+    return "tech";
+  if (
+    domain.includes("风险") ||
+    domain.includes("合规") ||
+    domain.includes("法务")
+  )
+    return "risk";
+  if (
+    domain.includes("市场") ||
+    domain.includes("金融") ||
+    domain.includes("投资")
+  )
+    return "market";
+  if (
+    domain.includes("业务") ||
+    domain.includes("产品") ||
+    domain.includes("行业")
+  )
+    return "business";
+  return "basic"; // 默认归为基本信息
+}
+
+// 1. 获取企业标签列表（优化版：支持按维度分组返回）
+app.get("/api/tags/companies", async (req, res) => {
+  const { page = 1, pageSize = 10, keyword = "" } = req.query;
+  const offset = (page - 1) * pageSize;
+
+  try {
+    let whereClause = "";
+    const params = [];
+    if (keyword) {
+      whereClause = "WHERE company_name LIKE ? OR company_id LIKE ?";
+      params.push(`%${keyword}%`, `%${keyword}%`);
+    }
+
+    const [countResult] = await pool.query(
+      `SELECT COUNT(*) as total FROM companies ${whereClause}`,
+      params,
+    );
+    const total = countResult[0].total;
+
+    const [companies] = await pool.query(
+      `SELECT company_id, company_name, raw_variants, registered_capital, establishment_date, is_high_tech, risk_score, patent_count 
+       FROM companies 
+       ${whereClause} 
+       ORDER BY establishment_date DESC 
+       LIMIT ? OFFSET ?`,
+      [...params, parseInt(pageSize), parseInt(offset)],
+    );
+
+    if (companies.length === 0) {
+      return res.json({ success: true, data: { list: [], total: 0 } });
+    }
+
+    // 查询关联标签
+    const companyIds = companies.map((c) => c.company_id);
+    const [tags] = await pool.query(
+      `SELECT m.company_id, t.tag_id, t.tag_name, t.domain 
+       FROM companies_tags_map m
+       JOIN tags t ON m.tag_id = t.tag_id
+       WHERE m.company_id IN (?)`,
+      [companyIds],
+    );
+
+    const list = companies.map((comp) => {
+      // 初始化维度容器
+      const dimensions = {
+        basic: [],
+        business: [],
+        tech: [],
+        risk: [],
+        market: [],
+      };
+
+      // 1. 填充数据库已有的标签
+      const compTags = tags.filter((t) => t.company_id === comp.company_id);
+      compTags.forEach((t) => {
+        const dim = mapDomainToDimension(t.domain);
+        dimensions[dim].push(t.tag_name);
+      });
+
+      // 2. 自动生成一些标签（用于演示数据丰富度）
+      // 仅当该维度为空时才自动填充，避免覆盖人工操作
+      if (dimensions.basic.length === 0) {
+        if (comp.registered_capital > 5000)
+          dimensions.basic.push("注册资本超5千万");
+        dimensions.basic.push("朝阳区注册");
+      }
+      if (dimensions.tech.length === 0 && comp.is_high_tech) {
+        dimensions.tech.push("国家高新技术企业");
+      }
+      if (dimensions.risk.length === 0) {
+        dimensions.risk.push(comp.risk_score < 60 ? "高风险预警" : "信用良好");
+      }
+
+      return {
+        key: comp.company_id,
+        name: comp.company_name,
+        code: comp.company_id,
+        updateTime: new Date().toISOString().split("T")[0],
+        dimensions: dimensions,
+      };
+    });
+
+    res.json({ success: true, data: { list, total } });
+  } catch (error) {
+    console.error("Fetch company tags error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 2. 新增标签 (单条追加，用于 "+" 号功能)
+app.post("/api/tags/add", async (req, res) => {
+  const { companyId, tagName, dimension } = req.body;
+
+  // 这里的逻辑稍微复杂一点：
+  // 真实场景通常是关联已有的 tag_id。
+  // 为了演示方便，如果 tags 表里没有这个 tag_name，我们先创建它。
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1. 检查标签是否存在，不存在则创建
+    let tagId;
+    const [existingTag] = await conn.query(
+      "SELECT tag_id FROM tags WHERE tag_name = ?",
+      [tagName],
+    );
+
+    if (existingTag.length > 0) {
+      tagId = existingTag[0].tag_id;
+    } else {
+      tagId = "TAG_" + Date.now() + Math.floor(Math.random() * 1000);
+      // 将前端传来的 dimension 映射回数据库的 domain 字段，方便下次查询归类
+      let domain = "基本信息";
+      if (dimension === "tech") domain = "科技属性";
+      if (dimension === "business") domain = "业务领域";
+      if (dimension === "risk") domain = "风险合规";
+      if (dimension === "market") domain = "市场表现";
+
+      await conn.query(
+        "INSERT INTO tags (tag_id, tag_name, domain, level) VALUES (?, ?, ?, 1)",
+        [tagId, tagName, domain],
+      );
+    }
+
+    // 2. 建立关联 (使用 IGNORE 避免重复报错)
+    await conn.query(
+      "INSERT IGNORE INTO companies_tags_map (company_id, tag_id) VALUES (?, ?)",
+      [companyId, tagId],
+    );
+
+    await conn.commit();
+    res.json({ success: true, message: "标签添加成功" });
+  } catch (error) {
+    await conn.rollback();
+    res.status(500).json({ success: false, message: error.message });
+  } finally {
+    conn.release();
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`http://localhost:${PORT}`);
 });
