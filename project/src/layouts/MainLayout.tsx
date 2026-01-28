@@ -19,28 +19,27 @@ import {
   ExperimentOutlined,
   ApartmentOutlined,
   SafetyCertificateOutlined,
+  BuildOutlined,
+  ControlOutlined,
 } from "@ant-design/icons";
 
 const { Header, Content, Footer, Sider } = Layout;
 
 const TOP_NAV_ITEMS: MenuProps["items"] = [
   { key: "home", label: "首页", icon: <DashboardOutlined /> },
-  { key: "industry-class", label: "产业分类", icon: <ApartmentOutlined /> }, // 新增
-  { key: "industry-portrait", label: "产业画像", icon: <ProjectOutlined /> }, // 原图谱画像
-  { key: "industry-score", label: "产业评分", icon: <PieChartOutlined /> }, // 独立模块
-  { key: "industry-diag", label: "产业诊断", icon: <ExperimentOutlined /> }, // 原产业分析
-  { key: "system-mgmt", label: "系统管理", icon: <SettingOutlined /> }, // 聚合管理功能
+  { key: "industry-class", label: "产业分类", icon: <ApartmentOutlined /> },
+  { key: "industry-portrait", label: "产业画像", icon: <ProjectOutlined /> },
+  { key: "industry-score", label: "产业评分", icon: <PieChartOutlined /> },
+  { key: "industry-diag", label: "产业诊断", icon: <ExperimentOutlined /> },
+  { key: "system-mgmt", label: "系统管理", icon: <SettingOutlined /> },
 ];
 
 // 注意：对于没有侧边栏的模块（如首页、产业分类），配置为空数组
 const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
-  // 1. 首页：左侧不设置子页面导航栏
   home: [],
 
-  // 2. 产业分类：在单一页面呈现，没有子页面
   "industry-class": [],
 
-  // 3. 产业画像：两个子页面：行业画像、企业画像
   "industry-portrait": [
     { key: "industry-profile", icon: <ProfileOutlined />, label: "行业画像" },
     {
@@ -50,27 +49,27 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
     },
   ],
 
-  // 4. 产业评分：在单一页面呈现，没有子页面
   "industry-score": [],
 
-  // 5. 产业诊断：暂时只有一个子页面：智能诊断
   "industry-diag": [
     { key: "smart-diag", icon: <ThunderboltOutlined />, label: "智能诊断" },
   ],
 
-  // 6. 系统管理：数据管理、用户管理
   "system-mgmt": [
     {
       key: "data-mgmt",
       icon: <DatabaseOutlined />,
       label: "数据管理",
       children: [
-        { key: "enterprise-data", label: "企业数据管理" },
-        { key: "industry-data", label: "行业数据管理" },
-        // 标签数据管理下有三个子页面
+        {
+          key: "enterprise-data",
+          label: "企业数据管理",
+          icon: <BuildOutlined />,
+        },
         {
           key: "tag-data",
           label: "标签数据管理",
+          icon: <ControlOutlined />,
           children: [
             {
               key: "enterprise-tag",
@@ -99,17 +98,21 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
 // --- 3. 面包屑映射 ---
 const BREADCRUMB_MAP: Record<string, string> = {
   home: "首页",
+
   "industry-class": "产业分类",
+
   "industry-portrait": "产业画像",
   "industry-profile": "行业画像",
   "enterprise-profile": "企业画像",
+
   "industry-score": "产业评分",
+
   "industry-diag": "产业诊断",
   "smart-diag": "智能诊断",
+
   "system-mgmt": "系统管理",
   "data-mgmt": "数据管理",
   "enterprise-data": "企业数据管理",
-  "industry-data": "行业数据管理",
   "tag-data": "标签数据管理",
   "enterprise-tag": "企业标签管理",
   "tag-library": "标签体系库",
@@ -120,7 +123,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
 
 const userDropdownItems: MenuProps["items"] = [
   { key: "center", label: "个人中心", icon: <UserOutlined /> },
-  { key: "settings", label: "系统设置", icon: <SettingOutlined /> },
+  // { key: "settings", label: "系统设置", icon: <SettingOutlined /> },
   { type: "divider" },
   { key: "logout", label: "退出登录", icon: <LogoutOutlined />, danger: true },
 ];

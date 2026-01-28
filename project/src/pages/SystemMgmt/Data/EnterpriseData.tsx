@@ -114,10 +114,10 @@ const EnterpriseData: React.FC = () => {
       render: (text) => <a style={{ fontWeight: "bold" }}>{text}</a>,
     },
     {
-      title: "企业ID / 唯一标识",
+      title: "统一社会信用代码",
       dataIndex: "key",
       key: "key",
-      width: 120,
+      width: 300,
       ellipsis: true,
       render: (text) => (
         <Typography.Text type="secondary" copyable style={{ fontSize: 12 }}>
@@ -211,7 +211,7 @@ const EnterpriseData: React.FC = () => {
           <Col>
             <Space>
               <Input
-                placeholder="搜索企业或业务标签..."
+                placeholder="搜索企业名称或统一社会信用代码"
                 prefix={<SearchOutlined />}
                 style={{ width: 300 }}
                 onChange={(e) => setSearchText(e.target.value)}

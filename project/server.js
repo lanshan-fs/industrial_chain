@@ -31,7 +31,7 @@ pool
 app.get("/api/companies", async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT company_id, company_name, raw_variants FROM companies LIMIT 100",
+      "SELECT company_id, company_name, raw_variants FROM companies LIMIT 200",
     );
 
     const formattedData = rows.map((row) => ({
