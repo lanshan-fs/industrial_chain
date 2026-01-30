@@ -1,10 +1,18 @@
 import React, { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Layout, Menu, Avatar, Dropdown, Breadcrumb, theme } from "antd";
+import {
+  Layout,
+  Menu,
+  Avatar,
+  Dropdown,
+  Breadcrumb,
+  theme,
+  Input,
+  Space,
+} from "antd";
 import type { MenuProps } from "antd";
 import {
   UserOutlined,
-  DashboardOutlined,
   ProjectOutlined,
   TagsOutlined,
   SettingOutlined,
@@ -24,9 +32,9 @@ import {
 } from "@ant-design/icons";
 
 const { Header, Content, Footer, Sider } = Layout;
+const { Search } = Input;
 
 const TOP_NAV_ITEMS: MenuProps["items"] = [
-  { key: "home", label: "首页", icon: <DashboardOutlined /> },
   { key: "industry-class", label: "产业分类", icon: <ApartmentOutlined /> },
   { key: "industry-portrait", label: "产业画像", icon: <ProjectOutlined /> },
   { key: "industry-score", label: "产业评分", icon: <PieChartOutlined /> },
@@ -34,12 +42,9 @@ const TOP_NAV_ITEMS: MenuProps["items"] = [
   { key: "system-mgmt", label: "系统管理", icon: <SettingOutlined /> },
 ];
 
-// 注意：对于没有侧边栏的模块（如首页、产业分类），配置为空数组
 const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
   home: [],
-
   "industry-class": [],
-
   "industry-portrait": [
     { key: "industry-profile", icon: <ProfileOutlined />, label: "行业画像" },
     {
@@ -48,13 +53,10 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
       label: "企业画像",
     },
   ],
-
   "industry-score": [],
-
   "industry-diag": [
     { key: "smart-diag", icon: <ThunderboltOutlined />, label: "智能诊断" },
   ],
-
   "system-mgmt": [
     {
       key: "data-mgmt",
@@ -95,21 +97,15 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
   ],
 };
 
-// --- 3. 面包屑映射 ---
 const BREADCRUMB_MAP: Record<string, string> = {
   home: "首页",
-
   "industry-class": "产业分类",
-
   "industry-portrait": "产业画像",
   "industry-profile": "行业画像",
   "enterprise-profile": "企业画像",
-
   "industry-score": "产业评分",
-
   "industry-diag": "产业诊断",
   "smart-diag": "智能诊断",
-
   "system-mgmt": "系统管理",
   "data-mgmt": "数据管理",
   "enterprise-data": "企业数据管理",
@@ -123,7 +119,6 @@ const BREADCRUMB_MAP: Record<string, string> = {
 
 const userDropdownItems: MenuProps["items"] = [
   { key: "center", label: "个人中心", icon: <UserOutlined /> },
-  // { key: "settings", label: "系统设置", icon: <SettingOutlined /> },
   { type: "divider" },
   { key: "logout", label: "退出登录", icon: <LogoutOutlined />, danger: true },
 ];
@@ -136,189 +131,238 @@ const MainLayout: React.FC = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
-  // 解析当前路径
-  // 假设路径格式为 /:topNav/:siderKey1/:siderKey2...
   const pathSnippets = location.pathname.split("/").filter((i) => i);
   const currentTopNav = pathSnippets[0] || "home";
-
-  // 递归查找当前选中的 Sider Key (用于高亮)
-  // 简单处理：取路径的最后一个片段作为选中的 key，或者倒数第二个
-  // 实际项目中可能需要更复杂的匹配逻辑，这里取路径最后一段匹配 Sider 配置
   const currentSiderKey = pathSnippets[pathSnippets.length - 1];
-
-  // 判断当前模块是否有侧边栏配置
   const currentSiderItems = SIDER_CONFIG[currentTopNav] || [];
   const hasSider = currentSiderItems.length > 0;
-
-  // 首页和其他单页模式处理 (Home, Industry Class, Score)
   const isSinglePage = !hasSider;
+  const isHomePage = currentTopNav === "home";
 
-  const handleTopNavClick = (e: { key: string }) => {
-    const key = e.key;
-    // const subItems = SIDER_CONFIG[key];
-
-    // 路由跳转逻辑：
-    // 1. 如果有子菜单，且配置了 children，尝试跳转到第一个叶子节点（可选优化）
-    // 2. 这里简单处理：如果有子菜单，跳转到该模块根路径，由 App.tsx 重定向到默认子页
-    // 3. 如果没有子菜单（单页），直接跳转
-    navigate(`/${key}`);
-  };
-
-  const handleSiderClick = (e: { key: string; keyPath: string[] }) => {
-    // 修正：使用基于当前 TopNav 的绝对路径跳转，支持同级页面切换
-    // 例如：从 /system-mgmt/enterprise-data 切换到 /system-mgmt/tag-library
-    navigate(`/${currentTopNav}/${e.key}`);
-  };
-
-  const handleUserMenuClick: MenuProps["onClick"] = (e) => {
-    if (e.key === "logout") navigate("/login");
-  };
-
-  // 生成面包屑 Items
   const breadcrumbItems = pathSnippets.map((snippet) => ({
     title: BREADCRUMB_MAP[snippet] || snippet,
   }));
 
+  const handleTopNavClick = (e: { key: string }) => navigate(`/${e.key}`);
+  const handleSiderClick = (e: { key: string }) =>
+    navigate(`/${currentTopNav}/${e.key}`);
+  const handleUserMenuClick: MenuProps["onClick"] = (e) => {
+    if (e.key === "logout") navigate("/login");
+  };
+
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
       <Header
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          padding: 0,
           background: "#001529",
-          padding: "0 16px",
           position: "sticky",
           top: 0,
           zIndex: 100,
           width: "100%",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", minWidth: 200 }}>
-          {/* <div
+        <div
+          className="header-content"
+          style={{
+            maxWidth: 1280,
+            margin: "0 auto",
+            padding: "0 24px",
+            display: "flex",
+            alignItems: "center",
+            height: "100%",
+          }}
+        >
+          <div
             style={{
-              width: 24,
-              height: 24,
-              background: "linear-gradient(135deg, #1890ff 0%, #0050b3 100%)",
-              borderRadius: 6,
-              marginRight: 10,
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              color: "white",
-              fontWeight: "bold",
+              cursor: "pointer",
+              marginRight: 48,
+              flexShrink: 0,
             }}
-          >
-            P
-          </div> */}
-          <span style={{ color: "white", fontSize: "20px", fontWeight: 600 }}>
-            朝阳区产业链洞察平台
-          </span>
-        </div>
-        <div style={{ flex: 1, margin: "0 20px" }}>
-          <Menu
-            theme="dark"
-            mode="horizontal"
-            selectedKeys={[currentTopNav]}
-            items={TOP_NAV_ITEMS}
-            onClick={handleTopNavClick}
-            style={{ borderBottom: "none", lineHeight: "64px" }}
-            disabledOverflow={false}
-          />
-        </div>
-        <div style={{ flexShrink: 0 }}>
-          <Dropdown
-            menu={{ items: userDropdownItems, onClick: handleUserMenuClick }}
-            placement="bottomRight"
-            arrow
+            onClick={() => navigate("/home")}
           >
             <div
               style={{
+                width: 32,
+                height: 32,
+                background: "linear-gradient(135deg, #1890ff 0%, #0050b3 100%)",
+                borderRadius: 6,
+                marginRight: 12,
                 display: "flex",
                 alignItems: "center",
-                cursor: "pointer",
-                padding: "4px 8px",
-                borderRadius: "6px",
-                background: "rgba(255,255,255,0.05)",
+                justifyContent: "center",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: 18,
+              }}
+            >
+              P
+            </div>
+            <span
+              style={{
+                color: "white",
+                fontSize: "18px",
+                fontWeight: 600,
+                letterSpacing: 1,
+              }}
+            >
+              朝阳区产业链洞察平台
+            </span>
+          </div>
+
+          {!isHomePage && (
+            <div
+              style={{
+                flex: 1,
+                maxWidth: 360,
+                marginRight: 36,
                 transition: "all 0.3s",
               }}
             >
-              <Avatar
-                style={{ backgroundColor: "#1890ff", verticalAlign: "middle" }}
-                icon={<UserOutlined />}
-                size="small"
+              <Search
+                placeholder="搜索企业、行业..."
+                allowClear
+                enterButton
+                onSearch={() => {}}
+                style={{ verticalAlign: "middle" }}
               />
-              {/* 此处省略了部分用户信息的展示代码，保持原有即可 */}
-              <div
-                className="hidden-xs"
-                style={{ marginLeft: 8, color: "white" }}
-              >
-                管理员
-              </div>
             </div>
-          </Dropdown>
+          )}
+
+          <div
+            style={{
+              flex: 1,
+              minWidth: 0,
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <Menu
+              theme="dark"
+              mode="horizontal"
+              selectedKeys={[currentTopNav]}
+              items={TOP_NAV_ITEMS}
+              onClick={handleTopNavClick}
+              style={{
+                borderBottom: "none",
+                lineHeight: "64px",
+                background: "transparent",
+                width: "100%",
+                justifyContent: !isHomePage ? "flex-end" : "flex-start",
+              }}
+              disabledOverflow={false}
+            />
+          </div>
+
+          <div style={{ flexShrink: 0, marginLeft: 24 }}>
+            <Dropdown
+              menu={{ items: userDropdownItems, onClick: handleUserMenuClick }}
+              placement="bottomRight"
+              arrow
+            >
+              <Space style={{ cursor: "pointer", color: "#fff" }}>
+                <Avatar
+                  style={{ backgroundColor: "#1890ff" }}
+                  icon={<UserOutlined />}
+                  size="default"
+                />
+                <span className="hidden-xs">管理员</span>
+              </Space>
+            </Dropdown>
+          </div>
         </div>
       </Header>
 
-      <Layout>
-        {hasSider && (
-          <Sider
-            width={240} // 稍微加宽以容纳多级菜单
-            collapsible
-            collapsed={collapsed}
-            onCollapse={setCollapsed}
-            breakpoint="lg"
-            collapsedWidth="60"
-            style={{ background: colorBgContainer }}
-          >
-            <Menu
-              mode="inline"
-              // selectedKeys 需要匹配当前路由的末端 key
-              selectedKeys={[currentSiderKey]}
-              // defaultOpenKeys 可以默认展开数据管理等
-              defaultOpenKeys={["data-mgmt", "tag-data"]}
-              items={SIDER_CONFIG[currentTopNav] || []}
-              onClick={handleSiderClick}
-              style={{ height: "100%", borderRight: 0, paddingTop: 10 }}
-            />
-          </Sider>
-        )}
-
-        <Layout style={{ padding: isSinglePage ? "0" : "0 16px 16px" }}>
-          {!isSinglePage && (
-            <Breadcrumb style={{ margin: "12px 0" }} items={breadcrumbItems} />
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: 0,
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+        }}
+      >
+        <Layout style={{ background: "transparent" }}>
+          {hasSider && (
+            <Sider
+              width={220}
+              collapsible
+              collapsed={collapsed}
+              onCollapse={setCollapsed}
+              breakpoint="lg"
+              collapsedWidth="60"
+              style={{
+                background: colorBgContainer,
+                margin: "24px 0 24px 24px",
+                borderRadius: borderRadiusLG,
+                overflow: "hidden",
+                boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
+              }}
+            >
+              <Menu
+                mode="inline"
+                selectedKeys={[currentSiderKey]}
+                defaultOpenKeys={["data-mgmt", "tag-data"]}
+                items={SIDER_CONFIG[currentTopNav] || []}
+                onClick={handleSiderClick}
+                style={{ height: "100%", borderRight: 0, paddingTop: 10 }}
+              />
+            </Sider>
           )}
 
-          <Content
-            style={{
-              padding: isSinglePage ? 0 : 24,
-              margin: 0,
-              minHeight: 280,
-              background: isSinglePage ? "transparent" : colorBgContainer,
-              borderRadius: isSinglePage ? 0 : borderRadiusLG,
-              overflowY: "auto",
-            }}
-          >
-            <Outlet />
-          </Content>
+          <Layout style={{ background: "transparent" }}>
+            {!isSinglePage && (
+              <div style={{ padding: "24px 24px 0 24px" }}>
+                <Breadcrumb items={breadcrumbItems} />
+              </div>
+            )}
 
-          <Footer
-            style={{
-              textAlign: "center",
-              background: isSinglePage ? "#000c17" : undefined,
-              color: isSinglePage ? "rgba(255,255,255,0.45)" : "#999",
-              padding: "12px 0",
-              fontSize: 12,
-              borderTop: isSinglePage
-                ? "1px solid rgba(255,255,255,0.05)"
-                : "none",
-            }}
-          >
-            区域产业链洞察平台 ©2026 Powered by
-          </Footer>
+            <Content
+              style={{
+                padding: isSinglePage ? 0 : 24,
+                margin: 0,
+                // 优化：不再强制 height 和 overflow，允许窗口自然滚动
+                minHeight: 280,
+                background: isSinglePage ? "transparent" : "transparent",
+              }}
+            >
+              <div
+                style={{
+                  background: isSinglePage ? "transparent" : colorBgContainer,
+                  padding: isSinglePage ? 0 : 24,
+                  borderRadius: isSinglePage ? 0 : borderRadiusLG,
+                  minHeight: "100%",
+                }}
+              >
+                <Outlet />
+              </div>
+            </Content>
+
+            <Footer
+              style={{
+                textAlign: "center",
+                background: "transparent",
+                color: "#999",
+                padding: "24px 0 48px 0",
+                fontSize: 12,
+              }}
+            >
+              区域产业链洞察平台 ©2026 Powered by 朝阳区科信局
+            </Footer>
+          </Layout>
         </Layout>
-      </Layout>
-      <style>{`@media (max-width: 576px) { .hidden-xs { display: none !important; } }`}</style>
+      </div>
+
+      <style>{`
+        @media (max-width: 576px) { .hidden-xs { display: none !important; } }
+        /* 修复侧边栏触发器样式 */
+        .ant-layout-sider-trigger { border-radius: 0 0 8px 8px; }
+      `}</style>
     </Layout>
   );
 };
