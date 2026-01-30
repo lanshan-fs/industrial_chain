@@ -31,7 +31,7 @@ import {
   ControlOutlined,
 } from "@ant-design/icons";
 
-const { Header, Content, Footer, Sider } = Layout;
+const { Header, Content, Sider } = Layout;
 const { Search } = Input;
 
 const TOP_NAV_ITEMS: MenuProps["items"] = [
@@ -343,7 +343,7 @@ const MainLayout: React.FC = () => {
               </div>
             </Content>
 
-            <Footer
+            {/* <Footer
               style={{
                 textAlign: "center",
                 background: "transparent",
@@ -352,8 +352,8 @@ const MainLayout: React.FC = () => {
                 fontSize: 12,
               }}
             >
-              区域产业链洞察平台 ©2026 Powered by 朝阳区科信局
-            </Footer>
+              区域产业链洞察平台 ©2026
+            </Footer> */}
           </Layout>
         </Layout>
       </div>

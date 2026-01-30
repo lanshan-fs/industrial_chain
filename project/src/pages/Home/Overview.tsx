@@ -10,8 +10,6 @@ import {
   FloatButton,
   Badge,
   Tooltip,
-  Modal,
-  Progress,
   Button,
   Spin,
   message,
@@ -19,6 +17,7 @@ import {
   Input,
   Tabs,
   Space,
+  Divider,
 } from "antd";
 import {
   SafetyCertificateOutlined,
@@ -41,13 +40,23 @@ import {
   ArrowRightOutlined,
   ExperimentOutlined,
   SearchOutlined,
+  CopyrightOutlined,
+  GithubOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+
+// 引入自定义组件
+import MoreButton from "../../components/Home/MoreButton";
+import RankList, { type RankItem } from "../../components/Home/RankList";
+import SuggestionList, {
+  type SuggestionItem,
+} from "../../components/Home/SuggestionList";
+import StatsGrid, { type StatItem } from "../../components/Home/StatsGrid";
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
-// --- 模拟数据 ---
+// ================== 数据准备 ==================
 
 // 1. 顶部驾驶舱关键指标
 const keyMetrics = [
@@ -56,8 +65,8 @@ const keyMetrics = [
   { label: "协同效率", value: 78.5, suffix: "%", color: "#ffec3d" },
 ];
 
-// 2. 企业资质分布
-const chaoyangStats = [
+// 2. 企业资质分布 (将转换为 StatItem 格式)
+const chaoyangStatsRaw = [
   { label: "上市企业", value: 35, icon: <GlobalOutlined />, color: "#cf1322" },
   { label: "外资企业", value: 128, icon: <GlobalOutlined />, color: "#d48806" },
   { label: "独角兽", value: 12, icon: <CrownOutlined />, color: "#eb2f96" },
@@ -70,12 +79,18 @@ const chaoyangStats = [
 ];
 
 // 3. 热门区域分布
-const hotspotStreets = [
+const hotspotStreets: RankItem[] = [
   { name: "酒仙桥街道", count: 156, percent: 85 },
   { name: "望京街道", count: 132, percent: 72 },
   { name: "朝外街道", count: 98, percent: 54 },
   { name: "大屯街道", count: 76, percent: 42 },
   { name: "奥运村街道", count: 65, percent: 36 },
+  { name: "建外街道", count: 54, percent: 30 },
+  { name: "三里屯", count: 42, percent: 25 },
+  { name: "呼家楼", count: 38, percent: 22 },
+  { name: "团结湖", count: 35, percent: 20 },
+  { name: "麦子店", count: 29, percent: 18 },
+  { name: "劲松街道", count: 25, percent: 15 },
 ];
 
 // 4. 平台公告
@@ -118,8 +133,22 @@ const hotSearches = {
   enterprises: ["京东方", "阿里云", "美团", "泡泡玛特"],
 };
 
-// 6. 产业生态圈分类
-const ecologyCategories = [
+// 6. 热门产业标签
+const hotTagsData: RankItem[] = [
+  { name: "生物医药", count: 320, percent: 90 },
+  { name: "跨境电商", count: 280, percent: 82 },
+  { name: "元宇宙", count: 210, percent: 70 },
+  { name: "自动驾驶", count: 180, percent: 65 },
+  { name: "绿色能源", count: 150, percent: 55 },
+  { name: "区块链", count: 120, percent: 45 },
+  { name: "SaaS", count: 98, percent: 35 },
+  { name: "智能制造", count: 85, percent: 30 },
+  { name: "光子计算", count: 60, percent: 20 },
+  { name: "工业互联", count: 45, percent: 15 },
+];
+
+// 7. 产业生态圈分类 (原始数据)
+const ecologyCategoriesRaw = [
   { name: "科研院校", icon: <BankOutlined />, count: 42 },
   { name: "行业协会", icon: <ClusterOutlined />, count: 15 },
   { name: "投资基金", icon: <RiseOutlined />, count: 88 },
@@ -131,17 +160,7 @@ const ecologyCategories = [
   { name: "投资基金", icon: <RiseOutlined />, count: 88 },
 ];
 
-// 7. 热门标签
-const hotTags = [
-  "生物医药",
-  "跨境电商",
-  "元宇宙",
-  "自动驾驶",
-  "绿色能源",
-  "区块链",
-  "SaaS",
-  "智能制造",
-];
+// ================== 主页面组件 ==================
 
 const Overview: React.FC = () => {
   const navigate = useNavigate();
@@ -149,13 +168,36 @@ const Overview: React.FC = () => {
   // 状态管理
   const [loading, setLoading] = useState(true);
   const [chainData, setChainData] = useState<any[]>([]);
-  const [weakLinksFull, setWeakLinksFull] = useState<any[]>([]);
+  const [weakLinksFull, setWeakLinksFull] = useState<SuggestionItem[]>([]);
   const [recommendEnterprisesFull, setRecommendEnterprisesFull] = useState<
-    any[]
+    SuggestionItem[]
   >([]);
   const [searchScope, setSearchScope] = useState("industry");
-  const [isWeakModalVisible, setIsWeakModalVisible] = useState(false);
-  const [isRecModalVisible, setIsRecModalVisible] = useState(false);
+
+  // 企业资质
+  const chaoyangStatsData: StatItem[] = chaoyangStatsRaw.map((item) => ({
+    icon: item.icon,
+    value: item.value,
+    label: item.label,
+    color: item.color,
+    // 点击跳转至产业分类，并携带筛选参数
+    onClick: () => {
+      message.loading(`正在筛选：${item.label}`);
+      navigate(
+        `/industry-class?qualification=${encodeURIComponent(item.label)}`,
+      );
+    },
+  }));
+
+  // 生态圈
+  const ecologyStatsData: StatItem[] = ecologyCategoriesRaw.map((item) => ({
+    icon: item.icon,
+    value: item.count,
+    label: item.name,
+    color: "#1890ff",
+    onClick: () =>
+      navigate(`/industry-class?ecology=${encodeURIComponent(item.name)}`),
+  }));
 
   // 初始化数据
   useEffect(() => {
@@ -170,12 +212,13 @@ const Overview: React.FC = () => {
           const computedWeakLinks = json.data.chainData.flatMap((layer: any) =>
             layer.subTags
               .filter((t: any) => t.isWeak)
-              .map((t: any) => ({ ...t, layer: layer.title })),
+              .map((t: any) => ({ name: t.name, highlight: true })),
           );
           setWeakLinksFull(computedWeakLinks);
         }
       } catch (error) {
         console.error("Fetch error:", error);
+        // Fallback data
         setChainData([
           {
             title: "上游 · 研发与技术",
@@ -185,6 +228,7 @@ const Overview: React.FC = () => {
               { name: "芯片设计", count: 40 },
               { name: "算法模型", count: 30, isWeak: true },
               { name: "EDA工具", count: 12 },
+              { name: "IP核", count: 8, isWeak: true },
             ],
           },
           {
@@ -206,35 +250,27 @@ const Overview: React.FC = () => {
             ],
           },
         ]);
+        setWeakLinksFull([
+          { name: "光刻机零部件", highlight: true },
+          { name: "工业级操作系统", highlight: true },
+          { name: "高性能传感器", highlight: true },
+        ]);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
+
     setRecommendEnterprisesFull([
-      {
-        name: "北京神州生物原料有限公司",
-        district: "大兴区",
-        tag: "生物原料供应",
-        match: "98%",
-      },
-      {
-        name: "中关村工业软件研发院",
-        district: "海淀区",
-        tag: "工业软件开发",
-        match: "95%",
-      },
-      {
-        name: "京北医药冷链物流集团",
-        district: "顺义区",
-        tag: "医药冷链物流",
-        match: "92%",
-      },
+      { name: "北京神州生物原料有限公司", desc: "匹配度 98%" },
+      { name: "中关村工业软件研发院", desc: "匹配度 95%" },
+      { name: "京北医药冷链物流集团", desc: "匹配度 92%" },
+      { name: "智谱AI科技有限公司", desc: "匹配度 90%" },
+      { name: "寒武纪科技股份有限公司", desc: "匹配度 89%" },
     ]);
   }, []);
 
   const styles = {
-    // 首页容器，背景色通栏
     fullWidthContainer: {
       width: "100vw",
       position: "relative" as "relative",
@@ -243,39 +279,43 @@ const Overview: React.FC = () => {
       marginLeft: "-50vw",
       marginRight: "-50vw",
     },
-    // Banner 区域样式
     bannerSection: {
       background: "linear-gradient(135deg, #001529 0%, #003a8c 100%)",
-      padding: "60px 0 100px 0", // 底部留空间给卡片上浮
+      padding: "60px 0 100px 0",
       marginBottom: -60,
     },
-    // 内容版心 1280px
     contentInner: {
       maxWidth: 1280,
       margin: "0 auto",
       padding: "0 24px",
     },
-    // 卡片通用样式 (优化：移除 marginBottom，改用 Grid Gutter 控制)
     card: {
       borderRadius: 8,
       boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-      // marginBottom: 24, // 移除
     },
     tagCard: {
       cursor: "pointer",
       borderRadius: 4,
-      padding: "12px",
+      padding: "8px 12px",
       background: "#fff",
       border: "1px solid #f0f0f0",
       transition: "all 0.3s",
-      minHeight: 70,
       display: "flex",
-      flexDirection: "column" as "column",
+      alignItems: "center",
       justifyContent: "space-between",
+      height: 48,
     },
     tagCardWeak: {
       background: "#fff7e6",
       border: "1px solid #ffd591",
+    },
+    footer: {
+      background: "#001529",
+      padding: "40px 0 20px 0",
+      color: "rgba(255,255,255,0.65)",
+      marginTop: 60,
+      textAlign: "center" as "center",
+      fontSize: 14,
     },
   };
 
@@ -321,8 +361,19 @@ const Overview: React.FC = () => {
                 className="home-search-tabs"
               />
               <style>{`
-                .home-search-tabs .ant-tabs-tab { color: rgba(255,255,255,0.7); font-size: 16px; padding: 8px 0; margin-right: 32px; }
-                .home-search-tabs .ant-tabs-tab-active .ant-tabs-tab-btn { color: #fff !important; font-weight: 600; font-size: 18px; }
+                .home-search-tabs .ant-tabs-tab { 
+                    color: rgba(255,255,255,0.7); 
+                    font-size: 16px; 
+                    padding: 8px 0; 
+                    margin-right: 32px; 
+                    transition: color 0.3s;
+                }
+                .home-search-tabs .ant-tabs-tab-active .ant-tabs-tab-btn { 
+                    color: #fff !important; 
+                    font-weight: 600; 
+                    font-size: 16px;
+                    text-shadow: 0 0 0.25px currentColor;
+                }
                 .home-search-tabs .ant-tabs-ink-bar { background: #fff; height: 3px; }
               `}</style>
 
@@ -377,6 +428,7 @@ const Overview: React.FC = () => {
                 </Button>
               </div>
 
+              {/* 热搜区域 */}
               <div
                 style={{
                   marginTop: 16,
@@ -475,12 +527,13 @@ const Overview: React.FC = () => {
 
       {/* 2. 主体内容 */}
       <Spin spinning={loading}>
-        <Row gutter={[24, 0]}>
-          {" "}
-          {/* 0 垂直间距，由内部 Col 控制 */}
-          {/* === 左侧：产业链树谱 === */}
-          <Col xs={24} lg={16} style={{ marginBottom: 24 }}>
+        <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
+          {/* === 左侧：产业链树谱 + 补链 + 引育 === */}
+          <Col xs={24} lg={16}>
             <Card
+              bordered={false}
+              style={{ ...styles.card, height: "100%" }}
+              bodyStyle={{ padding: 24 }}
               title={
                 <Space>
                   <EnvironmentOutlined style={{ color: "#1890ff" }} />
@@ -488,10 +541,8 @@ const Overview: React.FC = () => {
                   <Tag color="blue">数字医疗</Tag>
                 </Space>
               }
-              bordered={false}
-              style={{ ...styles.card, height: "100%" }} // height 100% 确保左侧撑满
-              bodyStyle={{ padding: 24 }}
             >
+              {/* 关键指标 */}
               <div
                 style={{
                   background: "#f5f7fa",
@@ -541,6 +592,7 @@ const Overview: React.FC = () => {
                 </Row>
               </div>
 
+              {/* 产业链树谱 */}
               <Collapse
                 defaultActiveKey={["upstream", "midstream", "downstream"]}
                 ghost
@@ -567,7 +619,7 @@ const Overview: React.FC = () => {
                     style={{ marginBottom: 16 }}
                   >
                     <List
-                      grid={{ gutter: 16, xs: 2, sm: 3, md: 3, lg: 3, xl: 4 }}
+                      grid={{ gutter: 16, xs: 2, sm: 2, md: 3, lg: 4, xl: 4 }}
                       dataSource={cat.subTags}
                       renderItem={(tag: any) => (
                         <List.Item style={{ marginBottom: 16 }}>
@@ -586,29 +638,16 @@ const Overview: React.FC = () => {
                               onClick={() =>
                                 navigate(`/industry-class?tag=${tag.name}`)
                               }
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.boxShadow =
-                                  "0 4px 12px rgba(0,0,0,0.1)";
-                                e.currentTarget.style.transform =
-                                  "translateY(-2px)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.boxShadow = "none";
-                                e.currentTarget.style.transform =
-                                  "translateY(0)";
-                              }}
                             >
                               <div
                                 style={{
-                                  fontSize: 13,
                                   fontWeight: 500,
                                   color: tag.isWeak ? "#d46b08" : "#333",
-                                  marginBottom: 8,
+                                  flex: 1,
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
-                                  display: "-webkit-box",
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: "vertical",
+                                  whiteSpace: "nowrap",
+                                  marginRight: 8,
                                 }}
                               >
                                 {tag.name}
@@ -616,16 +655,19 @@ const Overview: React.FC = () => {
                               <div
                                 style={{
                                   display: "flex",
-                                  justifyContent: "space-between",
                                   alignItems: "center",
+                                  flexShrink: 0,
                                 }}
                               >
-                                <Text type="secondary" style={{ fontSize: 12 }}>
-                                  {tag.count}
+                                <Text
+                                  type="secondary"
+                                  style={{ fontSize: 12, marginRight: 4 }}
+                                >
+                                  {tag.count}家
                                 </Text>
                                 {tag.isWeak && (
                                   <ThunderboltFilled
-                                    style={{ color: "#fa8c16" }}
+                                    style={{ color: "#fa8c16", fontSize: 12 }}
                                   />
                                 )}
                               </div>
@@ -637,268 +679,134 @@ const Overview: React.FC = () => {
                   </Panel>
                 ))}
               </Collapse>
+
+              <div
+                style={{ height: 1, background: "#f0f0f0", margin: "24px 0" }}
+              />
+
+              {/* 补链建议 & 推荐引育 */}
+              <Row gutter={[24, 24]}>
+                <Col span={24}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: 16,
+                    }}
+                  >
+                    <span style={{ fontSize: 16, fontWeight: 600 }}>
+                      <LinkOutlined
+                        style={{ color: "#fa8c16", marginRight: 8 }}
+                      />
+                      补链建议
+                    </span>
+                    <MoreButton
+                      onClick={() => message.info("查看更多补链建议")}
+                    />
+                  </div>
+                  <Card bordered={false} bodyStyle={{ padding: 0 }}>
+                    <SuggestionList
+                      data={weakLinksFull}
+                      icon={<ThunderboltFilled />}
+                      iconColor="#fa8c16"
+                    />
+                  </Card>
+                </Col>
+
+                <Col span={24}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: 16,
+                      marginTop: 8,
+                    }}
+                  >
+                    <span style={{ fontSize: 16, fontWeight: 600 }}>
+                      <AimOutlined
+                        style={{ color: "#1890ff", marginRight: 8 }}
+                      />
+                      推荐引育
+                    </span>
+                    <MoreButton
+                      onClick={() => message.info("查看更多引育推荐")}
+                    />
+                  </div>
+                  <Card bordered={false} bodyStyle={{ padding: 0 }}>
+                    <SuggestionList
+                      data={recommendEnterprisesFull}
+                      icon={<ShopOutlined />}
+                      iconColor="#1890ff"
+                    />
+                  </Card>
+                </Col>
+              </Row>
             </Card>
           </Col>
-          {/* === 右侧：分析看板 (紧凑布局) === */}
+
+          {/* === 右侧：分析看板 === */}
           <Col xs={24} lg={8}>
-            {/* 优化：减小 Row gutter 的垂直间距到 12 */}
-            <Row gutter={[24, 12]}>
-              {/* 1. 资质构成 */}
+            <Row gutter={[24, 24]}>
+              {/* 1. 资质构成 (添加跳转 + 更多按钮) */}
               <Col span={24}>
                 <Card
                   title="企业资质构成"
                   size="small"
                   bordered={false}
                   style={styles.card}
+                  extra={
+                    <MoreButton onClick={() => navigate("/industry-class")} />
+                  }
                 >
-                  <Row gutter={[8, 8]}>
-                    {" "}
-                    {/* 内部间距更紧凑 */}
-                    {chaoyangStats.map((item, idx) => (
-                      <Col span={8} key={idx}>
-                        <div
-                          style={{
-                            textAlign: "center",
-                            background: "#fafafa",
-                            padding: "8px 0",
-                            borderRadius: 4,
-                          }}
-                        >
-                          <div
-                            style={{
-                              color: item.color,
-                              fontSize: 16,
-                              marginBottom: 4,
-                            }}
-                          >
-                            {item.icon}
-                          </div>
-                          <div style={{ fontWeight: "bold", color: "#333" }}>
-                            {item.value}
-                          </div>
-                          <div style={{ fontSize: 11, color: "#999" }}>
-                            {item.label}
-                          </div>
-                        </div>
-                      </Col>
-                    ))}
-                  </Row>
+                  <StatsGrid data={chaoyangStatsData} />
                 </Card>
               </Col>
 
-              {/* 2. 产业生态圈 */}
+              {/* 2. 产业生态圈 (添加更多按钮) */}
               <Col span={24}>
                 <Card
                   title="产业生态圈"
                   size="small"
                   bordered={false}
                   style={styles.card}
+                  extra={
+                    <MoreButton onClick={() => navigate("/industry-class")} />
+                  }
                 >
-                  <Row gutter={[8, 8]}>
-                    {ecologyCategories.map((cat) => (
-                      <Col span={8} key={cat.name}>
-                        <div
-                          style={{
-                            textAlign: "center",
-                            cursor: "pointer",
-                            padding: "8px 0",
-                            borderRadius: 4,
-                            border: "1px solid #f0f0f0",
-                            transition: "all 0.3s",
-                          }}
-                          onClick={() => navigate("/industry-class")}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.borderColor = "#1890ff")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.borderColor = "#f0f0f0")
-                          }
-                        >
-                          <div
-                            style={{
-                              color: "#1890ff",
-                              fontSize: 16,
-                              marginBottom: 4,
-                            }}
-                          >
-                            {cat.icon}
-                          </div>
-                          <div style={{ fontSize: 12, color: "#333" }}>
-                            {cat.name}
-                          </div>
-                        </div>
-                      </Col>
-                    ))}
-                  </Row>
+                  <StatsGrid data={ecologyStatsData} />
                 </Card>
               </Col>
 
-              {/* 3. 热门标签 */}
+              {/* 3. 热门产业标签 */}
               <Col span={24}>
                 <Card
                   title="热门产业标签"
                   size="small"
                   bordered={false}
                   style={styles.card}
+                  extra={
+                    <MoreButton onClick={() => navigate("/industry-score")} />
+                  }
                 >
-                  <Space size={[8, 8]} wrap>
-                    {hotTags.map((tag, i) => (
-                      <Tag
-                        key={tag}
-                        color={i < 3 ? "blue" : "default"}
-                        style={{ cursor: "pointer", margin: 0 }}
-                        onClick={() => navigate(`/industry-class?tag=${tag}`)}
-                      >
-                        #{tag}
-                      </Tag>
-                    ))}
-                  </Space>
+                  <RankList data={hotTagsData} colorScale={true} />
                 </Card>
               </Col>
 
-              {/* 4. 热门街道 */}
+              {/* 4. 热门区域分布 */}
               <Col span={24}>
                 <Card
                   title="热门区域分布"
                   size="small"
-                  extra={<FireOutlined style={{ color: "#ff4d4f" }} />}
+                  extra={
+                    <MoreButton onClick={() => navigate("/industry-map")} />
+                  }
                   bordered={false}
                   style={styles.card}
                 >
-                  <List
-                    dataSource={hotspotStreets}
-                    size="small"
-                    renderItem={(item, i) => (
-                      <List.Item
-                        style={{
-                          padding: "6px 0",
-                          borderBottom: "1px dashed #f0f0f0",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            width: "100%",
-                          }}
-                        >
-                          <Badge
-                            count={i + 1}
-                            style={{
-                              background: i < 3 ? "#ff4d4f" : "#d9d9d9",
-                              boxShadow: "none",
-                              marginRight: 8,
-                            }}
-                          />
-                          <span style={{ flex: 1, fontSize: 13 }}>
-                            {item.name}
-                          </span>
-                          <Progress
-                            percent={item.percent}
-                            size="small"
-                            showInfo={false}
-                            strokeColor={i < 3 ? "#ff4d4f" : "#1890ff"}
-                            style={{ width: 60, marginRight: 8 }}
-                          />
-                          <span
-                            style={{
-                              fontSize: 12,
-                              color: "#999",
-                              width: 40,
-                              textAlign: "right",
-                            }}
-                          >
-                            {item.count}
-                          </span>
-                        </div>
-                      </List.Item>
-                    )}
-                  />
-                </Card>
-              </Col>
-
-              {/* 5. 补链建议 (独立成行 span=24) */}
-              <Col span={24}>
-                <Card
-                  title={
-                    <span style={{ color: "#fa8c16", fontSize: 13 }}>
-                      <LinkOutlined /> 补链建议
-                    </span>
-                  }
-                  size="small"
-                  bordered={false}
-                  style={{ ...styles.card, borderTop: "2px solid #fa8c16" }}
-                  bodyStyle={{ padding: 12 }}
-                >
-                  <List
-                    size="small"
-                    dataSource={weakLinksFull.slice(0, 3)}
-                    renderItem={(item) => (
-                      <List.Item style={{ padding: "6px 0" }}>
-                        <Space
-                          style={{
-                            width: "100%",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <Text
-                            ellipsis
-                            style={{ fontSize: 12, maxWidth: 200 }}
-                          >
-                            {item.name}
-                          </Text>
-                          <Tag color="orange" style={{ margin: 0 }}>
-                            缺口
-                          </Tag>
-                        </Space>
-                      </List.Item>
-                    )}
-                  />
-                </Card>
-              </Col>
-
-              {/* 6. 推荐引育 (独立成行 span=24) */}
-              <Col span={24}>
-                <Card
-                  title={
-                    <span style={{ color: "#1890ff", fontSize: 13 }}>
-                      <AimOutlined /> 推荐引育
-                    </span>
-                  }
-                  size="small"
-                  bordered={false}
-                  style={{ ...styles.card, borderTop: "2px solid #1890ff" }}
-                  bodyStyle={{ padding: 12 }}
-                >
-                  <List
-                    size="small"
-                    dataSource={recommendEnterprisesFull.slice(0, 3)}
-                    renderItem={(item) => (
-                      <List.Item style={{ padding: "6px 0" }}>
-                        <Space
-                          style={{
-                            width: "100%",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <Text
-                            ellipsis
-                            style={{ fontSize: 12, maxWidth: 180 }}
-                          >
-                            {item.name}
-                          </Text>
-                          <span
-                            style={{
-                              color: "#52c41a",
-                              fontWeight: "bold",
-                              fontSize: 12,
-                            }}
-                          >
-                            {item.match}
-                          </span>
-                        </Space>
-                      </List.Item>
-                    )}
+                  <RankList
+                    data={hotspotStreets}
+                    colorScale={true}
+                    limit={10}
                   />
                 </Card>
               </Col>
@@ -973,6 +881,83 @@ const Overview: React.FC = () => {
         </Card>
       </div>
 
+      {/* 4. 新增底部信息栏 (Footer) */}
+      <div style={{ ...styles.fullWidthContainer, ...styles.footer }}>
+        <div style={styles.contentInner}>
+          <Row gutter={[32, 32]}>
+            <Col xs={24} md={8} style={{ textAlign: "left" }}>
+              <div
+                style={{
+                  color: "#fff",
+                  fontSize: 18,
+                  fontWeight: "bold",
+                  marginBottom: 16,
+                }}
+              >
+                产业链洞察平台
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                专注于区域产业数据分析与辅助决策
+              </div>
+              <div>
+                <CopyrightOutlined /> 2026 朝阳区科学技术和信息化局
+              </div>
+            </Col>
+            <Col xs={24} md={8} style={{ textAlign: "left" }}>
+              <div style={{ color: "#fff", fontSize: 16, marginBottom: 16 }}>
+                快速链接
+              </div>
+              <Space
+                direction="vertical"
+                style={{ color: "rgba(255,255,255,0.65)" }}
+              >
+                <a style={{ color: "inherit" }} onClick={() => navigate("/")}>
+                  首页概览
+                </a>
+                <a
+                  style={{ color: "inherit" }}
+                  onClick={() => navigate("/industry-class")}
+                >
+                  产业分类
+                </a>
+                <a
+                  style={{ color: "inherit" }}
+                  onClick={() => navigate("/industry-portrait")}
+                >
+                  产业画像
+                </a>
+              </Space>
+            </Col>
+            <Col xs={24} md={8} style={{ textAlign: "left" }}>
+              <div style={{ color: "#fff", fontSize: 16, marginBottom: 16 }}>
+                联系我们
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                地址：北京市朝阳区日坛北街33号
+              </div>
+              <div style={{ marginBottom: 8 }}>电话：010-6509XXXX</div>
+              <div>邮箱：support@chaoyang.gov.cn</div>
+            </Col>
+          </Row>
+          <Divider
+            style={{ borderColor: "rgba(255,255,255,0.15)", margin: "24px 0" }}
+          />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <span>京ICP备20260001号-1</span>
+            <Space size="large">
+              <GithubOutlined style={{ fontSize: 20, cursor: "pointer" }} />
+              <GlobalOutlined style={{ fontSize: 20, cursor: "pointer" }} />
+            </Space>
+          </div>
+        </div>
+      </div>
+
       <FloatButton.Group
         trigger="hover"
         style={{ right: 24, bottom: 80 }}
@@ -985,19 +970,6 @@ const Overview: React.FC = () => {
           type="primary"
         />
       </FloatButton.Group>
-
-      <Modal
-        title="补链建议"
-        open={isWeakModalVisible}
-        onCancel={() => setIsWeakModalVisible(false)}
-        footer={null}
-      />
-      <Modal
-        title="引育推荐"
-        open={isRecModalVisible}
-        onCancel={() => setIsRecModalVisible(false)}
-        footer={null}
-      />
     </div>
   );
 };
