@@ -64,6 +64,9 @@ const chaoyangStats = [
   { label: "专精特新", value: 185, icon: <TrophyOutlined />, color: "#722ed1" },
   { label: "高新技术", value: 456, icon: <RocketOutlined />, color: "#1890ff" },
   { label: "科技中小", value: 890, icon: <ShopOutlined />, color: "#52c41a" },
+  { label: "上市企业", value: 35, icon: <GlobalOutlined />, color: "#cf1322" },
+  { label: "外资企业", value: 128, icon: <GlobalOutlined />, color: "#d48806" },
+  { label: "独角兽", value: 12, icon: <CrownOutlined />, color: "#eb2f96" },
 ];
 
 // 3. 热门区域分布
@@ -123,6 +126,9 @@ const ecologyCategories = [
   { name: "孵化器", icon: <BulbOutlined />, count: 26 },
   { name: "专业园区", icon: <EnvironmentOutlined />, count: 18 },
   { name: "概念验证", icon: <ExperimentOutlined />, count: 9 },
+  { name: "科研院校", icon: <BankOutlined />, count: 42 },
+  { name: "行业协会", icon: <ClusterOutlined />, count: 15 },
+  { name: "投资基金", icon: <RiseOutlined />, count: 88 },
 ];
 
 // 7. 热门标签
