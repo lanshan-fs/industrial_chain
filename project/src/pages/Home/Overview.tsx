@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import {
   Row,
   Col,
@@ -403,7 +404,7 @@ const Overview: React.FC = () => {
                         padding: "0 16px",
                         borderLeft: "1px solid #f0f0f0",
                       }}
-                      onClick={() => message.info("跳转至高级搜索页")}
+                      onClick={() => navigate("/advanced-search")}
                     >
                       高级搜索
                     </span>

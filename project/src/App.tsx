@@ -26,6 +26,8 @@ import AutoTag from "./pages/SystemMgmt/Data/Tag/AutoTag";
 import EnterpriseTag from "./pages/SystemMgmt/Data/Tag/EnterpriseTag";
 import TagLibrary from "./pages/SystemMgmt/Data/Tag/TagLibrary";
 
+import AdvancedSearch from "./pages/AdvancedSearch/Index";
+
 // --- 占位组件 ---
 const { Title, Text } = Typography;
 const PlaceholderPage: React.FC<{ title: string; desc: string }> = ({
@@ -64,6 +66,8 @@ const App: React.FC = () => {
         <Route element={<MainLayout />}>
           {/* 1. 首页 */}
           <Route path="home" element={<Overview />} />
+
+          <Route path="advanced-search" element={<AdvancedSearch />} />
 
           {/* 2. 产业分类 */}
           <Route path="industry-class" element={<IndustryClass />} />
