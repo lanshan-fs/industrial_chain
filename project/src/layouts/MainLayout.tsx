@@ -36,27 +36,40 @@ const { Search } = Input;
 
 const TOP_NAV_ITEMS: MenuProps["items"] = [
   { key: "industry-class", label: "产业分类", icon: <ApartmentOutlined /> },
-  { key: "industry-portrait", label: "产业画像", icon: <ProjectOutlined /> },
+  {
+    key: "industry-portrait",
+    label: "产业画像",
+    icon: <ProjectOutlined />,
+    children: [
+      {
+        key: "industry-portrait/industry-profile",
+        label: "行业画像",
+        icon: <ProfileOutlined />,
+      },
+      {
+        key: "industry-portrait/enterprise-profile",
+        label: "企业画像",
+        icon: <SolutionOutlined />,
+      },
+    ],
+  },
   { key: "industry-score", label: "产业评分", icon: <PieChartOutlined /> },
-  { key: "industry-diag", label: "产业诊断", icon: <ExperimentOutlined /> },
-  { key: "system-mgmt", label: "系统管理", icon: <SettingOutlined /> },
+  {
+    key: "industry-diag",
+    label: "产业诊断",
+    icon: <ExperimentOutlined />,
+    children: [
+      {
+        key: "industry-diag/smart-diag",
+        label: "智能诊断",
+        icon: <ThunderboltOutlined />,
+      },
+    ],
+  },
 ];
 
+// 优化：仅保留系统管理的侧边栏配置
 const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
-  home: [],
-  "industry-class": [],
-  "industry-portrait": [
-    { key: "industry-profile", icon: <ProfileOutlined />, label: "行业画像" },
-    {
-      key: "enterprise-profile",
-      icon: <SolutionOutlined />,
-      label: "企业画像",
-    },
-  ],
-  "industry-score": [],
-  "industry-diag": [
-    { key: "smart-diag", icon: <ThunderboltOutlined />, label: "智能诊断" },
-  ],
   "system-mgmt": [
     {
       key: "data-mgmt",
@@ -117,12 +130,6 @@ const BREADCRUMB_MAP: Record<string, string> = {
   "user-mgmt": "用户管理",
 };
 
-const userDropdownItems: MenuProps["items"] = [
-  { key: "center", label: "个人中心", icon: <UserOutlined /> },
-  { type: "divider" },
-  { key: "logout", label: "退出登录", icon: <LogoutOutlined />, danger: true },
-];
-
 const MainLayout: React.FC = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -131,24 +138,63 @@ const MainLayout: React.FC = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
+  // 解析路径
   const pathSnippets = location.pathname.split("/").filter((i) => i);
   const currentTopNav = pathSnippets[0] || "home";
-  const currentSiderKey = pathSnippets[pathSnippets.length - 1];
-  const currentSiderItems = SIDER_CONFIG[currentTopNav] || [];
+
+  const isSystemMgmt = currentTopNav === "system-mgmt";
+
+  // 优化：仅系统管理模块显示侧边栏
+  const currentSiderItems = isSystemMgmt
+    ? SIDER_CONFIG["system-mgmt"] || []
+    : [];
   const hasSider = currentSiderItems.length > 0;
-  const isSinglePage = !hasSider;
+
   const isHomePage = currentTopNav === "home";
+  // 系统管理页面通常不是 SinglePage (因为它有 Sider)，其他页面大多变成了 SinglePage (无 Sider)
+  const isSinglePage = !hasSider;
+
+  // 优化：用户下拉菜单，包含系统管理入口
+  const userDropdownItems: MenuProps["items"] = [
+    { key: "center", label: "个人中心", icon: <UserOutlined /> },
+    {
+      key: "system-mgmt",
+      label: "系统管理",
+      icon: <SettingOutlined />,
+      // 加个分割线或标记，使其显眼
+    },
+    { type: "divider" },
+    {
+      key: "logout",
+      label: "退出登录",
+      icon: <LogoutOutlined />,
+      danger: true,
+    },
+  ];
 
   const breadcrumbItems = pathSnippets.map((snippet) => ({
     title: BREADCRUMB_MAP[snippet] || snippet,
   }));
 
-  const handleTopNavClick = (e: { key: string }) => navigate(`/${e.key}`);
+  // 顶部导航点击
+  const handleTopNavClick = (e: { key: string }) => {
+    navigate(`/${e.key}`);
+  };
+
+  // 侧边栏点击（仅用于系统管理）：保持原有逻辑
   const handleSiderClick = (e: { key: string }) =>
     navigate(`/${currentTopNav}/${e.key}`);
+
   const handleUserMenuClick: MenuProps["onClick"] = (e) => {
-    if (e.key === "logout") navigate("/login");
+    if (e.key === "logout") {
+      navigate("/login");
+    } else if (e.key === "system-mgmt") {
+      navigate("/system-mgmt");
+    }
   };
+
+  // 计算顶部导航选中项：取路径去除了开头的 '/'
+  const selectedTopNavKey = location.pathname.substring(1) || "home";
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
@@ -172,6 +218,7 @@ const MainLayout: React.FC = () => {
             display: "flex",
             alignItems: "center",
             height: "100%",
+            transition: "max-width 0.3s",
           }}
         >
           <div
@@ -240,10 +287,11 @@ const MainLayout: React.FC = () => {
               justifyContent: "flex-end",
             }}
           >
+            {/* 注意：系统管理页面时，TopNav 应该不选中任何主要项，或者您可以添加逻辑 */}
             <Menu
               theme="dark"
               mode="horizontal"
-              selectedKeys={[currentTopNav]}
+              selectedKeys={[selectedTopNavKey]}
               items={TOP_NAV_ITEMS}
               onClick={handleTopNavClick}
               style={{
@@ -279,12 +327,13 @@ const MainLayout: React.FC = () => {
       <div
         style={{
           width: "100%",
-          maxWidth: 1280,
+          maxWidth: isSystemMgmt ? "100%" : 1280,
           margin: "0 auto",
           padding: 0,
           display: "flex",
           flexDirection: "column",
           flex: 1,
+          transition: "max-width 0.3s",
         }}
       >
         <Layout style={{ background: "transparent" }}>
@@ -304,11 +353,12 @@ const MainLayout: React.FC = () => {
                 boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
               }}
             >
+              {/* 这里的 selectedKeys 需要匹配 Sider 中的 key */}
               <Menu
                 mode="inline"
-                selectedKeys={[currentSiderKey]}
+                selectedKeys={[pathSnippets[pathSnippets.length - 1]]}
                 defaultOpenKeys={["data-mgmt", "tag-data"]}
-                items={SIDER_CONFIG[currentTopNav] || []}
+                items={currentSiderItems}
                 onClick={handleSiderClick}
                 style={{ height: "100%", borderRight: 0, paddingTop: 10 }}
               />
@@ -326,9 +376,8 @@ const MainLayout: React.FC = () => {
               style={{
                 padding: isSinglePage ? 0 : 24,
                 margin: 0,
-                // 优化：不再强制 height 和 overflow，允许窗口自然滚动
                 minHeight: 280,
-                background: isSinglePage ? "transparent" : "transparent",
+                background: "transparent",
               }}
             >
               <div
@@ -342,25 +391,12 @@ const MainLayout: React.FC = () => {
                 <Outlet />
               </div>
             </Content>
-
-            {/* <Footer
-              style={{
-                textAlign: "center",
-                background: "transparent",
-                color: "#999",
-                padding: "24px 0 48px 0",
-                fontSize: 12,
-              }}
-            >
-              区域产业链洞察平台 ©2026
-            </Footer> */}
           </Layout>
         </Layout>
       </div>
 
       <style>{`
         @media (max-width: 576px) { .hidden-xs { display: none !important; } }
-        /* 修复侧边栏触发器样式 */
         .ant-layout-sider-trigger { border-radius: 0 0 8px 8px; }
       `}</style>
     </Layout>

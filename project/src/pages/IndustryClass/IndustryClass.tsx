@@ -810,10 +810,10 @@ const IndustryClass: React.FC = () => {
                   )
                 }
                 style={{
-                  borderRadius: 24, // 胶囊按钮
+                  borderRadius: 24,
                   paddingLeft: 32,
                   paddingRight: 32,
-                  boxShadow: "0 4px 12px rgba(22, 119, 255, 0.3)", // 增加投影
+                  boxShadow: "0 4px 12px rgba(22, 119, 255, 0.3)",
                 }}
               >
                 查看画像
@@ -829,7 +829,7 @@ const IndustryClass: React.FC = () => {
     <Layout style={{ height: "calc(100vh - 64px)", background: "#fff" }}>
       {/* 侧边栏：增加背景色，视觉上分离 */}
       <Sider
-        width={400}
+        width={360}
         breakpoint="lg"
         collapsedWidth="0"
         style={{
