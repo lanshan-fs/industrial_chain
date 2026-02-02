@@ -705,7 +705,7 @@ const IndustryClass: React.FC = () => {
                     <BankOutlined
                       style={{ color: "#fa8c16", marginRight: 8, fontSize: 16 }}
                     />{" "}
-                    {item.registeredCapital}万人民币
+                    {item.registeredCapital}1 万人民币
                   </span>
                   <span style={{ display: "flex", alignItems: "center" }}>
                     <GlobalOutlined
@@ -867,7 +867,7 @@ const IndustryClass: React.FC = () => {
             onExpand={setExpandedKeys}
             onSelect={onSelect}
             titleRender={titleRender}
-            style={{ background: "transparent" }} // 透明背景，透出 Sider 的颜色
+            style={{ background: "transparent" }}
             height={screens.md ? 800 : 600}
           />
         )}
