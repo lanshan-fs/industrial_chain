@@ -20,9 +20,7 @@ import {
   Grid,
   Modal,
   Tooltip,
-  AutoComplete,
   Descriptions,
-  Input,
 } from "antd";
 import {
   SafetyOutlined,
@@ -30,7 +28,6 @@ import {
   TrophyOutlined,
   ExperimentOutlined,
   ThunderboltOutlined,
-  SearchOutlined,
   InfoCircleOutlined,
   AppstoreOutlined,
   RiseOutlined,
@@ -103,14 +100,6 @@ const DETAIL_RADAR_CONFIG = (data: any[]) => ({
   height: 300,
 });
 
-const MOCK_OPTIONS = [
-  { value: "数字医疗" },
-  { value: "人工智能" },
-  { value: "新能源汽车" },
-  { value: "工业互联网" },
-  { value: "生物医药" },
-];
-
 const IndustryProfile: React.FC = () => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
@@ -118,7 +107,7 @@ const IndustryProfile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   const [selectedIndustry, setSelectedIndustry] = useState("");
-  const [searchOptions, setSearchOptions] = useState<{ value: string }[]>([]);
+  // Removed local searchOptions state
 
   // 风险弹窗状态
   const [riskModalVisible, setRiskModalVisible] = useState(false);
@@ -193,15 +182,6 @@ const IndustryProfile: React.FC = () => {
     if (selectedIndustry) fetchProfile(selectedIndustry);
   }, [selectedIndustry]);
 
-  const handleSearch = (value: string) => {
-    if (value) setSelectedIndustry(value);
-  };
-  const handleSearchChange = (value: string) => {
-    if (!value) setSearchOptions([]);
-    else
-      setSearchOptions(MOCK_OPTIONS.filter((opt) => opt.value.includes(value)));
-  };
-
   const showCompanyDetail = (record: any, modelTitle: string) => {
     setCurrentDetail({
       name: record.name,
@@ -256,7 +236,6 @@ const IndustryProfile: React.FC = () => {
             {
               title: "企业名称",
               dataIndex: "name",
-              // width: 180,
               ellipsis: true,
               align: "center",
               render: (t) => <Text style={{ fontSize: 13 }}>{t}</Text>,
@@ -265,7 +244,6 @@ const IndustryProfile: React.FC = () => {
               title: "评分",
               dataIndex: "score",
               width: 120,
-              // ellipsis: true,
               align: "center",
               render: (s) => (
                 <Text strong style={{ color: s < 60 ? "red" : color }}>
@@ -277,7 +255,6 @@ const IndustryProfile: React.FC = () => {
               title: "评分详情",
               key: "action",
               width: 120,
-              // ellipsis: true,
               align: "center",
               render: (_, record) => (
                 <Button
@@ -357,32 +334,15 @@ const IndustryProfile: React.FC = () => {
         }}
       >
         <div style={{ maxWidth: 1600, margin: "0 auto", width: "100%" }}>
+          {/* 优化：移除了搜索框，保留右侧按钮并靠右对齐 */}
           <div
             style={{
               marginBottom: 24,
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent: "flex-end", // 靠右对齐
               alignItems: "center",
             }}
           >
-            <AutoComplete
-              options={searchOptions}
-              style={{ width: 500 }}
-              onSearch={handleSearchChange}
-              onSelect={handleSearch}
-              placeholder="请输入行业名称"
-            >
-              <Input.Search
-                size="large"
-                enterButton={
-                  <Button type="primary" icon={<SearchOutlined />}>
-                    行业画像搜索
-                  </Button>
-                }
-                onSearch={handleSearch}
-              />
-            </AutoComplete>
-
             {data && (
               <ReportActionButtons
                 reportTitle={`${data.basicInfo.industryName}行业分析报告`}
@@ -398,7 +358,7 @@ const IndustryProfile: React.FC = () => {
           ) : !data ? (
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="请搜索行业名称"
+              description="请从左侧选择行业，或使用顶部导航栏进行搜索"
               style={{ marginTop: 100 }}
             />
           ) : (

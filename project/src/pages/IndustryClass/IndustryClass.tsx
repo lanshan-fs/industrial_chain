@@ -18,7 +18,6 @@ import {
   Dropdown,
   Avatar,
 } from "antd";
-// 单独导入类型，解决 TS1484 错误
 import type { MenuProps } from "antd";
 import {
   DeploymentUnitOutlined,
@@ -47,7 +46,7 @@ const { Sider, Content } = Layout;
 const { Title, Text, Link } = Typography;
 const { useBreakpoint } = Grid;
 
-// --- 样式常量：增强色彩 ---
+// 增强色彩
 const STAGE_COLORS: Record<string, string> = {
   stage_上游: "#1677ff", // 科技蓝
   stage_中游: "#13c2c2", // 智造青
@@ -175,7 +174,6 @@ const IndustryClass: React.FC = () => {
   };
 
   // --- Event Handlers ---
-  // 修复：移除未使用的 info 参数
   const onSelect = (keys: React.Key[]) => {
     setSelectedKeys(keys);
     const key = keys[0] as string;
@@ -232,7 +230,6 @@ const IndustryClass: React.FC = () => {
     { key: "score_desc", label: "企业评分 (高->低)" },
   ];
 
-  // --- Helpers ---
   // 查找节点的父级 Stage 颜色
   const findParentStageKey = (nodeKey: string): string => {
     for (const root of treeData) {

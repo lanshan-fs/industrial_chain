@@ -15,16 +15,12 @@ import {
   Statistic,
   Empty,
   Divider,
-  Input,
   Progress,
   Timeline,
   Alert,
   Spin,
 } from "antd";
 import {
-  SearchOutlined,
-  // DownloadOutlined, // 移除：已封装在组件中
-  // ShareAltOutlined, // 移除：已封装在组件中
   GlobalOutlined,
   EnvironmentOutlined,
   BankOutlined,
@@ -35,7 +31,6 @@ import {
   ApartmentOutlined,
 } from "@ant-design/icons";
 import { Radar } from "@ant-design/plots";
-// import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
 // --- 引入新封装的组件 ---
@@ -341,26 +336,15 @@ const EnterpriseProfile: React.FC = () => {
           width: "100%",
         }}
       >
-        {/* 0. 顶部搜索 */}
+        {/* 0. 顶部工具栏 - 优化：移除了搜索框，保留右侧按钮 */}
         <div
           style={{
             marginBottom: 24,
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent: "flex-end", // 靠右对齐
             alignItems: "center",
           }}
         >
-          <Input.Search
-            placeholder="请输入企业名称"
-            enterButton={
-              <Button type="primary" icon={<SearchOutlined />}>
-                企业画像搜索
-              </Button>
-            }
-            size="large"
-            style={{ maxWidth: 500, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
-            onSearch={handleSearch}
-          />
           {/* 优化1：复用“下载”和“分享”组件，指定 targetId */}
           {profile && (
             <ReportActionButtons

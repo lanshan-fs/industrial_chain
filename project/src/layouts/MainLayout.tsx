@@ -9,6 +9,7 @@ import {
   theme,
   Input,
   Space,
+  ConfigProvider,
 } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -161,7 +162,6 @@ const MainLayout: React.FC = () => {
       key: "system-mgmt",
       label: "系统管理",
       icon: <SettingOutlined />,
-      // 加个分割线或标记，使其显眼
     },
     { type: "divider" },
     {
@@ -206,7 +206,8 @@ const MainLayout: React.FC = () => {
           top: 0,
           zIndex: 100,
           width: "100%",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          // 优化：去除阴影，视觉更扁平
+          boxShadow: "none",
         }}
       >
         <div
@@ -236,7 +237,7 @@ const MainLayout: React.FC = () => {
                 width: 32,
                 height: 32,
                 background: "linear-gradient(135deg, #1890ff 0%, #0050b3 100%)",
-                borderRadius: 6,
+                borderRadius: 4, // 稍微减小圆角，更硬朗
                 marginRight: 12,
                 display: "flex",
                 alignItems: "center",
@@ -252,8 +253,8 @@ const MainLayout: React.FC = () => {
               style={{
                 color: "white",
                 fontSize: "18px",
-                fontWeight: 600,
-                letterSpacing: 1,
+                fontWeight: 500,
+                // letterSpacing: 1,
               }}
             >
               朝阳区产业链洞察平台
@@ -264,18 +265,36 @@ const MainLayout: React.FC = () => {
             <div
               style={{
                 flex: 1,
-                maxWidth: 360,
-                marginRight: 36,
+                maxWidth: 320,
+                // marginRight: 28,
                 transition: "all 0.3s",
               }}
             >
-              <Search
-                placeholder="搜索企业、行业..."
-                allowClear
-                enterButton
-                onSearch={() => {}}
-                style={{ verticalAlign: "middle" }}
-              />
+              <ConfigProvider
+                theme={{
+                  components: {
+                    Input: {
+                      borderRadius: 0,
+                      borderRadiusLG: 0,
+                    },
+                    Button: {
+                      borderRadius: 0,
+                    },
+                  },
+                }}
+              >
+                <Search
+                  placeholder="搜索企业、行业..."
+                  allowClear
+                  enterButton="搜索"
+                  onSearch={(value) => {
+                    // 这里预留搜索逻辑，未来可以导航到搜索结果页
+                    console.log("Global search:", value);
+                  }}
+                  style={{ verticalAlign: "middle" }}
+                  size="middle"
+                />
+              </ConfigProvider>
             </div>
           )}
 
@@ -287,7 +306,6 @@ const MainLayout: React.FC = () => {
               justifyContent: "flex-end",
             }}
           >
-            {/* 注意：系统管理页面时，TopNav 应该不选中任何主要项，或者您可以添加逻辑 */}
             <Menu
               theme="dark"
               mode="horizontal"
@@ -353,7 +371,6 @@ const MainLayout: React.FC = () => {
                 boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
               }}
             >
-              {/* 这里的 selectedKeys 需要匹配 Sider 中的 key */}
               <Menu
                 mode="inline"
                 selectedKeys={[pathSnippets[pathSnippets.length - 1]]}
