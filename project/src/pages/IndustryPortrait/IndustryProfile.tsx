@@ -4,7 +4,6 @@ import {
   Button,
   Tree,
   Typography,
-  Card,
   Row,
   Col,
   Statistic,
@@ -40,6 +39,7 @@ import {
 } from "@ant-design/icons";
 import { Radar } from "@ant-design/plots";
 import type { DataNode } from "antd/es/tree";
+import type { ColumnsType } from "antd/es/table";
 
 import ReportActionButtons from "../../components/ReportActionButtons";
 
@@ -53,12 +53,13 @@ const COLORS = {
   green: "#52c41a",
   riskHigh: "#ff4d4f",
   riskLow: "#52c41a",
-  bg: "#f0f2f5",
+  bg: "#fff", // 背景改为纯白，配合边框设计
+  borderColor: "#f0f0f0", // 统一边框颜色
 };
 
-const CARD_HEAD_STYLE = { minHeight: 48, borderBottom: "1px solid #f0f0f0" };
+const BORDER_STYLE = `1px solid ${COLORS.borderColor}`;
 
-// 优化后的主雷达图配置：支持时间维度层叠
+// 优化后的主雷达图配置
 const MAIN_RADAR_CONFIG = (data: any[]) => ({
   data,
   xField: "item",
@@ -84,7 +85,6 @@ const MAIN_RADAR_CONFIG = (data: any[]) => ({
   height: 320,
 });
 
-// 详情弹窗中的小雷达配置
 const DETAIL_RADAR_CONFIG = (data: any[]) => ({
   data,
   xField: "name",
@@ -107,13 +107,10 @@ const IndustryProfile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   const [selectedIndustry, setSelectedIndustry] = useState("");
-  // Removed local searchOptions state
 
-  // 风险弹窗状态
   const [riskModalVisible, setRiskModalVisible] = useState(false);
   const [riskModalType, setRiskModalType] = useState<"high" | "low">("high");
 
-  // 详情弹窗状态
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [currentDetail, setCurrentDetail] = useState<any>(null);
 
@@ -154,11 +151,12 @@ const IndustryProfile: React.FC = () => {
       );
       const resData = await response.json();
       if (resData.success && resData.data) {
+        // Mock data enhancement if needed
         const enrichedData = {
           ...resData.data,
           basicInfo: {
             ...resData.data.basicInfo,
-            department: "XXXXXXXX",
+            department: "朝阳区科学技术和信息化局",
             policyCount: 12,
             growthRate: "18.5%",
             chainLink: "上游 - 中游 - 下游",
@@ -192,93 +190,101 @@ const IndustryProfile: React.FC = () => {
     setDetailModalVisible(true);
   };
 
+  // 渲染评分模型子卡片（包含排序表格）
   const renderSubModelCard = (
     title: string,
     icon: React.ReactNode,
     modelData: any,
     color: string,
-  ) => (
-    <Card
-      title={
-        <Space>
-          {icon}
-          {title}
-        </Space>
-      }
-      size="small"
-      bordered={false}
-      headStyle={CARD_HEAD_STYLE}
-      bodyStyle={{ padding: 0 }}
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}
-    >
+    hasRightBorder: boolean = true,
+  ) => {
+    const columns: ColumnsType<any> = [
+      {
+        title: "企业名称",
+        dataIndex: "name",
+        ellipsis: true,
+        align: "left",
+        render: (t) => <Text style={{ fontSize: 13 }}>{t}</Text>,
+      },
+      {
+        title: "评分",
+        dataIndex: "score",
+        width: 100,
+        align: "center",
+        sorter: (a, b) => a.score - b.score, // 增加排序功能
+        showSorterTooltip: { title: "点击排序" },
+        render: (s) => (
+          <Text strong style={{ color: s < 60 ? "red" : color }}>
+            {s}
+          </Text>
+        ),
+      },
+      {
+        title: "详情",
+        key: "action",
+        width: 70,
+        align: "center",
+        render: (_, record) => (
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => showCompanyDetail(record, title)}
+          />
+        ),
+      },
+    ];
+
+    return (
       <div
         style={{
-          padding: "16px 24px",
-          background: `${color}08`,
-          borderBottom: "1px solid #f0f0f0",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          borderRight: hasRightBorder && !isMobile ? BORDER_STYLE : "none",
         }}
       >
-        <Statistic
-          title="行业平均得分"
-          value={modelData.score}
-          valueStyle={{ color: color, fontWeight: "bold" }}
-          suffix="分"
-        />
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: BORDER_STYLE,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: "#fafafa",
+          }}
+        >
+          <Space>
+            {icon}
+            <Text strong>{title}</Text>
+          </Space>
+          <Statistic
+            value={modelData.score}
+            valueStyle={{ color: color, fontWeight: "bold", fontSize: 18 }}
+            suffix={<span style={{ fontSize: 12, color: "#999" }}>分(均)</span>}
+          />
+        </div>
+        <div style={{ flex: 1, padding: 0 }}>
+          <Table
+            dataSource={modelData.companies}
+            rowKey="name"
+            pagination={false}
+            size="small"
+            columns={columns}
+            scroll={{ y: 250 }} // 固定高度
+            bordered={false}
+          />
+        </div>
       </div>
-      <div style={{ flex: 1, overflow: "hidden" }}>
-        <Table
-          dataSource={modelData.companies}
-          rowKey="name"
-          pagination={false}
-          size="small"
-          scroll={{ y: 200 }}
-          columns={[
-            {
-              title: "企业名称",
-              dataIndex: "name",
-              ellipsis: true,
-              align: "center",
-              render: (t) => <Text style={{ fontSize: 13 }}>{t}</Text>,
-            },
-            {
-              title: "评分",
-              dataIndex: "score",
-              width: 120,
-              align: "center",
-              render: (s) => (
-                <Text strong style={{ color: s < 60 ? "red" : color }}>
-                  {s}
-                </Text>
-              ),
-            },
-            {
-              title: "评分详情",
-              key: "action",
-              width: 120,
-              align: "center",
-              render: (_, record) => (
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<EyeOutlined />}
-                  onClick={() => showCompanyDetail(record, title)}
-                >
-                  详情
-                </Button>
-              ),
-            },
-          ]}
-        />
-      </div>
-    </Card>
-  );
+    );
+  };
 
   const renderSider = () => (
     <Sider
       width={240}
       theme="light"
       style={{
-        borderRight: "1px solid #f0f0f0",
+        borderRight: BORDER_STYLE,
         height: "calc(100vh - 64px)",
         position: isMobile ? "absolute" : "static",
         zIndex: 10,
@@ -292,7 +298,7 @@ const IndustryProfile: React.FC = () => {
         <div
           style={{
             padding: "20px 16px 12px",
-            borderBottom: "1px solid #f0f0f0",
+            borderBottom: BORDER_STYLE,
           }}
         >
           <Text strong style={{ fontSize: 16 }}>
@@ -323,24 +329,26 @@ const IndustryProfile: React.FC = () => {
   );
 
   return (
-    <Layout style={{ minHeight: "85vh", background: COLORS.bg }}>
+    <Layout style={{ minHeight: "85vh", background: "#fff" }}>
       {renderSider()}
 
       <Content
         style={{
-          padding: "24px",
+          padding: 0, // 移除Content内边距，实现全宽设计
           overflowY: "auto",
           height: "calc(100vh - 64px)",
         }}
       >
-        <div style={{ maxWidth: 1600, margin: "0 auto", width: "100%" }}>
-          {/* 优化：移除了搜索框，保留右侧按钮并靠右对齐 */}
+        <div style={{ width: "100%" }}>
+          {/* 顶部工具栏 */}
           <div
             style={{
-              marginBottom: 24,
+              padding: "16px 24px",
+              borderBottom: BORDER_STYLE,
               display: "flex",
-              justifyContent: "flex-end", // 靠右对齐
+              justifyContent: "flex-end",
               alignItems: "center",
+              background: "#fff",
             }}
           >
             {data && (
@@ -362,190 +370,203 @@ const IndustryProfile: React.FC = () => {
               style={{ marginTop: 100 }}
             />
           ) : (
-            <div id="industry-report-content">
-              <Space direction="vertical" size={24} style={{ width: "100%" }}>
-                {/* 行业概览 */}
-                <Card bordered={false} bodyStyle={{ padding: 24 }}>
-                  <Row gutter={24}>
-                    <Col xs={24} lg={15}>
-                      <div style={{ marginBottom: 24 }}>
-                        <Space align="center" style={{ marginBottom: 12 }}>
-                          <Title
-                            level={2}
-                            style={{ margin: 0, color: COLORS.primary }}
-                          >
-                            {data.basicInfo.industryName}
-                          </Title>
-                          <Tag color="geekblue">朝阳区重点行业</Tag>{" "}
-                          <Tag color="success">AAA级</Tag>
-                        </Space>
-                        <Descriptions
-                          column={2}
-                          size="small"
-                          labelStyle={{ color: "#999", width: 100 }}
+            <div
+              id="industry-report-content"
+              style={{ borderBottom: BORDER_STYLE }}
+            >
+              {/* 第一行：行业概览 + 雷达图 
+                   使用 Grid 布局模拟“紧贴”效果
+                */}
+              <Row gutter={0} style={{ borderBottom: BORDER_STYLE }}>
+                <Col
+                  xs={24}
+                  lg={15}
+                  style={{ borderRight: !isMobile ? BORDER_STYLE : "none" }}
+                >
+                  <div style={{ padding: 24 }}>
+                    <div style={{ marginBottom: 24 }}>
+                      <Space align="center" style={{ marginBottom: 12 }}>
+                        <Title
+                          level={2}
+                          style={{ margin: 0, color: COLORS.primary }}
                         >
-                          <Descriptions.Item label="综合评分">
-                            <span
-                              style={{
-                                fontSize: 24,
-                                fontWeight: "bold",
-                                color: COLORS.primary,
-                              }}
-                            >
-                              {data.totalScore}
-                            </span>
-                          </Descriptions.Item>
-                          <Descriptions.Item label="同比上月增长">
-                            <span style={{ color: COLORS.riskHigh }}>
-                              <RiseOutlined /> {data.basicInfo.growthRate}
-                            </span>
-                          </Descriptions.Item>
-                          <Descriptions.Item label="主管部门">
-                            {data.basicInfo.department}
-                          </Descriptions.Item>
-                          <Descriptions.Item label="相关政策">
-                            {data.basicInfo.policyCount} 项
-                          </Descriptions.Item>
-                          <Descriptions.Item label="产业链环节" span={2}>
-                            <Space split={<Divider type="vertical" />}>
-                              {data.basicInfo.chainLink
-                                .split(" - ")
-                                .map((l: string, i: number) => (
-                                  <Text key={i} strong={i === 1}>
-                                    {l}
-                                  </Text>
-                                ))}
-                            </Space>
-                          </Descriptions.Item>
-                          <Descriptions.Item label="行业描述" span={2}>
-                            <Text
-                              type="secondary"
-                              style={{ maxWidth: 600 }}
-                              ellipsis={{ tooltip: true }}
-                            >
-                              {data.basicInfo.description}
-                            </Text>
-                          </Descriptions.Item>
-                        </Descriptions>
-                      </div>
-                      <div
-                        style={{
-                          background: "#fafafa",
-                          padding: "20px",
-                          borderRadius: 6,
-                          display: "flex",
-                          justifyContent: "space-around",
-                        }}
+                          {data.basicInfo.industryName}
+                        </Title>
+                        <Tag color="geekblue">朝阳区重点行业</Tag>{" "}
+                        <Tag color="success">AAA级</Tag>
+                      </Space>
+                      <Descriptions
+                        column={2}
+                        size="small"
+                        labelStyle={{ color: "#999", width: 100 }}
                       >
-                        <Statistic
-                          title="收录企业"
-                          value={data.basicInfo.totalCompanies}
-                          suffix="家"
-                          valueStyle={{ fontSize: 22, fontWeight: 500 }}
-                          prefix={
-                            <BankOutlined style={{ color: COLORS.primary }} />
-                          }
-                        />
-                        <Divider
-                          type="vertical"
-                          style={{ height: 40, top: 10 }}
-                        />
-                        <Statistic
-                          title="资本规模"
-                          value={data.basicInfo.totalCapital}
-                          suffix="亿元"
-                          valueStyle={{ fontSize: 22, fontWeight: 500 }}
-                          prefix={
-                            <ContainerOutlined style={{ color: COLORS.gold }} />
-                          }
-                        />
-                        <Divider
-                          type="vertical"
-                          style={{ height: 40, top: 10 }}
-                        />
-                        <Statistic
-                          title="主要风险"
-                          value={data.risks.high.length}
-                          suffix="项"
-                          valueStyle={{
-                            fontSize: 22,
-                            fontWeight: 500,
-                            color: COLORS.riskHigh,
-                          }}
-                          prefix={<WarningOutlined />}
-                        />
-                      </div>
-                    </Col>
-                    <Col xs={24} lg={9}>
-                      <div
-                        style={{
-                          height: "100%",
-                          display: "flex",
-                          flexDirection: "column",
-                          justifyContent: "center",
-                          minHeight: 320,
-                        }}
-                      >
-                        <div style={{ textAlign: "center", marginBottom: 8 }}>
-                          <Text strong style={{ fontSize: 16 }}>
-                            {data.basicInfo.industryName}行业 多维能力雷达图
+                        <Descriptions.Item label="综合评分">
+                          <span
+                            style={{
+                              fontSize: 24,
+                              fontWeight: "bold",
+                              color: COLORS.primary,
+                            }}
+                          >
+                            {data.totalScore}
+                          </span>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="同比上月">
+                          <span style={{ color: COLORS.riskHigh }}>
+                            <RiseOutlined /> {data.basicInfo.growthRate}
+                          </span>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="主管部门">
+                          {data.basicInfo.department}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="相关政策">
+                          {data.basicInfo.policyCount} 项
+                        </Descriptions.Item>
+                        <Descriptions.Item label="产业链环节" span={2}>
+                          <Space split={<Divider type="vertical" />}>
+                            {data.basicInfo.chainLink
+                              .split(" - ")
+                              .map((l: string, i: number) => (
+                                <Text key={i} strong={i === 1}>
+                                  {l}
+                                </Text>
+                              ))}
+                          </Space>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="行业描述" span={2}>
+                          <Text
+                            type="secondary"
+                            style={{ maxWidth: 600, display: "block" }}
+                            ellipsis={{ tooltip: true }}
+                          >
+                            {data.basicInfo.description}
                           </Text>
-                          <div style={{ fontSize: 12, color: "#999" }}>
-                            （近6个月动态评估）
-                          </div>
-                        </div>
-                        <Radar {...MAIN_RADAR_CONFIG(data.overallRadar)} />
-                      </div>
-                    </Col>
-                  </Row>
-                </Card>
+                        </Descriptions.Item>
+                      </Descriptions>
+                    </div>
 
-                {/* 评分模型 */}
-                <Row gutter={20} align="stretch">
-                  <Col xs={24} md={8}>
-                    {renderSubModelCard(
-                      "行业基础评分",
-                      <TrophyOutlined style={{ color: COLORS.gold }} />,
-                      data.models.basic,
-                      COLORS.gold,
-                    )}
-                  </Col>
-                  <Col xs={24} md={8}>
-                    {renderSubModelCard(
-                      "科技属性评分",
-                      <ExperimentOutlined style={{ color: COLORS.primary }} />,
-                      data.models.tech,
-                      COLORS.primary,
-                    )}
-                  </Col>
-                  <Col xs={24} md={8}>
-                    {renderSubModelCard(
-                      "行业能力评分",
-                      <ThunderboltOutlined style={{ color: COLORS.green }} />,
-                      data.models.ability,
-                      COLORS.green,
-                    )}
-                  </Col>
-                </Row>
-
-                {/* 薄弱环节 & 风险 */}
-                <Row gutter={24}>
-                  <Col span={12}>
-                    <Card
-                      title={
-                        <Space>
-                          <FallOutlined /> 薄弱环节识别
-                        </Space>
-                      }
-                      size="small"
-                      bordered={false}
-                      headStyle={CARD_HEAD_STYLE}
-                      style={{ height: "100%" }}
+                    {/* 统计数据栏 */}
+                    <div
+                      style={{
+                        background: "#fafafa",
+                        padding: "16px 20px",
+                        border: BORDER_STYLE,
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
                     >
+                      <Statistic
+                        title="收录企业"
+                        value={data.basicInfo.totalCompanies}
+                        suffix="家"
+                        valueStyle={{ fontSize: 20, fontWeight: 500 }}
+                        prefix={
+                          <BankOutlined style={{ color: COLORS.primary }} />
+                        }
+                      />
+                      <Divider type="vertical" style={{ height: 40, top: 5 }} />
+                      <Statistic
+                        title="资本规模"
+                        value={data.basicInfo.totalCapital}
+                        suffix="亿元"
+                        valueStyle={{ fontSize: 20, fontWeight: 500 }}
+                        prefix={
+                          <ContainerOutlined style={{ color: COLORS.gold }} />
+                        }
+                      />
+                      <Divider type="vertical" style={{ height: 40, top: 5 }} />
+                      <Statistic
+                        title="主要风险"
+                        value={data.risks.high.length}
+                        suffix="项"
+                        valueStyle={{
+                          fontSize: 20,
+                          fontWeight: 500,
+                          color: COLORS.riskHigh,
+                        }}
+                        prefix={<WarningOutlined />}
+                      />
+                    </div>
+                  </div>
+                </Col>
+                <Col xs={24} lg={9}>
+                  <div
+                    style={{
+                      padding: 24,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: "100%",
+                    }}
+                  >
+                    <div style={{ textAlign: "center", marginBottom: 12 }}>
+                      <Text strong style={{ fontSize: 16 }}>
+                        多维能力雷达图
+                      </Text>
+                      <div style={{ fontSize: 12, color: "#999" }}>
+                        （近6个月动态评估）
+                      </div>
+                    </div>
+                    <Radar {...MAIN_RADAR_CONFIG(data.overallRadar)} />
+                  </div>
+                </Col>
+              </Row>
+
+              {/* 第二行：三个评分模型 (无Gutter，紧贴) */}
+              <Row gutter={0} style={{ borderBottom: BORDER_STYLE }}>
+                <Col xs={24} md={8}>
+                  {renderSubModelCard(
+                    "行业基础评分",
+                    <TrophyOutlined style={{ color: COLORS.gold }} />,
+                    data.models.basic,
+                    COLORS.gold,
+                  )}
+                </Col>
+                <Col xs={24} md={8}>
+                  {renderSubModelCard(
+                    "科技属性评分",
+                    <ExperimentOutlined style={{ color: COLORS.primary }} />,
+                    data.models.tech,
+                    COLORS.primary,
+                  )}
+                </Col>
+                <Col xs={24} md={8}>
+                  {renderSubModelCard(
+                    "行业能力评分",
+                    <ThunderboltOutlined style={{ color: COLORS.green }} />,
+                    data.models.ability,
+                    COLORS.green,
+                    false, // 最后一个不需要右边框
+                  )}
+                </Col>
+              </Row>
+
+              {/* 第三行：薄弱环节 & 风险评估 */}
+              <Row gutter={0} style={{ borderBottom: BORDER_STYLE }}>
+                <Col
+                  span={24}
+                  lg={12}
+                  style={{ borderRight: !isMobile ? BORDER_STYLE : "none" }}
+                >
+                  <div style={{ padding: 0 }}>
+                    <div
+                      style={{
+                        padding: "12px 24px",
+                        borderBottom: BORDER_STYLE,
+                        backgroundColor: "#fafafa",
+                      }}
+                    >
+                      <Space>
+                        <FallOutlined /> <Text strong>薄弱环节识别</Text>
+                      </Space>
+                    </div>
+                    <div style={{ padding: 24, minHeight: 250 }}>
                       <List
                         dataSource={data.weakLinks}
+                        split={false}
                         renderItem={(item: any) => (
-                          <List.Item>
+                          <List.Item style={{ padding: "8px 0" }}>
                             <Alert
                               message={<Text strong>{item.name}</Text>}
                               description={
@@ -562,59 +583,73 @@ const IndustryProfile: React.FC = () => {
                               }
                               type={item.level === "高危" ? "error" : "warning"}
                               showIcon
-                              style={{ width: "100%" }}
+                              style={{
+                                width: "100%",
+                                border: "none",
+                                background:
+                                  item.level === "高危" ? "#fff1f0" : "#fffbe6",
+                              }}
                             />
                           </List.Item>
                         )}
                       />
-                    </Card>
-                  </Col>
-                  <Col span={12}>
-                    <Card
-                      title={
-                        <Space>
-                          <SafetyOutlined /> 风险评估监控
-                        </Space>
-                      }
-                      size="small"
-                      bordered={false}
-                      headStyle={CARD_HEAD_STYLE}
-                      style={{ height: "100%" }}
-                      extra={
-                        <Space>
-                          <Tooltip title="查看高风险企业名单">
-                            <Button
-                              type="text"
-                              size="small"
-                              icon={
-                                <WarningOutlined
-                                  style={{ color: COLORS.riskHigh }}
-                                />
-                              }
-                              onClick={() => {
-                                setRiskModalType("high");
-                                setRiskModalVisible(true);
-                              }}
-                            />
-                          </Tooltip>
-                          <Tooltip title="查看优质企业名单">
-                            <Button
-                              type="text"
-                              size="small"
-                              icon={
-                                <CheckCircleOutlined
-                                  style={{ color: COLORS.green }}
-                                />
-                              }
-                              onClick={() => {
-                                setRiskModalType("low");
-                                setRiskModalVisible(true);
-                              }}
-                            />
-                          </Tooltip>
-                        </Space>
-                      }
+                    </div>
+                  </div>
+                </Col>
+                <Col span={24} lg={12}>
+                  <div
+                    style={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: "12px 24px",
+                        borderBottom: BORDER_STYLE,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        backgroundColor: "#fafafa",
+                      }}
                     >
+                      <Space>
+                        <SafetyOutlined /> <Text strong>风险评估监控</Text>
+                      </Space>
+                      <Space>
+                        <Tooltip title="查看高风险企业名单">
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={
+                              <WarningOutlined
+                                style={{ color: COLORS.riskHigh }}
+                              />
+                            }
+                            onClick={() => {
+                              setRiskModalType("high");
+                              setRiskModalVisible(true);
+                            }}
+                          />
+                        </Tooltip>
+                        <Tooltip title="查看优质企业名单">
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={
+                              <CheckCircleOutlined
+                                style={{ color: COLORS.green }}
+                              />
+                            }
+                            onClick={() => {
+                              setRiskModalType("low");
+                              setRiskModalVisible(true);
+                            }}
+                          />
+                        </Tooltip>
+                      </Space>
+                    </div>
+                    <div style={{ padding: "0 24px", flex: 1 }}>
                       <List
                         size="small"
                         dataSource={data.risks.high}
@@ -629,7 +664,7 @@ const IndustryProfile: React.FC = () => {
                                   boxShadow: "0 0 0 1px #d9d9d9 inset",
                                 }}
                               />
-                              <Text style={{ width: 100 }} ellipsis>
+                              <Text style={{ width: 120 }} ellipsis>
                                 {item.name}
                               </Text>
                             </Space>
@@ -644,7 +679,7 @@ const IndustryProfile: React.FC = () => {
                           </List.Item>
                         )}
                       />
-                      <div style={{ textAlign: "center", marginTop: 8 }}>
+                      <div style={{ textAlign: "center", padding: "12px 0" }}>
                         <Button
                           type="link"
                           size="small"
@@ -656,103 +691,109 @@ const IndustryProfile: React.FC = () => {
                           查看更多高风险企业 <DoubleRightOutlined />
                         </Button>
                       </div>
-                    </Card>
-                  </Col>
-                </Row>
+                    </div>
+                  </div>
+                </Col>
+              </Row>
 
-                {/* 重点企业 */}
-                <Card
-                  title={
-                    <Space>
-                      <AppstoreOutlined /> 行业重点企业一览
-                    </Space>
-                  }
-                  size="small"
-                  bordered={false}
-                  headStyle={CARD_HEAD_STYLE}
+              {/* 第四行：重点企业列表 */}
+              <div style={{ padding: 0 }}>
+                <div
+                  style={{
+                    padding: "12px 24px",
+                    borderBottom: BORDER_STYLE,
+                    backgroundColor: "#fafafa",
+                  }}
                 >
-                  <Table
-                    dataSource={data.topCompanies}
-                    size="middle"
-                    pagination={false}
-                    rowKey="name"
-                    columns={[
-                      {
-                        title: "排名",
-                        width: 80,
-                        align: "center",
-                        render: (_, __, i) => (
-                          <Badge
-                            count={i + 1}
-                            style={{
-                              backgroundColor:
-                                i < 3 ? COLORS.primary : "#d9d9d9",
-                            }}
-                          />
-                        ),
-                      },
-                      {
-                        title: "企业名称",
-                        dataIndex: "name",
-                        render: (t) => <a style={{ fontWeight: 500 }}>{t}</a>,
-                      },
-                      {
-                        title: "注册资本",
-                        dataIndex: "capital",
-                        align: "right",
-                        render: (t) => (
-                          <Text>{parseFloat(t).toLocaleString()} 万</Text>
-                        ),
-                      },
-                      {
-                        title: "综合评分",
-                        dataIndex: "score",
-                        align: "center",
-                        render: (s) => (
-                          <Text
-                            strong
-                            style={{ color: COLORS.primary, fontSize: 16 }}
-                          >
-                            {s}
-                          </Text>
-                        ),
-                      },
-                      {
-                        title: "企业标签",
-                        dataIndex: "tags",
-                        render: (tags) => (
-                          <Space size={4}>
-                            {tags.map((t: string) => (
-                              <Tag key={t} color="blue">
-                                {t}
-                              </Tag>
-                            ))}
-                          </Space>
-                        ),
-                      },
-                      {
-                        title: "操作",
-                        width: 100,
-                        align: "center",
-                        render: () => <a>查看画像</a>,
-                      },
-                    ]}
-                  />
-                </Card>
-              </Space>
-
-              <div
-                style={{
-                  textAlign: "center",
-                  marginTop: 32,
-                  color: "#ccc",
-                  fontSize: 12,
-                }}
-              >
-                - 朝阳区产业链洞察平台生成 -
+                  <Space>
+                    <AppstoreOutlined /> <Text strong>行业重点企业一览</Text>
+                  </Space>
+                </div>
+                <Table
+                  dataSource={data.topCompanies}
+                  size="middle"
+                  pagination={false}
+                  rowKey="name"
+                  bordered={false}
+                  style={{ margin: 0 }}
+                  columns={[
+                    {
+                      title: "排名",
+                      width: 80,
+                      align: "center",
+                      render: (_, __, i) => (
+                        <Badge
+                          count={i + 1}
+                          style={{
+                            backgroundColor: i < 3 ? COLORS.primary : "#d9d9d9",
+                          }}
+                        />
+                      ),
+                    },
+                    {
+                      title: "企业名称",
+                      dataIndex: "name",
+                      render: (t) => <a style={{ fontWeight: 500 }}>{t}</a>,
+                    },
+                    {
+                      title: "注册资本",
+                      dataIndex: "capital",
+                      align: "right",
+                      render: (t) => (
+                        <Text>{parseFloat(t).toLocaleString()} 万</Text>
+                      ),
+                    },
+                    {
+                      title: "综合评分",
+                      dataIndex: "score",
+                      align: "center",
+                      // sorter: (a, b) => a.score - b.score, // 全局列表也加上排序
+                      render: (s) => (
+                        <Text
+                          strong
+                          style={{ color: COLORS.primary, fontSize: 16 }}
+                        >
+                          {s}
+                        </Text>
+                      ),
+                    },
+                    {
+                      title: "企业标签",
+                      dataIndex: "tags",
+                      render: (tags) => (
+                        <Space size={4}>
+                          {tags.map((t: string) => (
+                            <Tag key={t} color="blue">
+                              {t}
+                            </Tag>
+                          ))}
+                        </Space>
+                      ),
+                    },
+                    {
+                      title: "操作",
+                      width: 100,
+                      align: "center",
+                      render: () => <a>查看画像</a>,
+                    },
+                  ]}
+                />
               </div>
             </div>
           )}
+
+          {/* 底部版权 */}
+          <div
+            style={{
+              textAlign: "center",
+              padding: "24px 0",
+              color: "#ccc",
+              fontSize: 12,
+              background: "#f5f5f5", // 底部稍微区分一下背景
+            }}
+          >
+            - 朝阳区产业链洞察平台生成 -
+          </div>
 
           {/* 详情弹窗 */}
           <Modal
