@@ -69,7 +69,7 @@ const TOP_NAV_ITEMS: MenuProps["items"] = [
   },
 ];
 
-// 优化：仅保留系统管理的侧边栏配置
+// 系统管理的侧边栏配置
 const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
   "system-mgmt": [
     {
@@ -144,25 +144,24 @@ const MainLayout: React.FC = () => {
   const currentTopNav = pathSnippets[0] || "home";
 
   const isSystemMgmt = currentTopNav === "system-mgmt";
+  const isIndustryDiag = currentTopNav === "industry-diag";
 
-  // 优化：仅系统管理模块显示侧边栏
+  // 定义哪些页面需要全宽
+  const isFullWidthPage = isSystemMgmt || isIndustryDiag;
+
+  // 定义哪些页面是 App 模式 (无全局滚动条，高度固定为 100vh)
+  const isAppMode = isIndustryDiag;
+
   const currentSiderItems = isSystemMgmt
     ? SIDER_CONFIG["system-mgmt"] || []
     : [];
   const hasSider = currentSiderItems.length > 0;
-
   const isHomePage = currentTopNav === "home";
-  // 系统管理页面通常不是 SinglePage (因为它有 Sider)，其他页面大多变成了 SinglePage (无 Sider)
   const isSinglePage = !hasSider;
 
-  // 优化：用户下拉菜单，包含系统管理入口
   const userDropdownItems: MenuProps["items"] = [
     { key: "center", label: "个人中心", icon: <UserOutlined /> },
-    {
-      key: "system-mgmt",
-      label: "系统管理",
-      icon: <SettingOutlined />,
-    },
+    { key: "system-mgmt", label: "系统管理", icon: <SettingOutlined /> },
     { type: "divider" },
     {
       key: "logout",
@@ -176,28 +175,27 @@ const MainLayout: React.FC = () => {
     title: BREADCRUMB_MAP[snippet] || snippet,
   }));
 
-  // 顶部导航点击
-  const handleTopNavClick = (e: { key: string }) => {
-    navigate(`/${e.key}`);
-  };
-
-  // 侧边栏点击（仅用于系统管理）：保持原有逻辑
+  const handleTopNavClick = (e: { key: string }) => navigate(`/${e.key}`);
   const handleSiderClick = (e: { key: string }) =>
     navigate(`/${currentTopNav}/${e.key}`);
 
   const handleUserMenuClick: MenuProps["onClick"] = (e) => {
-    if (e.key === "logout") {
-      navigate("/login");
-    } else if (e.key === "system-mgmt") {
-      navigate("/system-mgmt");
-    }
+    if (e.key === "logout") navigate("/login");
+    else if (e.key === "system-mgmt") navigate("/system-mgmt");
   };
 
-  // 计算顶部导航选中项：取路径去除了开头的 '/'
   const selectedTopNavKey = location.pathname.substring(1) || "home";
 
   return (
-    <Layout style={{ minHeight: "100vh", background: "#f0f2f5" }}>
+    <Layout
+      style={{
+        // 关键修复：App模式下强制锁定视口高度，禁止 body 滚动
+        height: isAppMode ? "100vh" : "auto",
+        minHeight: "100vh",
+        overflow: isAppMode ? "hidden" : "visible",
+        background: "#f0f2f5",
+      }}
+    >
       <Header
         style={{
           padding: 0,
@@ -206,8 +204,9 @@ const MainLayout: React.FC = () => {
           top: 0,
           zIndex: 100,
           width: "100%",
-          // 优化：去除阴影，视觉更扁平
           boxShadow: "none",
+          height: 64,
+          flex: "0 0 auto", // 防止 Header 被压缩
         }}
       >
         <div
@@ -219,7 +218,6 @@ const MainLayout: React.FC = () => {
             display: "flex",
             alignItems: "center",
             height: "100%",
-            transition: "max-width 0.3s",
           }}
         >
           <div
@@ -237,7 +235,7 @@ const MainLayout: React.FC = () => {
                 width: 32,
                 height: 32,
                 background: "linear-gradient(135deg, #1890ff 0%, #0050b3 100%)",
-                borderRadius: 4, // 稍微减小圆角，更硬朗
+                borderRadius: 4,
                 marginRight: 12,
                 display: "flex",
                 alignItems: "center",
@@ -249,37 +247,18 @@ const MainLayout: React.FC = () => {
             >
               P
             </div>
-            <span
-              style={{
-                color: "white",
-                fontSize: "18px",
-                fontWeight: 500,
-                // letterSpacing: 1,
-              }}
-            >
+            <span style={{ color: "white", fontSize: "18px", fontWeight: 500 }}>
               朝阳区产业链洞察平台
             </span>
           </div>
 
           {!isHomePage && (
-            <div
-              style={{
-                flex: 1,
-                maxWidth: 320,
-                // marginRight: 28,
-                transition: "all 0.3s",
-              }}
-            >
+            <div style={{ flex: 1, maxWidth: 320, transition: "all 0.3s" }}>
               <ConfigProvider
                 theme={{
                   components: {
-                    Input: {
-                      borderRadius: 0,
-                      borderRadiusLG: 0,
-                    },
-                    Button: {
-                      borderRadius: 0,
-                    },
+                    Input: { borderRadius: 0 },
+                    Button: { borderRadius: 0 },
                   },
                 }}
               >
@@ -287,10 +266,7 @@ const MainLayout: React.FC = () => {
                   placeholder="搜索企业、行业..."
                   allowClear
                   enterButton="搜索"
-                  onSearch={(value) => {
-                    // 这里预留搜索逻辑，未来可以导航到搜索结果页
-                    console.log("Global search:", value);
-                  }}
+                  onSearch={(value) => console.log("Global search:", value)}
                   style={{ verticalAlign: "middle" }}
                   size="middle"
                 />
@@ -342,19 +318,24 @@ const MainLayout: React.FC = () => {
         </div>
       </Header>
 
+      {/* 主内容 Wrapper */}
       <div
         style={{
           width: "100%",
-          maxWidth: isSystemMgmt ? "100%" : 1280,
+          maxWidth: isFullWidthPage ? "100%" : 1280,
           margin: "0 auto",
           padding: 0,
           display: "flex",
           flexDirection: "column",
+          // 关键修复：使用 flex: 1 占据剩余空间，而不是 calc
           flex: 1,
           transition: "max-width 0.3s",
+          // 确保 Wrapper 自身也是 100% 高度 (相对于父级 Flex 容器)
+          height: isAppMode ? "100%" : "auto",
+          overflow: isAppMode ? "hidden" : "visible",
         }}
       >
-        <Layout style={{ background: "transparent" }}>
+        <Layout style={{ background: "transparent", height: "100%" }}>
           {hasSider && (
             <Sider
               width={220}
@@ -382,7 +363,7 @@ const MainLayout: React.FC = () => {
             </Sider>
           )}
 
-          <Layout style={{ background: "transparent" }}>
+          <Layout style={{ background: "transparent", height: "100%" }}>
             {!isSinglePage && (
               <div style={{ padding: "24px 24px 0 24px" }}>
                 <Breadcrumb items={breadcrumbItems} />
@@ -395,6 +376,9 @@ const MainLayout: React.FC = () => {
                 margin: 0,
                 minHeight: 280,
                 background: "transparent",
+                // 确保 Content 撑满且不处理滚动（交给子组件）
+                height: isAppMode ? "100%" : "auto",
+                overflow: isAppMode ? "hidden" : "initial",
               }}
             >
               <div
@@ -402,7 +386,11 @@ const MainLayout: React.FC = () => {
                   background: isSinglePage ? "transparent" : colorBgContainer,
                   padding: isSinglePage ? 0 : 24,
                   borderRadius: isSinglePage ? 0 : borderRadiusLG,
-                  minHeight: "100%",
+                  // 强制撑满高度，建立 Flex 上下文供 Outlet 使用
+                  height: isAppMode ? "100%" : "auto",
+                  minHeight: isAppMode ? 0 : "100%",
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
                 <Outlet />
