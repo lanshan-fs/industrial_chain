@@ -35,7 +35,8 @@ import {
 const { Header, Content, Sider } = Layout;
 const { Search } = Input;
 
-const TOP_NAV_ITEMS: MenuProps["items"] = [
+// 定义导航数据结构
+const TOP_NAV_ITEMS = [
   { key: "industry-class", label: "产业分类", icon: <ApartmentOutlined /> },
   {
     key: "industry-portrait",
@@ -184,7 +185,48 @@ const MainLayout: React.FC = () => {
     else if (e.key === "system-mgmt") navigate("/system-mgmt");
   };
 
-  const selectedTopNavKey = location.pathname.substring(1) || "home";
+  const renderNavItems = () => {
+    return TOP_NAV_ITEMS.map((item) => {
+      const isActive = currentTopNav === item.key;
+      const hasChildren = item.children && item.children.length > 0;
+
+      // 导航项触发区域的渲染内容
+      const trigger = (
+        <div
+          className={`nav-action-trigger ${isActive ? "active" : ""}`}
+          onClick={() => {
+            if (!hasChildren) {
+              handleTopNavClick({ key: item.key });
+            }
+          }}
+        >
+          <span style={{ fontSize: "16px", marginRight: 8 }}>{item.icon}</span>
+          <span style={{ fontSize: "16px", fontWeight: 500 }}>
+            {item.label}
+          </span>
+        </div>
+      );
+
+      // 如果有子菜单，使用 Dropdown 包裹
+      if (hasChildren) {
+        return (
+          <Dropdown
+            key={item.key}
+            menu={{
+              items: item.children,
+              onClick: handleTopNavClick,
+            }}
+            placement="bottom"
+            arrow
+          >
+            {trigger}
+          </Dropdown>
+        );
+      }
+
+      return <div key={item.key}>{trigger}</div>;
+    });
+  };
 
   return (
     <Layout
@@ -274,30 +316,18 @@ const MainLayout: React.FC = () => {
             </div>
           )}
 
+          {/* 顶部导航区域 */}
           <div
             style={{
               flex: 1,
               minWidth: 0,
               display: "flex",
               justifyContent: "flex-end",
-              marginRight: 12, // 增加与用户头像的间距
+              marginRight: 12,
+              height: "100%",
             }}
           >
-            <Menu
-              theme="dark"
-              mode="horizontal"
-              selectedKeys={[selectedTopNavKey]}
-              items={TOP_NAV_ITEMS}
-              onClick={handleTopNavClick}
-              style={{
-                borderBottom: "none",
-                lineHeight: "64px",
-                background: "transparent",
-                width: "100%",
-                justifyContent: !isHomePage ? "flex-end" : "flex-start",
-              }}
-              disabledOverflow={false}
-            />
+            {renderNavItems()}
           </div>
 
           <div style={{ flexShrink: 0 }}>
@@ -306,7 +336,7 @@ const MainLayout: React.FC = () => {
               placement="bottomRight"
               arrow
             >
-              <div className="user-dropdown-trigger">
+              <div className="nav-action-trigger">
                 <Space style={{ color: "#fff" }}>
                   <Avatar
                     style={{ backgroundColor: "#1890ff" }}
@@ -407,17 +437,25 @@ const MainLayout: React.FC = () => {
         @media (max-width: 576px) { .hidden-xs { display: none !important; } }
         .ant-layout-sider-trigger { border-radius: 0 0 8px 8px; }
         
-        /* 优化：用户下拉菜单触发区样式 */
-        .user-dropdown-trigger {
+        /* 统一导航和用户下拉菜单的触发样式 */
+        .nav-action-trigger {
           height: 64px;
           display: flex;
           align-items: center;
           padding: 0 16px;
           cursor: pointer;
           transition: all 0.3s;
+          color: rgba(255, 255, 255, 0.65);
+          // font-size: 16px;
         }
-        .user-dropdown-trigger:hover {
+        .nav-action-trigger:hover {
+          color: #fff;
           background-color: rgba(255, 255, 255, 0.1);
+        }
+        /* 选中状态 */
+        .nav-action-trigger.active {
+          color: #fff;
+          background-color: #1890ff;
         }
       `}</style>
     </Layout>
