@@ -14,7 +14,7 @@ import {
 import type { MenuProps } from "antd";
 import {
   UserOutlined,
-  ProjectOutlined,
+  // ProjectOutlined, // 移除未使用的图标
   TagsOutlined,
   SettingOutlined,
   LogoutOutlined,
@@ -23,9 +23,9 @@ import {
   ThunderboltOutlined,
   TeamOutlined,
   DatabaseOutlined,
-  SolutionOutlined,
+  // SolutionOutlined, // 移除未使用的图标
   ProfileOutlined,
-  ExperimentOutlined,
+  // ExperimentOutlined, // 移除未使用的图标
   ApartmentOutlined,
   SafetyCertificateOutlined,
   BuildOutlined,
@@ -35,38 +35,29 @@ import {
 const { Header, Content, Sider } = Layout;
 const { Search } = Input;
 
-// 定义导航数据结构
+// 定义导航数据结构 - 根据业务需求2.8-V3优化
 const TOP_NAV_ITEMS = [
-  { key: "industry-class", label: "分类", icon: <ApartmentOutlined /> },
   {
-    key: "industry-portrait",
-    label: "画像",
-    icon: <ProjectOutlined />,
-    children: [
-      {
-        key: "industry-portrait/industry-profile",
-        label: "行业画像",
-        icon: <ProfileOutlined />,
-      },
-      {
-        key: "industry-portrait/enterprise-profile",
-        label: "企业画像",
-        icon: <SolutionOutlined />,
-      },
-    ],
+    key: "industry-class",
+    label: "产业分类",
+    icon: <ApartmentOutlined />,
   },
-  { key: "industry-score", label: "评分", icon: <PieChartOutlined /> },
   {
-    key: "industry-diag",
-    label: "诊断",
-    icon: <ExperimentOutlined />,
-    children: [
-      {
-        key: "industry-diag/smart-diag",
-        label: "智能诊断",
-        icon: <ThunderboltOutlined />,
-      },
-    ],
+    key: "industry-portrait", // 点击跳转后由路由重定向至 /industry-profile
+    label: "行业画像",
+    icon: <ProfileOutlined />,
+    // 根据需求：企业画像仅从各页面跳转进入，不在导航栏设单独入口，故移除子菜单
+  },
+  {
+    key: "industry-score",
+    label: "产业评分",
+    icon: <PieChartOutlined />,
+  },
+  {
+    key: "industry-diag", // 点击跳转后由路由重定向至 /smart-diag
+    label: "智能诊断",
+    icon: <ThunderboltOutlined />,
+    // 根据需求：扁平化层级，直接展示智能诊断
   },
 ];
 
@@ -114,11 +105,11 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
 
 const BREADCRUMB_MAP: Record<string, string> = {
   home: "首页",
-  "industry-class": "分类",
+  "industry-class": "产业分类",
   "industry-portrait": "画像",
   "industry-profile": "行业画像",
   "enterprise-profile": "企业画像",
-  "industry-score": "评分",
+  "industry-score": "产业评分",
   "industry-diag": "诊断",
   "smart-diag": "智能诊断",
   "system-mgmt": "系统管理",
@@ -145,18 +136,21 @@ const MainLayout: React.FC = () => {
   const currentTopNav = pathSnippets[0] || "home";
 
   const isSystemMgmt = currentTopNav === "system-mgmt";
+  // 注意：智能诊断模块的路由前缀是 industry-diag
   const isIndustryDiag = currentTopNav === "industry-diag";
 
-  // 定义哪些页面需要全宽
+  // 定义哪些页面需要全宽 (根据需求：智能诊断、系统管理模块不设置 1280 最大宽度)
   const isFullWidthPage = isSystemMgmt || isIndustryDiag;
 
   // 定义哪些页面是 App 模式 (无全局滚动条，高度固定为 100vh)
   const isAppMode = isIndustryDiag;
 
+  // 根据需求：除系统管理外，其他模块统一取消侧边导航栏
   const currentSiderItems = isSystemMgmt
     ? SIDER_CONFIG["system-mgmt"] || []
     : [];
   const hasSider = currentSiderItems.length > 0;
+
   const isHomePage = currentTopNav === "home";
   const isSinglePage = !hasSider;
 
@@ -187,8 +181,11 @@ const MainLayout: React.FC = () => {
 
   const renderNavItems = () => {
     return TOP_NAV_ITEMS.map((item) => {
+      // 只要当前主路由匹配，就高亮
       const isActive = currentTopNav === item.key;
-      const hasChildren = item.children && item.children.length > 0;
+      // TS 类型断言，因为我们移除了 children 但 TS 推断可能还在
+      const hasChildren =
+        (item as any).children && (item as any).children.length > 0;
 
       // 导航项触发区域的渲染内容
       const trigger = (
@@ -213,7 +210,7 @@ const MainLayout: React.FC = () => {
           <Dropdown
             key={item.key}
             menu={{
-              items: item.children,
+              items: (item as any).children,
               onClick: handleTopNavClick,
             }}
             placement="bottom"
@@ -254,7 +251,7 @@ const MainLayout: React.FC = () => {
         <div
           className="header-content"
           style={{
-            maxWidth: 1280,
+            maxWidth: 1280, // Header 内容区域依然保持居中限制，视觉更协调
             margin: "0 auto",
             padding: "0 24px",
             display: "flex",
@@ -355,6 +352,7 @@ const MainLayout: React.FC = () => {
       <div
         style={{
           width: "100%",
+          // 根据需求：智能诊断(industry-diag)和系统管理(system-mgmt)不限制宽度，其他为 1280
           maxWidth: isFullWidthPage ? "100%" : 1280,
           margin: "0 auto",
           padding: 0,
