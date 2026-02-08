@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // 新增
 import {
   Card,
   Row,
@@ -12,7 +13,6 @@ import {
   Progress,
   Tooltip,
   Drawer,
-  message,
 } from "antd";
 import {
   TagsOutlined,
@@ -23,81 +23,46 @@ import {
   RightOutlined,
   InfoCircleOutlined,
 } from "@ant-design/icons";
+import { dimensions } from "./tagData"; // 引入统一的数据源
 
 const { Title, Text } = Typography;
 
-// --- 模拟数据 ---
-
 // 1. 总体统计数据
 const overviewData = {
-  totalTags: 128,
-  coveredEnterprises: 345,
-  dailyGrowth: 2.3, // 较昨日增长百分比
+  totalTags: 233, // 更新为所有维度总和
+  coveredEnterprises: 2215,
+  dailyGrowth: 2.3,
 };
 
-// 2. 五个维度详情数据
-const dimensionData = [
-  {
-    id: "basic",
-    name: "基本信息维度",
-    tagCount: 24,
-    usedCount: 345,
-    color: "#1890ff",
-  },
-  {
-    id: "business",
-    name: "经营业务维度",
-    tagCount: 36,
-    usedCount: 280,
-    color: "#52c41a",
-  },
-  {
-    id: "tech",
-    name: "科技属性维度",
-    tagCount: 18,
-    usedCount: 120,
-    color: "#722ed1",
-  },
-  {
-    id: "risk",
-    name: "风险管控维度",
-    tagCount: 15,
-    usedCount: 45,
-    color: "#faad14",
-  },
-  {
-    id: "market",
-    name: "市场表现维度",
-    tagCount: 35,
-    usedCount: 88,
-    color: "#f5222d",
-  },
-];
-
-// 3. 热门标签 Top 10
+// 热门标签 Top 10 (模拟)
 const hotTags = [
-  { rank: 1, name: "高新技术企业", count: 156, dimension: "科技属性维度" },
-  { rank: 2, name: "朝阳区重点", count: 142, dimension: "基本信息维度" },
-  { rank: 3, name: "养老服务", count: 98, dimension: "经营业务维度" },
-  { rank: 4, name: "专精特新", count: 85, dimension: "科技属性维度" },
-  { rank: 5, name: "政府采购", count: 76, dimension: "经营业务维度" },
-  { rank: 6, name: "信用良好", count: 68, dimension: "风险管控维度" },
-  { rank: 7, name: "研发强", count: 54, dimension: "科技属性维度" },
-  { rank: 8, name: "拟上市", count: 42, dimension: "市场表现维度" },
-  { rank: 9, name: "互联网医疗", count: 38, dimension: "经营业务维度" },
-  { rank: 10, name: "独角兽", count: 12, dimension: "科技属性维度" },
+  { rank: 1, name: "高新技术企业", count: 156, dimension: "创新实力维度" },
+  { rank: 2, name: "朝阳区重点", count: 142, dimension: "区域特征维度" },
+  { rank: 3, name: "养老服务", count: 98, dimension: "产业定位维度" },
+  { rank: 4, name: "专精特新", count: 85, dimension: "创新实力维度" },
+  { rank: 5, name: "政府采购", count: 76, dimension: "经营资质维度" },
+  { rank: 6, name: "信用良好", count: 68, dimension: "经营资质维度" },
+  { rank: 7, name: "研发强", count: 54, dimension: "创新实力维度" },
+  { rank: 8, name: "拟上市", count: 42, dimension: "资本实力维度" },
+  { rank: 9, name: "互联网医疗", count: 38, dimension: "产业定位维度" },
+  { rank: 10, name: "独角兽", count: 12, dimension: "创新实力维度" },
 ];
 
 const TagLibrary: React.FC = () => {
+  const navigate = useNavigate(); // 使用 hook
   const [manageDrawerVisible, setManageDrawerVisible] = useState(false);
 
-  // 模拟打开配置抽屉
   const showDrawer = () => {
     setManageDrawerVisible(true);
   };
 
   const closeDrawer = () => {
     setManageDrawerVisible(false);
+  };
+
+  // 跳转详情页处理函数
+  const handleViewDetail = (dimId: string) => {
+    navigate(`/system-mgmt/tag-library/detail/${dimId}`);
   };
 
   return (
@@ -114,7 +79,7 @@ const TagLibrary: React.FC = () => {
               valueStyle={{ color: "#1890ff" }}
             />
             <div style={{ marginTop: 8, fontSize: 12, color: "#8c8c8c" }}>
-              涵盖 5 大维度，持续建设中
+              涵盖 7 大维度，持续建设中
             </div>
           </Col>
           <Col span={12}>
@@ -137,19 +102,18 @@ const TagLibrary: React.FC = () => {
         </Row>
       </Card>
 
-      {/* 第二部分：五个维度详情卡片 */}
+      {/* 第二部分：七个维度详情卡片 */}
       <Title level={5} style={{ marginBottom: 16 }}>
         维度分布详情
       </Title>
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        {dimensionData.map((dim) => (
+        {dimensions.map((dim) => (
           <Col
             xs={24}
             sm={12}
             md={8}
-            lg={4}
-            xl={4}
-            style={{ flex: "1 0 auto" }}
+            lg={6} // 调整栅格以适应更多维度
+            xl={6}
             key={dim.id}
           >
             <Card
@@ -157,6 +121,7 @@ const TagLibrary: React.FC = () => {
               bordered={false}
               style={{ height: "100%", borderTop: `4px solid ${dim.color}` }}
               bodyStyle={{ padding: "20px 16px" }}
+              onClick={() => handleViewDetail(dim.id)} // 整个卡片可点击
             >
               <Space
                 direction="vertical"
@@ -182,7 +147,7 @@ const TagLibrary: React.FC = () => {
                   </Text>
                   <Progress
                     percent={Math.round(
-                      (dim.usedCount / overviewData.coveredEnterprises) * 100
+                      (dim.usedCount / overviewData.coveredEnterprises) * 100,
                     )}
                     size="small"
                     strokeColor={dim.color}
@@ -197,7 +162,13 @@ const TagLibrary: React.FC = () => {
                     }}
                   >
                     <span>{dim.usedCount} 家</span>
-                    <a onClick={() => message.info(`跳转至${dim.name}详情页`)}>
+                    {/* 更新点击事件 */}
+                    <a
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewDetail(dim.id);
+                      }}
+                    >
                       详情 <RightOutlined style={{ fontSize: 10 }} />
                     </a>
                   </div>
@@ -282,7 +253,6 @@ const TagLibrary: React.FC = () => {
         {/* 第四部分：体系管理入口 & 系统信息 */}
         <Col xs={24} lg={8}>
           <Space direction="vertical" style={{ width: "100%" }} size={24}>
-            {/* 体系管理入口 */}
             <Card
               title={
                 <Space>
@@ -316,16 +286,15 @@ const TagLibrary: React.FC = () => {
               </div>
             </Card>
 
-            {/* 系统信息 */}
             <Card title="系统信息" bordered={false} size="small">
               <List size="small">
                 <List.Item>
                   <Text type="secondary">最后更新时间</Text>
-                  <Text>2026-01-15 10:30</Text>
+                  <Text>2026-02-08 15:43</Text>
                 </List.Item>
                 <List.Item>
                   <Text type="secondary">当前版本</Text>
-                  <Text>V1.2.0</Text>
+                  <Text>V2.8.0</Text>
                 </List.Item>
                 <List.Item>
                   <Text type="secondary">数据来源</Text>
@@ -337,7 +306,6 @@ const TagLibrary: React.FC = () => {
         </Col>
       </Row>
 
-      {/* 侧边栏抽屉：标签体系配置（模拟） */}
       <Drawer
         title="标签体系配置"
         placement="right"

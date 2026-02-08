@@ -25,6 +25,7 @@ import WeightData from "./pages/SystemMgmt/Data/WeightData";
 import AutoTag from "./pages/SystemMgmt/Data/Tag/AutoTag";
 import EnterpriseTag from "./pages/SystemMgmt/Data/Tag/EnterpriseTag";
 import TagLibrary from "./pages/SystemMgmt/Data/Tag/TagLibrary";
+import DimensionDetail from "./pages/SystemMgmt/Data/Tag/DimensionDetail";
 
 import AdvancedSearch from "./pages/AdvancedSearch/Index";
 
@@ -109,6 +110,10 @@ const App: React.FC = () => {
             {/* 注意：路由 Path 依然保持扁平，方便 MainLayout 跳转 */}
             <Route path="enterprise-tag" element={<EnterpriseTag />} />
             <Route path="tag-library" element={<TagLibrary />} />
+            <Route
+              path="tag-library/detail/:dimensionId"
+              element={<DimensionDetail />}
+            />
             <Route path="auto-tag" element={<AutoTag />} />
 
             {/* 6.3 用户管理 */}

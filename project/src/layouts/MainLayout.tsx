@@ -37,10 +37,10 @@ const { Search } = Input;
 
 // 定义导航数据结构
 const TOP_NAV_ITEMS = [
-  { key: "industry-class", label: "产业分类", icon: <ApartmentOutlined /> },
+  { key: "industry-class", label: "分类", icon: <ApartmentOutlined /> },
   {
     key: "industry-portrait",
-    label: "产业画像",
+    label: "画像",
     icon: <ProjectOutlined />,
     children: [
       {
@@ -55,10 +55,10 @@ const TOP_NAV_ITEMS = [
       },
     ],
   },
-  { key: "industry-score", label: "产业评分", icon: <PieChartOutlined /> },
+  { key: "industry-score", label: "评分", icon: <PieChartOutlined /> },
   {
     key: "industry-diag",
-    label: "产业诊断",
+    label: "诊断",
     icon: <ExperimentOutlined />,
     children: [
       {
@@ -114,12 +114,12 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
 
 const BREADCRUMB_MAP: Record<string, string> = {
   home: "首页",
-  "industry-class": "产业分类",
-  "industry-portrait": "产业画像",
+  "industry-class": "分类",
+  "industry-portrait": "画像",
   "industry-profile": "行业画像",
   "enterprise-profile": "企业画像",
-  "industry-score": "产业评分",
-  "industry-diag": "产业诊断",
+  "industry-score": "评分",
+  "industry-diag": "诊断",
   "smart-diag": "智能诊断",
   "system-mgmt": "系统管理",
   "data-mgmt": "数据管理",
