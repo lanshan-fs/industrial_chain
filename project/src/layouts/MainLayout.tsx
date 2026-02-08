@@ -14,7 +14,6 @@ import {
 import type { MenuProps } from "antd";
 import {
   UserOutlined,
-  // ProjectOutlined, // 移除未使用的图标
   TagsOutlined,
   SettingOutlined,
   LogoutOutlined,
@@ -23,9 +22,7 @@ import {
   ThunderboltOutlined,
   TeamOutlined,
   DatabaseOutlined,
-  // SolutionOutlined, // 移除未使用的图标
   ProfileOutlined,
-  // ExperimentOutlined, // 移除未使用的图标
   ApartmentOutlined,
   SafetyCertificateOutlined,
   BuildOutlined,
@@ -35,7 +32,7 @@ import {
 const { Header, Content, Sider } = Layout;
 const { Search } = Input;
 
-// 定义导航数据结构 - 根据业务需求2.8-V3优化
+// 定义导航数据结构
 const TOP_NAV_ITEMS = [
   {
     key: "industry-class",
@@ -43,10 +40,9 @@ const TOP_NAV_ITEMS = [
     icon: <ApartmentOutlined />,
   },
   {
-    key: "industry-portrait", // 点击跳转后由路由重定向至 /industry-profile
+    key: "industry-portrait",
     label: "行业画像",
     icon: <ProfileOutlined />,
-    // 根据需求：企业画像仅从各页面跳转进入，不在导航栏设单独入口，故移除子菜单
   },
   {
     key: "industry-score",
@@ -54,14 +50,12 @@ const TOP_NAV_ITEMS = [
     icon: <PieChartOutlined />,
   },
   {
-    key: "industry-diag", // 点击跳转后由路由重定向至 /smart-diag
+    key: "industry-diag",
     label: "智能诊断",
     icon: <ThunderboltOutlined />,
-    // 根据需求：扁平化层级，直接展示智能诊断
   },
 ];
 
-// 系统管理的侧边栏配置
 const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
   "system-mgmt": [
     {
@@ -106,11 +100,11 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
 const BREADCRUMB_MAP: Record<string, string> = {
   home: "首页",
   "industry-class": "产业分类",
-  "industry-portrait": "画像",
+  // "industry-portrait": "画像",
   "industry-profile": "行业画像",
   "enterprise-profile": "企业画像",
   "industry-score": "产业评分",
-  "industry-diag": "诊断",
+  // "industry-diag": "诊断",
   "smart-diag": "智能诊断",
   "system-mgmt": "系统管理",
   "data-mgmt": "数据管理",
@@ -135,17 +129,15 @@ const MainLayout: React.FC = () => {
   const pathSnippets = location.pathname.split("/").filter((i) => i);
   const currentTopNav = pathSnippets[0] || "home";
 
+  const isEnterpriseProfile = location.pathname.includes("enterprise-profile");
+  const activeNavKey = isEnterpriseProfile ? "" : currentTopNav;
+
   const isSystemMgmt = currentTopNav === "system-mgmt";
-  // 注意：智能诊断模块的路由前缀是 industry-diag
   const isIndustryDiag = currentTopNav === "industry-diag";
 
-  // 定义哪些页面需要全宽 (根据需求：智能诊断、系统管理模块不设置 1280 最大宽度)
   const isFullWidthPage = isSystemMgmt || isIndustryDiag;
-
-  // 定义哪些页面是 App 模式 (无全局滚动条，高度固定为 100vh)
   const isAppMode = isIndustryDiag;
 
-  // 根据需求：除系统管理外，其他模块统一取消侧边导航栏
   const currentSiderItems = isSystemMgmt
     ? SIDER_CONFIG["system-mgmt"] || []
     : [];
@@ -181,13 +173,10 @@ const MainLayout: React.FC = () => {
 
   const renderNavItems = () => {
     return TOP_NAV_ITEMS.map((item) => {
-      // 只要当前主路由匹配，就高亮
-      const isActive = currentTopNav === item.key;
-      // TS 类型断言，因为我们移除了 children 但 TS 推断可能还在
+      const isActive = activeNavKey === item.key;
       const hasChildren =
         (item as any).children && (item as any).children.length > 0;
 
-      // 导航项触发区域的渲染内容
       const trigger = (
         <div
           className={`nav-action-trigger ${isActive ? "active" : ""}`}
@@ -198,13 +187,25 @@ const MainLayout: React.FC = () => {
           }}
         >
           <span style={{ fontSize: "16px", marginRight: 8 }}>{item.icon}</span>
-          <span style={{ fontSize: "16px", fontWeight: 500 }}>
-            {item.label}
-          </span>
+          {/* 优化点：移除 fontWeight: 500，使用默认字重更清爽 */}
+          <span style={{ fontSize: "16px" }}>{item.label}</span>
+          {isActive && (
+            <div
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 3,
+                background: "#00e5ff",
+                borderRadius: "3px 3px 0 0",
+                boxShadow: "0 0 8px rgba(0, 229, 255, 0.6)",
+              }}
+            />
+          )}
         </div>
       );
 
-      // 如果有子菜单，使用 Dropdown 包裹
       if (hasChildren) {
         return (
           <Dropdown
@@ -221,14 +222,17 @@ const MainLayout: React.FC = () => {
         );
       }
 
-      return <div key={item.key}>{trigger}</div>;
+      return (
+        <div key={item.key} style={{ position: "relative", height: "100%" }}>
+          {trigger}
+        </div>
+      );
     });
   };
 
   return (
     <Layout
       style={{
-        // 关键修复：App模式下强制锁定视口高度，禁止 body 滚动
         height: isAppMode ? "100vh" : "auto",
         minHeight: "100vh",
         overflow: isAppMode ? "hidden" : "visible",
@@ -238,25 +242,28 @@ const MainLayout: React.FC = () => {
       <Header
         style={{
           padding: 0,
-          background: "#001529",
+          background: "linear-gradient(90deg, #001529 0%, #003a8c 100%)",
           position: "sticky",
           top: 0,
           zIndex: 100,
           width: "100%",
-          boxShadow: "none",
-          height: 64,
-          flex: "0 0 auto", // 防止 Header 被压缩
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+          height: 56,
+          lineHeight: "56px",
+          flex: "0 0 auto",
+          borderBottom: "none",
         }}
       >
         <div
           className="header-content"
           style={{
-            maxWidth: 1280, // Header 内容区域依然保持居中限制，视觉更协调
+            maxWidth: 1280,
             margin: "0 auto",
             padding: "0 24px",
             display: "flex",
             alignItems: "center",
             height: "100%",
+            width: "100%",
           }}
         >
           <div
@@ -266,27 +273,37 @@ const MainLayout: React.FC = () => {
               cursor: "pointer",
               marginRight: 48,
               flexShrink: 0,
+              height: "100%",
             }}
             onClick={() => navigate("/home")}
           >
             <div
               style={{
-                width: 32,
-                height: 32,
-                background: "linear-gradient(135deg, #1890ff 0%, #0050b3 100%)",
-                borderRadius: 4,
-                marginRight: 12,
+                width: 30,
+                height: 30,
+                background: "rgba(255, 255, 255, 0.15)",
+                borderRadius: 6,
+                marginRight: 10,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "white",
+                color: "#fff",
                 fontWeight: "bold",
-                fontSize: 18,
+                fontSize: 16,
+                border: "1px solid rgba(255,255,255,0.2)",
               }}
             >
               P
             </div>
-            <span style={{ color: "white", fontSize: "18px", fontWeight: 500 }}>
+            {/* 优化点：字重从 600 降为 500，视觉更协调 */}
+            <span
+              style={{
+                color: "#fff",
+                fontSize: "18px",
+                fontWeight: 500,
+                letterSpacing: "0.5px",
+              }}
+            >
               朝阳区产业链洞察平台
             </span>
           </div>
@@ -296,51 +313,73 @@ const MainLayout: React.FC = () => {
               <ConfigProvider
                 theme={{
                   components: {
-                    Input: { borderRadius: 0 },
-                    Button: { borderRadius: 0 },
+                    Input: {
+                      colorBgContainer: "rgba(255, 255, 255, 0.1)",
+                      colorBorder: "transparent",
+                      colorTextPlaceholder: "rgba(255, 255, 255, 0.5)",
+                      colorText: "#fff",
+                    },
+                    Button: {
+                      colorBgContainer: "rgba(255, 255, 255, 0.2)",
+                      colorText: "#fff",
+                      colorPrimaryHover: "rgba(255, 255, 255, 0.3)",
+                      // 修复点：使用 lineWidth: 0 替代 border: 'none' 来消除边框
+                      lineWidth: 0,
+                    },
                   },
                 }}
               >
                 <Search
                   placeholder="搜索企业、行业..."
                   allowClear
-                  enterButton="搜索"
                   onSearch={(value) => console.log("Global search:", value)}
                   style={{ verticalAlign: "middle" }}
                   size="middle"
+                  variant="borderless"
                 />
               </ConfigProvider>
             </div>
           )}
 
-          {/* 顶部导航区域 */}
           <div
             style={{
               flex: 1,
               minWidth: 0,
               display: "flex",
               justifyContent: "flex-end",
-              marginRight: 12,
+              marginRight: 24,
               height: "100%",
             }}
           >
             {renderNavItems()}
           </div>
 
-          <div style={{ flexShrink: 0 }}>
+          <div
+            style={{
+              flexShrink: 0,
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
             <Dropdown
               menu={{ items: userDropdownItems, onClick: handleUserMenuClick }}
               placement="bottomRight"
               arrow
             >
-              <div className="nav-action-trigger">
-                <Space style={{ color: "#fff" }}>
+              <div
+                className="nav-action-trigger"
+                style={{ color: "rgba(255,255,255,0.85)" }}
+              >
+                <Space>
                   <Avatar
-                    style={{ backgroundColor: "#1890ff" }}
+                    style={{ backgroundColor: "#1890ff", color: "#fff" }}
                     icon={<UserOutlined />}
-                    size="default"
+                    size="small"
                   />
-                  <span className="hidden-xs">管理员</span>
+                  <span className="hidden-xs" style={{ fontSize: 14 }}>
+                    管理员
+                  </span>
                 </Space>
               </div>
             </Dropdown>
@@ -348,20 +387,16 @@ const MainLayout: React.FC = () => {
         </div>
       </Header>
 
-      {/* 主内容 Wrapper */}
       <div
         style={{
           width: "100%",
-          // 根据需求：智能诊断(industry-diag)和系统管理(system-mgmt)不限制宽度，其他为 1280
           maxWidth: isFullWidthPage ? "100%" : 1280,
           margin: "0 auto",
           padding: 0,
           display: "flex",
           flexDirection: "column",
-          // 关键修复：使用 flex: 1 占据剩余空间，而不是 calc
           flex: 1,
           transition: "max-width 0.3s",
-          // 确保 Wrapper 自身也是 100% 高度 (相对于父级 Flex 容器)
           height: isAppMode ? "100%" : "auto",
           overflow: isAppMode ? "hidden" : "visible",
         }}
@@ -407,7 +442,6 @@ const MainLayout: React.FC = () => {
                 margin: 0,
                 minHeight: 280,
                 background: "transparent",
-                // 确保 Content 撑满且不处理滚动（交给子组件）
                 height: isAppMode ? "100%" : "auto",
                 overflow: isAppMode ? "hidden" : "initial",
               }}
@@ -417,7 +451,6 @@ const MainLayout: React.FC = () => {
                   background: isSinglePage ? "transparent" : colorBgContainer,
                   padding: isSinglePage ? 0 : 24,
                   borderRadius: isSinglePage ? 0 : borderRadiusLG,
-                  // 强制撑满高度，建立 Flex 上下文供 Outlet 使用
                   height: isAppMode ? "100%" : "auto",
                   minHeight: isAppMode ? 0 : "100%",
                   display: "flex",
@@ -435,25 +468,27 @@ const MainLayout: React.FC = () => {
         @media (max-width: 576px) { .hidden-xs { display: none !important; } }
         .ant-layout-sider-trigger { border-radius: 0 0 8px 8px; }
         
-        /* 统一导航和用户下拉菜单的触发样式 */
         .nav-action-trigger {
-          height: 64px;
+          height: 56px; 
           display: flex;
           align-items: center;
           padding: 0 16px;
           cursor: pointer;
           transition: all 0.3s;
           color: rgba(255, 255, 255, 0.65);
-          // font-size: 16px;
+          position: relative;
         }
+        
         .nav-action-trigger:hover {
           color: #fff;
           background-color: rgba(255, 255, 255, 0.1);
         }
-        /* 选中状态 */
+        
+        /* 优化点：选中态只保留文字微发光，去掉加粗，保持轻快感 */
         .nav-action-trigger.active {
           color: #fff;
-          background-color: #1890ff;
+          background-color: transparent;
+          text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
         }
       `}</style>
     </Layout>
