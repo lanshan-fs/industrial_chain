@@ -280,6 +280,7 @@ const MainLayout: React.FC = () => {
               minWidth: 0,
               display: "flex",
               justifyContent: "flex-end",
+              marginRight: 12, // 增加与用户头像的间距
             }}
           >
             <Menu
@@ -299,20 +300,22 @@ const MainLayout: React.FC = () => {
             />
           </div>
 
-          <div style={{ flexShrink: 0, marginLeft: 24 }}>
+          <div style={{ flexShrink: 0 }}>
             <Dropdown
               menu={{ items: userDropdownItems, onClick: handleUserMenuClick }}
               placement="bottomRight"
               arrow
             >
-              <Space style={{ cursor: "pointer", color: "#fff" }}>
-                <Avatar
-                  style={{ backgroundColor: "#1890ff" }}
-                  icon={<UserOutlined />}
-                  size="default"
-                />
-                <span className="hidden-xs">管理员</span>
-              </Space>
+              <div className="user-dropdown-trigger">
+                <Space style={{ color: "#fff" }}>
+                  <Avatar
+                    style={{ backgroundColor: "#1890ff" }}
+                    icon={<UserOutlined />}
+                    size="default"
+                  />
+                  <span className="hidden-xs">管理员</span>
+                </Space>
+              </div>
             </Dropdown>
           </div>
         </div>
@@ -403,6 +406,19 @@ const MainLayout: React.FC = () => {
       <style>{`
         @media (max-width: 576px) { .hidden-xs { display: none !important; } }
         .ant-layout-sider-trigger { border-radius: 0 0 8px 8px; }
+        
+        /* 优化：用户下拉菜单触发区样式 */
+        .user-dropdown-trigger {
+          height: 64px;
+          display: flex;
+          align-items: center;
+          padding: 0 16px;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        .user-dropdown-trigger:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
       `}</style>
     </Layout>
   );

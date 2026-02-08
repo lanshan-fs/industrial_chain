@@ -523,11 +523,11 @@ const SmartDiag: React.FC = () => {
           <Button
             type="primary"
             shape="circle"
-            size="small"
+            // size="small"
             icon={<SendOutlined />}
             onClick={() => handleSend()}
             disabled={!inputValue.trim() || loading}
-            style={{ position: "absolute", right: 8, bottom: 8 }}
+            style={{ position: "absolute", right: 12, bottom: 7 }}
           />
         </div>
         <div
