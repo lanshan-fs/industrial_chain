@@ -857,7 +857,7 @@ const EnterpriseProfile: React.FC = () => {
               activeKey={activeTab}
               onChange={setActiveTab}
               items={[
-                { key: "profile", label: "企业画像" },
+                { key: "profile", label: "基本信息" },
                 { key: "rd", label: "研发信息" },
                 { key: "market", label: "市场信息" },
                 { key: "qualification", label: "资质信息" },
