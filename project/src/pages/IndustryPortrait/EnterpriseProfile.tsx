@@ -19,6 +19,7 @@ import {
   Grid,
   Tabs,
   Card,
+  List,
 } from "antd";
 import {
   GlobalOutlined,
@@ -32,14 +33,14 @@ import {
   SafetyCertificateOutlined,
   ShopOutlined,
   FileProtectOutlined,
+  WarningOutlined,
+  RiseOutlined,
 } from "@ant-design/icons";
-import { Radar, DualAxes } from "@ant-design/plots";
+import { Radar } from "@ant-design/plots";
 import dayjs from "dayjs";
 
-// --- 引入新封装的组件 ---
 import ReportActionButtons from "../../components/ReportActionButtons";
 
-// --- 引入本地数据 ---
 import companiesData from "../../assets/data/companies.json";
 import tagsData from "../../assets/data/tags.json";
 
@@ -55,6 +56,9 @@ const COLORS = {
   bg: "#fff",
   borderColor: "#f0f0f0",
   textSecondary: "#666",
+  riskHigh: "#ff4d4f",
+  riskMedium: "#faad14",
+  riskLow: "#52c41a",
 };
 
 const BORDER_STYLE = `1px solid ${COLORS.borderColor}`;
@@ -93,70 +97,8 @@ const MAIN_RADAR_CONFIG = (data: any[]) => ({
   },
   scale: { y: { min: 0, max: 100, tickCount: 5 } },
   axis: { x: { grid: { line: { style: { stroke: "#eee" } } } } },
-  height: 240,
+  height: 220, // 稍微调小一点以适应布局
 });
-
-const SUB_MODEL_CHART_CONFIG = (data: any[], color: string) => {
-  return {
-    data: [data, data],
-    xField: "name",
-    yField: ["score", "weight"],
-    geometryOptions: [
-      {
-        geometry: "column",
-        color: color,
-        columnWidthRatio: 0.4,
-      },
-      {
-        geometry: "line",
-        color: "#595959",
-        lineStyle: { lineWidth: 2, lineDash: [4, 4] },
-        point: {
-          size: 3,
-          shape: "circle",
-          style: { fill: "#fff", stroke: "#595959" },
-        },
-      },
-    ],
-    legend: {
-      position: "top-right",
-      itemName: {
-        formatter: (text: string) => (text === "score" ? "得分" : "权重"),
-      },
-    },
-    meta: {
-      score: { min: 0, max: 100, alias: "得分" },
-      weight: { min: 0, max: 100, alias: "权重" },
-    },
-    xAxis: {
-      label: {
-        autoRotate: false,
-        rotate: Math.PI / 2,
-        style: {
-          fontSize: 10,
-          textAlign: "start",
-          textBaseline: "middle",
-        },
-        offset: 10,
-      },
-    },
-    yAxis: {
-      score: { min: 0, max: 100, tickCount: 5 },
-      weight: { min: 0, max: 100, tickCount: 5, grid: null },
-    },
-    tooltip: {
-      showMarkers: false,
-      formatter: (datum: any) => {
-        return {
-          name: datum.score !== undefined ? "得分" : "权重",
-          value: datum.score ?? datum.weight,
-        };
-      },
-    },
-    height: 240,
-    padding: [20, 20, 70, 30],
-  };
-};
 
 // --- Mock 数据生成器 ---
 const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
@@ -172,6 +114,20 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
     allTags[0];
 
   const creditCode = "91110105MA01XXXXXX";
+
+  // 迁出风险数据模拟
+  const riskVal = company.risk_score || 40; // 这里的 risk_score 在原始数据中似乎代表风险分数
+  // 假设 risk_score 越高风险越高
+  let migrationRiskLevel = "低";
+  let migrationRiskColor = COLORS.riskLow;
+  if (riskVal > 60) {
+    migrationRiskLevel = "中";
+    migrationRiskColor = COLORS.riskMedium;
+  }
+  if (riskVal > 80) {
+    migrationRiskLevel = "高";
+    migrationRiskColor = COLORS.riskHigh;
+  }
 
   // 通用维度生成器
   const generateDimensions = (base: number) => [
@@ -204,6 +160,35 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
     metrics: {
       totalScore,
       rank: Math.floor(Math.random() * 50) + 1,
+    },
+    // 迁出风险数据
+    migrationRisk: {
+      level: migrationRiskLevel,
+      score: riskVal,
+      color: migrationRiskColor,
+      factors: [
+        {
+          name: "周边办公租金上涨",
+          impact: "High",
+          desc: "租金成本同比上涨 15%",
+        },
+        {
+          name: "核心人才流失风险",
+          impact: "Medium",
+          desc: "研发人员流动率略高",
+        },
+        {
+          name: "产业政策适配度",
+          impact: "Medium",
+          desc: "部分优惠政策即将到期",
+        },
+        {
+          name: "业务市场区域偏移",
+          impact: "Low",
+          desc: "主要客户群体向外区迁移",
+        },
+        { name: "用地空间限制", impact: "Low", desc: "现有办公面积趋于饱和" },
+      ],
     },
     overallRadar: [
       { item: "基础实力", score: 85 },
@@ -279,77 +264,87 @@ const EnterpriseProfile: React.FC = () => {
     }, 600);
   };
 
-  // --- 渲染子模型区块 ---
-  const renderSubModelSection = (
+  // --- 渲染子模型卡片 (优化版：复用 IndustryProfile 的设计但调整字段) ---
+  const renderSubModelCard = (
     title: string,
     icon: React.ReactNode,
     modelData: any,
     color: string,
-    hasRightBorder: boolean,
-  ) => (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        borderRight: hasRightBorder && !isMobile ? BORDER_STYLE : "none",
-      }}
-    >
+    hasRightBorder: boolean = true,
+  ) => {
+    const columns: any[] = [
+      {
+        title: "评分维度",
+        dataIndex: "name",
+        ellipsis: true,
+        align: "left",
+        render: (t: string) => <Text style={{ fontSize: 13 }}>{t}</Text>,
+      },
+      {
+        title: "权重",
+        dataIndex: "weight",
+        width: 80, // 增加宽度以容纳排序图标
+        align: "center",
+        sorter: (a: any, b: any) => a.weight - b.weight, // 添加权重排序
+        render: (t: number) => <Tag style={{ marginRight: 0 }}>{t}%</Tag>,
+      },
+      {
+        title: "得分",
+        dataIndex: "score",
+        width: 80, // 增加宽度以容纳排序图标
+        align: "center",
+        sorter: (a: any, b: any) => a.score - b.score, // 添加得分排序
+        render: (s: number) => (
+          <Text strong style={{ color: s < 60 ? "red" : color }}>
+            {s}
+          </Text>
+        ),
+      },
+    ];
+
+    return (
       <div
         style={{
-          padding: "12px 20px",
-          borderBottom: BORDER_STYLE,
-          backgroundColor: "#fafafa",
+          height: "100%",
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          flexDirection: "column",
+          borderRight: hasRightBorder && !isMobile ? BORDER_STYLE : "none",
         }}
       >
-        <Space>
-          {icon}
-          <Text strong>{title}</Text>
-        </Space>
-        <Tag color={color} style={{ marginRight: 0 }}>
-          {modelData.score} 分
-        </Tag>
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: BORDER_STYLE,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: "#fafafa",
+          }}
+        >
+          <Space>
+            {icon}
+            <Text strong>{title}</Text>
+          </Space>
+          <Statistic
+            value={modelData.score}
+            valueStyle={{ color: color, fontWeight: "bold", fontSize: 18 }}
+            suffix={<span style={{ fontSize: 12, color: "#999" }}>分(总)</span>}
+          />
+        </div>
+        <div style={{ flex: 1, padding: 0 }}>
+          <Table
+            dataSource={modelData.dimensions}
+            rowKey="name"
+            pagination={false}
+            size="small"
+            columns={columns}
+            scroll={{ y: 250 }} // 固定高度
+            bordered={false}
+          />
+        </div>
       </div>
-      <div style={{ padding: 12, borderBottom: BORDER_STYLE }}>
-        {/* @ts-ignore DualAxes TS definition issue */}
-        <DualAxes {...SUB_MODEL_CHART_CONFIG(modelData.dimensions, color)} />
-      </div>
-      <div style={{ flex: 1 }}>
-        <Table
-          dataSource={modelData.dimensions}
-          rowKey="name"
-          pagination={false}
-          size="small"
-          bordered={false}
-          scroll={{ y: 200 }}
-          columns={[
-            { title: "评分维度", dataIndex: "name", ellipsis: true },
-            {
-              title: "权重",
-              dataIndex: "weight",
-              width: 60,
-              align: "center",
-              render: (t) => (
-                <span style={{ fontSize: 12, color: "#999" }}>{t}%</span>
-              ),
-            },
-            {
-              title: "得分",
-              dataIndex: "score",
-              width: 60,
-              align: "center",
-              render: (t) => (
-                <b style={{ color: t < 60 ? "red" : color }}>{t}</b>
-              ),
-            },
-          ]}
-        />
-      </div>
-    </div>
-  );
+    );
+  };
 
   // --- 渲染各子标签页内容 ---
 
@@ -452,7 +447,7 @@ const EnterpriseProfile: React.FC = () => {
               column={2}
               bordered
               size="small"
-              labelStyle={{ width: 140, background: "#fafafa" }}
+              labelStyle={{ width: 160, background: "#fafafa" }}
             >
               <Descriptions.Item label="统一社会信用代码">
                 {profile.baseInfo.creditCode}
@@ -525,7 +520,7 @@ const EnterpriseProfile: React.FC = () => {
         </Col>
       </Row>
 
-      {/* 区块三：综合评估 */}
+      {/* 区块三：企业综合评估 */}
       <div style={{ borderBottom: BORDER_STYLE }}>
         <div
           style={{
@@ -534,49 +529,170 @@ const EnterpriseProfile: React.FC = () => {
             backgroundColor: "#fafafa",
           }}
         >
-          <Text strong>企业综合能力评估</Text>
+          <Text strong>企业综合评估</Text>
         </div>
         <div style={{ padding: 24 }}>
-          <Row gutter={48} align="middle">
-            <Col xs={24} md={8} style={{ textAlign: "center" }}>
-              <Progress
-                type="dashboard"
-                percent={profile.metrics.totalScore}
-                strokeColor={COLORS.primary}
-                width={200}
-                format={(percent) => (
-                  <div style={{ color: COLORS.primary }}>
-                    <div style={{ fontSize: 32 }}>{percent}</div>
-                    <div style={{ fontSize: 14, color: "#999" }}>综合得分</div>
+          <Row gutter={0}>
+            {/* 左子区块：企业综合能力可视化 */}
+            <Col
+              xs={24}
+              lg={14}
+              style={{
+                borderRight: !isMobile ? "1px solid #f0f0f0" : "none",
+                paddingRight: !isMobile ? 24 : 0,
+              }}
+            >
+              <Title level={5} style={{ fontSize: 14, marginBottom: 24 }}>
+                企业综合能力可视化
+              </Title>
+              <Row gutter={24} align="middle">
+                <Col xs={24} md={10} style={{ textAlign: "center" }}>
+                  <Progress
+                    type="dashboard"
+                    percent={profile.metrics.totalScore}
+                    strokeColor={COLORS.primary}
+                    width={180}
+                    format={(percent) => (
+                      <div style={{ color: COLORS.primary }}>
+                        <div style={{ fontSize: 32 }}>{percent}</div>
+                        <div style={{ fontSize: 14, color: "#999" }}>
+                          综合得分
+                        </div>
+                      </div>
+                    )}
+                  />
+                  <div style={{ marginTop: 16 }}>
+                    <Alert
+                      message="经营稳健，潜力巨大"
+                      type="success"
+                      showIcon
+                      style={{
+                        display: "inline-flex",
+                        fontSize: 12,
+                        padding: "4px 12px",
+                      }}
+                    />
                   </div>
-                )}
-              />
-              <div style={{ marginTop: 16 }}>
-                <Alert
-                  message="企业经营状况良好，科技属性突出"
-                  type="success"
-                  showIcon
-                  style={{ display: "inline-flex" }}
+                </Col>
+                <Col xs={24} md={14}>
+                  <Radar {...MAIN_RADAR_CONFIG(profile.overallRadar)} />
+                </Col>
+              </Row>
+            </Col>
+
+            {/* 右子区块：企业迁出风险 */}
+            <Col xs={24} lg={10} style={{ paddingLeft: !isMobile ? 24 : 0 }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <Title level={5} style={{ fontSize: 14, margin: 0 }}>
+                  企业迁出风险
+                </Title>
+                <WarningOutlined style={{ color: "#faad14" }} />
+              </div>
+
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: 4,
+                  padding: "16px 0",
+                }}
+              >
+                <Row align="middle" gutter={16} style={{ marginBottom: 20 }}>
+                  <Col>
+                    <Text type="secondary">当前风险等级：</Text>
+                  </Col>
+                  <Col>
+                    <Tag
+                      color={profile.migrationRisk.color}
+                      style={{
+                        fontSize: 14,
+                        padding: "4px 12px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {profile.migrationRisk.level}风险
+                    </Tag>
+                  </Col>
+                  <Col>
+                    <Progress
+                      percent={profile.migrationRisk.score}
+                      size="small"
+                      status="normal"
+                      strokeColor={profile.migrationRisk.color}
+                      style={{ width: 100 }}
+                      showInfo={false}
+                    />
+                  </Col>
+                </Row>
+
+                <Text strong style={{ fontSize: 12, color: "#999" }}>
+                  关键风险因素 (Top 5)
+                </Text>
+                <List
+                  size="small"
+                  split={false}
+                  dataSource={profile.migrationRisk.factors}
+                  renderItem={(item: any, index: number) => (
+                    <List.Item
+                      style={{
+                        padding: "8px 0",
+                        borderBottom: "1px dashed #f0f0f0",
+                      }}
+                    >
+                      <Space style={{ width: "100%" }}>
+                        <Avatar
+                          size={18}
+                          style={{
+                            backgroundColor: index < 3 ? "#ffccc7" : "#f0f0f0",
+                            color: index < 3 ? "#cf1322" : "#666",
+                            fontSize: 10,
+                          }}
+                        >
+                          {index + 1}
+                        </Avatar>
+                        <div style={{ flex: 1 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <Text style={{ fontSize: 13 }}>{item.name}</Text>
+                            <Space size={4}>
+                              {item.impact === "High" && (
+                                <RiseOutlined
+                                  style={{
+                                    color: COLORS.riskHigh,
+                                    fontSize: 10,
+                                  }}
+                                />
+                              )}
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {item.desc}
+                              </Text>
+                            </Space>
+                          </div>
+                        </div>
+                      </Space>
+                    </List.Item>
+                  )}
                 />
               </div>
-            </Col>
-            <Col xs={24} md={16}>
-              <Title
-                level={5}
-                style={{ marginBottom: 16, textAlign: "center" }}
-              >
-                多维评分雷达
-              </Title>
-              <Radar {...MAIN_RADAR_CONFIG(profile.overallRadar)} />
             </Col>
           </Row>
         </div>
       </div>
 
-      {/* 区块四：三大评分模型 */}
+      {/* 区块四：三大评分模型 (优化后：复用 IndustryProfile 组件风格) */}
       <Row gutter={0} style={{ borderBottom: BORDER_STYLE }}>
         <Col xs={24} md={8}>
-          {renderSubModelSection(
+          {renderSubModelCard(
             "企业基础评分",
             <BankOutlined style={{ color: COLORS.gold }} />,
             profile.models.basic,
@@ -585,7 +701,7 @@ const EnterpriseProfile: React.FC = () => {
           )}
         </Col>
         <Col xs={24} md={8}>
-          {renderSubModelSection(
+          {renderSubModelCard(
             "科技属性评分",
             <ExperimentOutlined style={{ color: COLORS.primary }} />,
             profile.models.tech,
@@ -594,7 +710,7 @@ const EnterpriseProfile: React.FC = () => {
           )}
         </Col>
         <Col xs={24} md={8}>
-          {renderSubModelSection(
+          {renderSubModelCard(
             "企业能力评分",
             <ThunderboltOutlined style={{ color: COLORS.green }} />,
             profile.models.ability,
