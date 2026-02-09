@@ -33,6 +33,7 @@ const { Header, Content, Sider } = Layout;
 const { Search } = Input;
 
 // 定义导航数据结构
+// 修改点：根据需求调整了导航项的顺序（产业评分提前至行业画像之前）
 const TOP_NAV_ITEMS = [
   {
     key: "industry-class",
@@ -40,14 +41,14 @@ const TOP_NAV_ITEMS = [
     icon: <ApartmentOutlined />,
   },
   {
-    key: "industry-portrait",
-    label: "行业画像",
-    icon: <ProfileOutlined />,
-  },
-  {
     key: "industry-score",
     label: "产业评分",
     icon: <PieChartOutlined />,
+  },
+  {
+    key: "industry-portrait",
+    label: "行业画像",
+    icon: <ProfileOutlined />,
   },
   {
     key: "industry-diag",
@@ -100,11 +101,9 @@ const SIDER_CONFIG: Record<string, MenuProps["items"]> = {
 const BREADCRUMB_MAP: Record<string, string> = {
   home: "首页",
   "industry-class": "产业分类",
-  // "industry-portrait": "画像",
   "industry-profile": "行业画像",
   "enterprise-profile": "企业画像",
   "industry-score": "产业评分",
-  // "industry-diag": "诊断",
   "smart-diag": "智能诊断",
   "system-mgmt": "系统管理",
   "data-mgmt": "数据管理",
@@ -186,9 +185,9 @@ const MainLayout: React.FC = () => {
             }
           }}
         >
-          <span style={{ fontSize: "16px", marginRight: 8 }}>{item.icon}</span>
-          {/* 优化点：移除 fontWeight: 500，使用默认字重更清爽 */}
-          <span style={{ fontSize: "16px" }}>{item.label}</span>
+          {/* 修改点：调整字体大小为 15px，更显精致 */}
+          <span style={{ fontSize: "15px", marginRight: 6 }}>{item.icon}</span>
+          <span style={{ fontSize: "15px" }}>{item.label}</span>
           {isActive && (
             <div
               style={{
@@ -266,6 +265,7 @@ const MainLayout: React.FC = () => {
             width: "100%",
           }}
         >
+          {/* LOGO 区域 */}
           <div
             style={{
               display: "flex",
@@ -288,20 +288,20 @@ const MainLayout: React.FC = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 color: "#fff",
-                fontWeight: "bold",
+                fontWeight: 400, // 修改点：字重减小
                 fontSize: 16,
                 border: "1px solid rgba(255,255,255,0.2)",
               }}
             >
               P
             </div>
-            {/* 优化点：字重从 600 降为 500，视觉更协调 */}
+            {/* 修改点：完全移除 fontWeight 加粗，使用标准字重，视觉更轻盈 */}
             <span
               style={{
                 color: "#fff",
                 fontSize: "18px",
-                fontWeight: 500,
-                letterSpacing: "0.5px",
+                fontWeight: 400,
+                letterSpacing: "1px", // 增加一点字间距提升呼吸感
               }}
             >
               朝阳区产业链洞察平台
@@ -323,7 +323,6 @@ const MainLayout: React.FC = () => {
                       colorBgContainer: "rgba(255, 255, 255, 0.2)",
                       colorText: "#fff",
                       colorPrimaryHover: "rgba(255, 255, 255, 0.3)",
-                      // 修复点：使用 lineWidth: 0 替代 border: 'none' 来消除边框
                       lineWidth: 0,
                     },
                   },
@@ -475,7 +474,7 @@ const MainLayout: React.FC = () => {
           padding: 0 16px;
           cursor: pointer;
           transition: all 0.3s;
-          color: rgba(255, 255, 255, 0.65);
+          color: rgba(255, 255, 255, 0.75); /* 修改点：提高默认透明度，更清晰 */
           position: relative;
         }
         
@@ -484,11 +483,11 @@ const MainLayout: React.FC = () => {
           background-color: rgba(255, 255, 255, 0.1);
         }
         
-        /* 优化点：选中态只保留文字微发光，去掉加粗，保持轻快感 */
         .nav-action-trigger.active {
           color: #fff;
           background-color: transparent;
-          text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+          /* 修改点：调整发光效果，稍微柔和一点 */
+          text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
         }
       `}</style>
     </Layout>
