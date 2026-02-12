@@ -1021,6 +1021,18 @@ function buildTree(items) {
   return rootNodes;
 }
 
+app.get("/api/industry/categories", async (req, res) => {
+  try {
+    // 强制排序确保颜色映射顺序一致
+    const [rows] = await pool.query(
+      "SELECT id, parent_id, name, level FROM sys_industry_category WHERE level <= 1 ORDER BY sort_order ASC",
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`http://localhost:${PORT}`);
 });
