@@ -12,8 +12,8 @@ import EnterpriseHonorTab from "./components/EnterpriseHonorTab";
 import EnterpriseProductTab from "./components/EnterpriseProductTab";
 
 // --- 引入本地数据 ---
-import companiesData from "../../assets/data_test/companies.json";
-import tagsData from "../../assets/data_test/tags.json";
+import companiesData from "../../assets/data/companies.json";
+import tagsData from "../../assets/data/tags.json";
 
 const { Content } = Layout;
 
