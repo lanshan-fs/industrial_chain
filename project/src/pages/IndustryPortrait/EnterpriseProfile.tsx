@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Layout, Tabs, Empty, Spin } from "antd";
+import { Layout, Tabs, Empty, Spin, Button } from "antd";
+import { ArrowLeftOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 import ReportActionButtons from "../../components/ReportActionButtons";
 import EnterpriseOverviewTab from "./components/EnterpriseOverviewTab";
@@ -188,6 +190,7 @@ const EnterpriseProfile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("profile"); // 控制子标签页切换
+  const navigate = useNavigate(); // 使用 hook 获取导航方法
 
   // 初始化加载
   useEffect(() => {
@@ -230,8 +233,17 @@ const EnterpriseProfile: React.FC = () => {
               height: 64, // 固定高度
             }}
           >
-            {/* 左侧留空或后续扩展 */}
-            <div style={{ flex: 1 }}></div>
+            {/* 左侧：返回按钮 */}
+            <div style={{ flex: 1 }}>
+              <Button
+                type="text"
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate(-1)}
+                style={{ fontSize: 14 }}
+              >
+                返回
+              </Button>
+            </div>
 
             {/* 中间：Tabs 导航 (放在右侧与按钮平行) */}
             <Tabs
