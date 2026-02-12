@@ -41,6 +41,26 @@ interface TagRaw {
   path: string;
 }
 
+// --- 标签池 (新增) ---
+const TAG_POOL = [
+  "高新技术企业",
+  "科技型中小企业",
+  "专精特新",
+  "专精特新小巨人",
+  "独角兽企业",
+  "瞪羚企业",
+  "A级纳税人",
+  "中关村金种子",
+  "ISO9001认证",
+  "知识产权优势企业",
+  "绿色工厂",
+  "智能制造标杆",
+  "企业技术中心",
+  "博士后工作站",
+  "上市后备企业",
+  "文明单位",
+];
+
 // --- Mock 数据生成器 ---
 const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
   if (!company) return null;
@@ -78,6 +98,12 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
     { name: "企业人员规模", weight: 10, score: Math.min(base, 100) },
     { name: "分支机构数量", weight: 10, score: Math.min(base - 10, 100) },
   ];
+
+  // --- 随机生成标签逻辑 (修改) ---
+  // 从池中随机打乱并取 6-10 个
+  const randomTags = [...TAG_POOL]
+    .sort(() => 0.5 - Math.random())
+    .slice(0, Math.floor(Math.random() * 5) + 6);
 
   return {
     baseInfo: {
@@ -172,7 +198,7 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
         ],
       },
     },
-    tags: ["高新技术企业", "科技型中小企业", "A级纳税人"],
+    tags: randomTags, // 使用随机生成的丰富标签列表
     honors: [
       { year: "2023", name: "北京市专精特新中小企业" },
       { year: "2022", name: "朝阳区高增长企业 Top20" },
@@ -221,7 +247,7 @@ const EnterpriseProfile: React.FC = () => {
               padding: "0 24px",
               borderBottom: BORDER_STYLE,
               display: "flex",
-              justifyContent: "space-between", // 左右分布
+              justifyContent: "space-between",
               alignItems: "center",
               backgroundColor: "#fff",
               height: 64,
@@ -252,7 +278,6 @@ const EnterpriseProfile: React.FC = () => {
             </div>
           ) : (
             <div id="enterprise-report-content">
-              {/* 直接渲染整合后的全览页面 */}
               <EnterpriseOverviewTab profile={profile} />
             </div>
           )}

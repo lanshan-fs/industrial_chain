@@ -12,7 +12,6 @@ import {
   Descriptions,
   Table,
   Statistic,
-  // Divider,
   Progress,
   Timeline,
   Alert,
@@ -29,7 +28,6 @@ import {
   UserOutlined,
   WarningOutlined,
   RiseOutlined,
-  // AppstoreOutlined,
   RocketOutlined,
   ShopOutlined,
   SafetyCertificateOutlined,
@@ -183,45 +181,45 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
     {
       key: "rd",
       label: (
-        <span>
+        <Space>
           <RocketOutlined /> 研发信息
-        </span>
+        </Space>
       ),
       children: <EnterpriseRDTab />,
     },
     {
       key: "market",
       label: (
-        <span>
+        <Space>
           <ShopOutlined /> 市场信息
-        </span>
+        </Space>
       ),
       children: <EnterpriseMarketTab />,
     },
     {
       key: "qualification",
       label: (
-        <span>
+        <Space>
           <SafetyCertificateOutlined /> 资质信息
-        </span>
+        </Space>
       ),
       children: <EnterpriseQualificationTab />,
     },
     {
       key: "honor",
       label: (
-        <span>
+        <Space>
           <TrophyOutlined /> 获奖信息
-        </span>
+        </Space>
       ),
       children: <EnterpriseHonorTab />,
     },
     {
       key: "product",
       label: (
-        <span>
+        <Space>
           <FileProtectOutlined /> 产品信息
-        </span>
+        </Space>
       ),
       children: <EnterpriseProductTab />,
     },
@@ -266,8 +264,8 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                   <GlobalOutlined /> 官网：{profile.baseInfo.website}
                 </span>
               </Space>
-              {/* 企业标签现在只在此处展示 */}
-              <Space style={{ marginTop: 8 }}>
+              {/* 企业标签：增加 wrap 属性，防止标签过多时不换行 */}
+              <Space style={{ marginTop: 8 }} wrap>
                 {profile.tags.map((t: string) => (
                   <Tag key={t} color="geekblue">
                     {t}
@@ -370,7 +368,6 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
             }}
           >
             <Text strong>资质与荣誉概览</Text>
-            {/* 移除了“更多”链接 */}
           </div>
           <div style={{ padding: 24 }}>
             <Timeline
@@ -386,7 +383,6 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                 ),
               }))}
             />
-            {/* 移除了此处的企业标签展示 */}
           </div>
         </Col>
       </Row>
@@ -401,11 +397,9 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
       >
         <Tabs
           items={tabItems}
-          // 移除 type="card"，使用默认样式（Line），视觉更简洁
-          tabBarStyle={{ margin: 0 }} // 移除 Tab 栏下方的默认外边距
+          tabBarStyle={{ margin: 0 }}
           style={{ width: "100%" }}
         />
-        {/* 添加一点底部留白，使内容不紧贴分割线 */}
         <div style={{ height: 24 }}></div>
       </div>
 
