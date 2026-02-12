@@ -2,7 +2,7 @@
  * src/pages/IndustryPortrait/components/EnterpriseRDTab.tsx
  */
 import React from "react";
-import { RocketOutlined } from "@ant-design/icons";
+// import { RocketOutlined } from "@ant-design/icons";
 import { Tag } from "antd";
 import ProfileListCard from "./ProfileListCard";
 
@@ -51,8 +51,8 @@ const EnterpriseRDTab: React.FC = () => {
 
   return (
     <ProfileListCard
-      title="研发创新信息"
-      icon={<RocketOutlined />}
+      // title="研发创新信息"
+      // icon={<RocketOutlined />}
       columns={columns}
       data={data}
     />

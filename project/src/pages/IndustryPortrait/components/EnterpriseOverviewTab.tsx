@@ -12,12 +12,13 @@ import {
   Descriptions,
   Table,
   Statistic,
-  Divider,
+  // Divider,
   Progress,
   Timeline,
   Alert,
   Grid,
   List,
+  Tabs,
 } from "antd";
 import {
   GlobalOutlined,
@@ -28,9 +29,22 @@ import {
   UserOutlined,
   WarningOutlined,
   RiseOutlined,
+  // AppstoreOutlined,
+  RocketOutlined,
+  ShopOutlined,
+  SafetyCertificateOutlined,
+  TrophyOutlined,
+  FileProtectOutlined,
 } from "@ant-design/icons";
 import { Radar } from "@ant-design/plots";
 import dayjs from "dayjs";
+
+// --- 引入子标签页组件 ---
+import EnterpriseRDTab from "./EnterpriseRDTab";
+import EnterpriseMarketTab from "./EnterpriseMarketTab";
+import EnterpriseQualificationTab from "./EnterpriseQualificationTab";
+import EnterpriseHonorTab from "./EnterpriseHonorTab";
+import EnterpriseProductTab from "./EnterpriseProductTab";
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
@@ -164,6 +178,55 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
     );
   };
 
+  // --- 子标签页配置 ---
+  const tabItems = [
+    {
+      key: "rd",
+      label: (
+        <span>
+          <RocketOutlined /> 研发信息
+        </span>
+      ),
+      children: <EnterpriseRDTab />,
+    },
+    {
+      key: "market",
+      label: (
+        <span>
+          <ShopOutlined /> 市场信息
+        </span>
+      ),
+      children: <EnterpriseMarketTab />,
+    },
+    {
+      key: "qualification",
+      label: (
+        <span>
+          <SafetyCertificateOutlined /> 资质信息
+        </span>
+      ),
+      children: <EnterpriseQualificationTab />,
+    },
+    {
+      key: "honor",
+      label: (
+        <span>
+          <TrophyOutlined /> 获奖信息
+        </span>
+      ),
+      children: <EnterpriseHonorTab />,
+    },
+    {
+      key: "product",
+      label: (
+        <span>
+          <FileProtectOutlined /> 产品信息
+        </span>
+      ),
+      children: <EnterpriseProductTab />,
+    },
+  ];
+
   return (
     <>
       {/* 区块一：企业名片 */}
@@ -203,6 +266,7 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                   <GlobalOutlined /> 官网：{profile.baseInfo.website}
                 </span>
               </Space>
+              {/* 企业标签现在只在此处展示 */}
               <Space style={{ marginTop: 8 }}>
                 {profile.tags.map((t: string) => (
                   <Tag key={t} color="geekblue">
@@ -305,8 +369,8 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
               backgroundColor: "#fafafa",
             }}
           >
-            <Text strong>资质与荣誉</Text>
-            <a href="#">更多</a>
+            <Text strong>资质与荣誉概览</Text>
+            {/* 移除了“更多”链接 */}
           </div>
           <div style={{ padding: 24 }}>
             <Timeline
@@ -322,18 +386,28 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                 ),
               }))}
             />
-            <Divider style={{ margin: "12px 0" }} />
-            <Title level={5} style={{ fontSize: 14, marginBottom: 8 }}>
-              企业标签
-            </Title>
-            <Space size={[0, 8]} wrap>
-              {profile.tags.map((t: string) => (
-                <Tag key={t}>{t}</Tag>
-              ))}
-            </Space>
+            {/* 移除了此处的企业标签展示 */}
           </div>
         </Col>
       </Row>
+
+      {/* 新增区块：企业详细数据 Tabs */}
+      <div
+        style={{
+          borderBottom: BORDER_STYLE,
+          padding: "0 24px",
+          minHeight: 300,
+        }}
+      >
+        <Tabs
+          items={tabItems}
+          // 移除 type="card"，使用默认样式（Line），视觉更简洁
+          tabBarStyle={{ margin: 0 }} // 移除 Tab 栏下方的默认外边距
+          style={{ width: "100%" }}
+        />
+        {/* 添加一点底部留白，使内容不紧贴分割线 */}
+        <div style={{ height: 24 }}></div>
+      </div>
 
       {/* 区块三：企业综合评估 */}
       <div style={{ borderBottom: BORDER_STYLE }}>

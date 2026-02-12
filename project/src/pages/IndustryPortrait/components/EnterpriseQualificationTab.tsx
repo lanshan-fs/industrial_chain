@@ -2,7 +2,7 @@
  * src/pages/IndustryPortrait/components/EnterpriseQualificationTab.tsx
  */
 import React from "react";
-import { SafetyCertificateOutlined } from "@ant-design/icons";
+// import { SafetyCertificateOutlined } from "@ant-design/icons";
 import ProfileListCard from "./ProfileListCard";
 
 const EnterpriseQualificationTab: React.FC = () => {
@@ -39,8 +39,8 @@ const EnterpriseQualificationTab: React.FC = () => {
 
   return (
     <ProfileListCard
-      title="企业资质认证"
-      icon={<SafetyCertificateOutlined />}
+      // title="企业资质认证"
+      // icon={<SafetyCertificateOutlined />}
       columns={columns}
       data={data}
     />

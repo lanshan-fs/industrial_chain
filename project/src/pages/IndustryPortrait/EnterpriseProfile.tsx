@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Layout, Tabs, Empty, Spin, Button } from "antd";
+import { Layout, Empty, Spin, Button } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 import ReportActionButtons from "../../components/ReportActionButtons";
 import EnterpriseOverviewTab from "./components/EnterpriseOverviewTab";
-import EnterpriseRDTab from "./components/EnterpriseRDTab";
-import EnterpriseMarketTab from "./components/EnterpriseMarketTab";
-import EnterpriseQualificationTab from "./components/EnterpriseQualificationTab";
-import EnterpriseHonorTab from "./components/EnterpriseHonorTab";
-import EnterpriseProductTab from "./components/EnterpriseProductTab";
 
 // --- 引入本地数据 ---
 import companiesData from "../../assets/data/companies.json";
@@ -189,8 +184,7 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
 const EnterpriseProfile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("profile"); // 控制子标签页切换
-  const navigate = useNavigate(); // 使用 hook 获取导航方法
+  const navigate = useNavigate();
 
   // 初始化加载
   useEffect(() => {
@@ -221,59 +215,34 @@ const EnterpriseProfile: React.FC = () => {
     <Layout style={{ minHeight: "100vh", background: "#fff" }}>
       <Content style={{ padding: 0, width: "100%" }}>
         <div style={{ maxWidth: "100%", margin: "0 auto" }}>
-          {/* 顶部工具栏 + 导航 Tabs */}
+          {/* 顶部工具栏 */}
           <div
             style={{
               padding: "0 24px",
               borderBottom: BORDER_STYLE,
               display: "flex",
-              justifyContent: "flex-end", // 整体靠右
+              justifyContent: "space-between", // 左右分布
               alignItems: "center",
               backgroundColor: "#fff",
-              height: 64, // 固定高度
+              height: 64,
             }}
           >
             {/* 左侧：返回按钮 */}
-            <div style={{ flex: 1 }}>
-              <Button
-                type="text"
-                icon={<ArrowLeftOutlined />}
-                onClick={() => navigate(-1)}
-                style={{ fontSize: 14 }}
-              >
-                返回
-              </Button>
-            </div>
-
-            {/* 中间：Tabs 导航 (放在右侧与按钮平行) */}
-            <Tabs
-              activeKey={activeTab}
-              onChange={setActiveTab}
-              items={[
-                { key: "profile", label: "基本信息" },
-                { key: "rd", label: "研发信息" },
-                { key: "market", label: "市场信息" },
-                { key: "qualification", label: "资质信息" },
-                { key: "honor", label: "获奖信息" },
-                { key: "product", label: "产品信息" },
-              ]}
-              style={{ marginRight: 24, marginBottom: -16 }} // 负边距抵消 Tabs 默认底部留白，使其垂直居中
-              tabBarStyle={{ borderBottom: "none", marginBottom: 0 }}
-            />
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+              style={{ fontSize: 14 }}
+            >
+              返回
+            </Button>
 
             {/* 右侧：操作按钮 */}
             {profile && (
-              <div
-                style={{
-                  paddingLeft: 16,
-                  borderLeft: "1px solid #f0f0f0",
-                }}
-              >
-                <ReportActionButtons
-                  reportTitle={`${profile.baseInfo.name}企业画像报告`}
-                  targetId="enterprise-report-content"
-                />
-              </div>
+              <ReportActionButtons
+                reportTitle={`${profile.baseInfo.name}企业画像报告`}
+                targetId="enterprise-report-content"
+              />
             )}
           </div>
 
@@ -283,15 +252,8 @@ const EnterpriseProfile: React.FC = () => {
             </div>
           ) : (
             <div id="enterprise-report-content">
-              {/* 根据 ActiveTab 渲染不同内容 */}
-              {activeTab === "profile" && (
-                <EnterpriseOverviewTab profile={profile} />
-              )}
-              {activeTab === "rd" && <EnterpriseRDTab />}
-              {activeTab === "market" && <EnterpriseMarketTab />}
-              {activeTab === "qualification" && <EnterpriseQualificationTab />}
-              {activeTab === "honor" && <EnterpriseHonorTab />}
-              {activeTab === "product" && <EnterpriseProductTab />}
+              {/* 直接渲染整合后的全览页面 */}
+              <EnterpriseOverviewTab profile={profile} />
             </div>
           )}
 

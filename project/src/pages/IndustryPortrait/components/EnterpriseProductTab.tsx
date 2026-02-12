@@ -2,7 +2,7 @@
  * src/pages/IndustryPortrait/components/EnterpriseProductTab.tsx
  */
 import React from "react";
-import { FileProtectOutlined } from "@ant-design/icons";
+// import { FileProtectOutlined } from "@ant-design/icons";
 import ProfileListCard from "./ProfileListCard";
 
 const EnterpriseProductTab: React.FC = () => {
@@ -39,8 +39,8 @@ const EnterpriseProductTab: React.FC = () => {
 
   return (
     <ProfileListCard
-      title="主要产品与服务"
-      icon={<FileProtectOutlined />}
+      // title="主要产品与服务"
+      // icon={<FileProtectOutlined />}
       columns={columns}
       data={data}
     />

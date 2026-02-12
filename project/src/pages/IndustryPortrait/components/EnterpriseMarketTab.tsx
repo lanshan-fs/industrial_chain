@@ -2,7 +2,7 @@
  * src/pages/IndustryPortrait/components/EnterpriseMarketTab.tsx
  */
 import React from "react";
-import { ShopOutlined } from "@ant-design/icons";
+// import { ShopOutlined } from "@ant-design/icons";
 import ProfileListCard from "./ProfileListCard";
 
 const EnterpriseMarketTab: React.FC = () => {
@@ -39,8 +39,8 @@ const EnterpriseMarketTab: React.FC = () => {
 
   return (
     <ProfileListCard
-      title="市场招投标与竞品信息"
-      icon={<ShopOutlined />}
+      // title="市场招投标与竞品信息"
+      // icon={<ShopOutlined />}
       columns={columns}
       data={data}
     />
