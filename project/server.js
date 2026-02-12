@@ -896,6 +896,96 @@ app.post("/api/tags/add", async (req, res) => {
   }
 });
 
+// ==========================================
+// 新增：元数据获取接口 (用于高级搜索)
+// ==========================================
+app.get("/api/meta/all", async (req, res) => {
+  try {
+    const conn = await pool.getConnection();
+
+    // 1. 获取所有字典数据
+    const [dictRows] = await conn.query(
+      "SELECT group_code, name, sort_order FROM sys_dictionary ORDER BY sort_order",
+    );
+    const dictionary = {};
+    dictRows.forEach((row) => {
+      if (!dictionary[row.group_code]) {
+        dictionary[row.group_code] = [];
+      }
+      dictionary[row.group_code].push({ label: row.name, value: row.name });
+    });
+
+    // 2. 获取行业分类 (构建树)
+    const [industryRows] = await conn.query(
+      "SELECT id, parent_id, name, level FROM sys_industry_category ORDER BY sort_order",
+    );
+    const industryTree = buildTree(industryRows);
+
+    // 3. 获取应用场景
+    const [scenarioRows] = await conn.query(
+      "SELECT name FROM sys_scenario ORDER BY sort_order",
+    );
+    const scenarios = scenarioRows.map((r) => ({
+      label: r.name,
+      value: r.name,
+    }));
+
+    // 4. 获取行政区域 (街道/地区)
+    const [regionRows] = await conn.query(
+      "SELECT name, type FROM sys_region WHERE type IN ('STREET', 'AREA') ORDER BY sort_order",
+    );
+    const regions = {
+      street: regionRows
+        .filter((r) => r.type === "STREET")
+        .map((r) => ({ label: r.name, value: r.name })),
+      area: regionRows
+        .filter((r) => r.type === "AREA")
+        .map((r) => ({ label: r.name, value: r.name })),
+    };
+
+    conn.release();
+
+    res.json({
+      success: true,
+      data: {
+        dictionary,
+        industryTree,
+        scenarios,
+        regions,
+      },
+    });
+  } catch (error) {
+    console.error("Meta API Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 辅助函数：构建树形结构
+function buildTree(items) {
+  const itemMap = {};
+  const rootNodes = [];
+
+  items.forEach((item) => {
+    itemMap[item.id] = {
+      title: item.name,
+      value: item.name, // 使用名称作为 value，方便前端搜索
+      key: item.id,
+      children: [],
+    };
+  });
+
+  items.forEach((item) => {
+    const node = itemMap[item.id];
+    if (item.parent_id && item.parent_id !== 0 && itemMap[item.parent_id]) {
+      itemMap[item.parent_id].children.push(node);
+    } else {
+      rootNodes.push(node);
+    }
+  });
+
+  return rootNodes;
+}
+
 app.listen(PORT, () => {
   console.log(`http://localhost:${PORT}`);
 });
