@@ -17,6 +17,7 @@ import {
   Divider,
   Dropdown,
   Avatar,
+  message,
 } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -26,7 +27,6 @@ import {
   UserOutlined,
   BankOutlined,
   EnvironmentOutlined,
-  SafetyCertificateOutlined,
   ExportOutlined,
   SortAscendingOutlined,
   GlobalOutlined,
@@ -37,36 +37,31 @@ import {
   ShopOutlined,
   RiseOutlined,
   CrownOutlined,
+  UpOutlined, // 新增：用于收起图标
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { DataNode } from "antd/es/tree";
-import { FILTER_CONFIG } from "../AdvancedSearch/constants";
 
 const { Sider, Content } = Layout;
 const { Title, Text, Link } = Typography;
 const { useBreakpoint } = Grid;
 
-// 增强色彩
+// --- 原版树谱颜色配置 (保持不变) ---
 const STAGE_COLORS: Record<string, string> = {
-  stage_上游: "#1677ff", // 科技蓝
-  stage_中游: "#13c2c2", // 智造青
-  stage_下游: "#fa8c16", // 服务橙
+  stage_上游: "#1677ff",
+  stage_中游: "#13c2c2",
+  stage_下游: "#fa8c16",
 };
-
-// 使用更明显的淡色背景，增强树谱的区块感
 const STAGE_BG_COLORS: Record<string, string> = {
   stage_上游: "#f0f5ff",
   stage_中游: "#e6fffb",
   stage_下游: "#fff7e6",
 };
-
-// 边框色，用于节点左侧装饰
 const STAGE_BORDER_COLORS: Record<string, string> = {
   stage_上游: "#adc6ff",
   stage_中游: "#87e8de",
   stage_下游: "#ffd591",
 };
-
 const LOGO_COLORS = [
   "#1677ff",
   "#722ed1",
@@ -75,6 +70,113 @@ const LOGO_COLORS = [
   "#f5222d",
   "#52c41a",
 ];
+
+// 随机标签颜色
+const TAG_COLORS = [
+  "magenta",
+  "red",
+  "volcano",
+  "orange",
+  "gold",
+  "lime",
+  "green",
+  "cyan",
+  "blue",
+  "geekblue",
+  "purple",
+];
+
+// --- 静态 Mock 数据 ---
+const MOCK_TECH_FIELDS = [
+  "人工智能",
+  "大数据",
+  "云计算",
+  "物联网",
+  "区块链",
+  "5G通信",
+  "数字孪生",
+  "边缘计算",
+  "量子计算",
+  "元宇宙",
+];
+const MOCK_FINANCING_ROUNDS = [
+  "种子轮",
+  "天使轮",
+  "A轮",
+  "B轮",
+  "C轮",
+  "D轮及以上",
+  "IPO上市",
+  "战略融资",
+  "未融资",
+];
+
+// --- 辅助组件：可折叠的筛选行 ---
+const FilterRow: React.FC<{
+  label: string;
+  groupKey: string;
+  options: string[];
+  activeValue: string;
+  onSelect: (key: string, val: string) => void;
+}> = ({ label, groupKey, options, activeValue, onSelect }) => {
+  const [expanded, setExpanded] = useState(false);
+  const LIMIT = 10; // 默认显示个数
+  const showExpand = options.length > LIMIT;
+  const visibleOptions = expanded ? options : options.slice(0, LIMIT);
+
+  return (
+    <div style={{ display: "flex", marginBottom: 10, lineHeight: "26px" }}>
+      <div
+        style={{ width: 80, color: "#8c8c8c", fontWeight: 500, flexShrink: 0 }}
+      >
+        {label}
+      </div>
+      <div style={{ flex: 1, display: "flex", alignItems: "flex-start" }}>
+        <div style={{ flex: 1 }}>
+          <Space wrap size={[4, 4]}>
+            <Tag.CheckableTag
+              checked={!activeValue}
+              onChange={() => onSelect(groupKey, "")}
+              style={{ border: "none", padding: "1px 10px" }}
+            >
+              不限
+            </Tag.CheckableTag>
+            {visibleOptions.map((opt) => (
+              <Tag.CheckableTag
+                key={opt}
+                checked={activeValue === opt}
+                onChange={() => onSelect(groupKey, opt)}
+                style={{
+                  border: "none",
+                  padding: "1px 10px",
+                  color: activeValue === opt ? undefined : "#595959",
+                }}
+              >
+                {opt}
+              </Tag.CheckableTag>
+            ))}
+          </Space>
+        </div>
+        {showExpand && (
+          <Button
+            type="link"
+            size="small"
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              padding: "0 8px",
+              fontSize: 12,
+              height: 24,
+              marginLeft: 8,
+            }}
+          >
+            {expanded ? "收起" : "更多"}{" "}
+            {expanded ? <UpOutlined /> : <DownOutlined />}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const IndustryClass: React.FC = () => {
   const navigate = useNavigate();
@@ -91,16 +193,26 @@ const IndustryClass: React.FC = () => {
   const [preciseList, setPreciseList] = useState<any[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
 
+  // 筛选元数据
+  const [metaData, setMetaData] = useState<any>({
+    dictionary: {},
+    scenarios: [],
+    regions: { street: [], area: [] },
+  });
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>(
+    {},
+  );
+
   // Stats
   const [searchTime, setSearchTime] = useState(0.0);
   const [totalResult, setTotalResult] = useState(0);
   const [sortLabel, setSortLabel] = useState("默认排序");
 
-  // Scroll Refs
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // --- Initialization ---
   useEffect(() => {
+    fetchMeta();
     fetchTree();
   }, []);
 
@@ -109,22 +221,15 @@ const IndustryClass: React.FC = () => {
     const keyword = params.get("keyword") || "";
     const tagId = params.get("tagId");
     const stageKey = params.get("stageKey");
-    const advanced = params.get("advanced");
-    const filterData = params.get("filterData");
 
     if (tagId) setSelectedKeys([tagId]);
     if (stageKey) setSelectedKeys([stageKey]);
 
-    const queryParams: any = { keyword };
-    if (tagId) queryParams.tagId = tagId;
-    if (stageKey) queryParams.stageKey = stageKey;
-    if (advanced === "true" && filterData) {
-      queryParams.filterData = filterData;
-    }
-
+    const queryParams: any = { keyword, tagId, stageKey };
     fetchCompanies(queryParams);
   }, [location.search]);
 
+  // 1. 获取树谱
   const fetchTree = async () => {
     setLoadingTree(true);
     try {
@@ -132,12 +237,26 @@ const IndustryClass: React.FC = () => {
       const json = await res.json();
       if (json.success) {
         setTreeData(json.data);
-        setExpandedKeys(json.data.map((d: any) => d.key));
+        if (json.data && json.data.length > 0) {
+          setExpandedKeys([json.data[0].key]);
+        }
       }
     } catch (err) {
       console.error(err);
+      message.error("加载树谱失败");
     } finally {
       setLoadingTree(false);
+    }
+  };
+
+  // 2. 获取筛选元数据
+  const fetchMeta = async () => {
+    try {
+      const res = await fetch("http://localhost:3001/api/meta/all");
+      const json = await res.json();
+      if (json.success) setMetaData(json.data);
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -166,6 +285,7 @@ const IndustryClass: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
+      message.error("获取企业列表失败");
     } finally {
       const endTime = performance.now();
       setSearchTime(parseFloat(((endTime - startTime) / 1000).toFixed(3)));
@@ -173,64 +293,7 @@ const IndustryClass: React.FC = () => {
     }
   };
 
-  // --- Event Handlers ---
-  const onSelect = (keys: React.Key[]) => {
-    setSelectedKeys(keys);
-    const key = keys[0] as string;
-    const params = new URLSearchParams(location.search);
-
-    if (key) {
-      params.delete("tagId");
-      params.delete("stageKey");
-      if (key.startsWith("stage_")) {
-        params.set("stageKey", key);
-      } else {
-        params.set("tagId", key);
-      }
-    } else {
-      params.delete("tagId");
-      params.delete("stageKey");
-    }
-    navigate(`?${params.toString()}`);
-  };
-
-  const scrollLeft = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -320, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 320, behavior: "smooth" });
-    }
-  };
-
-  const handleSortChange: MenuProps["onClick"] = (e) => {
-    switch (e.key) {
-      case "default":
-        setSortLabel("默认排序");
-        break;
-      case "capital_desc":
-        setSortLabel("注册资本 (高->低)");
-        break;
-      case "date_desc":
-        setSortLabel("成立日期 (晚->早)");
-        break;
-      case "score_desc":
-        setSortLabel("评分 (高->低)");
-        break;
-    }
-  };
-
-  const sortItems: MenuProps["items"] = [
-    { key: "default", label: "默认排序" },
-    { key: "capital_desc", label: "注册资本 (高->低)" },
-    { key: "date_desc", label: "成立日期 (晚->早)" },
-    { key: "score_desc", label: "企业评分 (高->低)" },
-  ];
-
-  // 查找节点的父级 Stage 颜色
+  // --- 原版树谱逻辑 ---
   const findParentStageKey = (nodeKey: string): string => {
     for (const root of treeData) {
       if (root.key === nodeKey) return root.key as string;
@@ -253,7 +316,6 @@ const IndustryClass: React.FC = () => {
     const isSelected = selectedKeys.includes(node.key);
     const isStage = String(node.key).startsWith("stage_");
 
-    // 确定节点的颜色体系
     let stageKey = isStage
       ? (node.key as string)
       : findParentStageKey(node.key as string);
@@ -261,7 +323,6 @@ const IndustryClass: React.FC = () => {
     const bgColor = STAGE_BG_COLORS[stageKey] || "#fafafa";
     const borderColor = STAGE_BORDER_COLORS[stageKey] || "#d9d9d9";
 
-    // 视觉设计：每个节点都是一个小胶囊，带有左侧颜色条
     return (
       <div
         style={{
@@ -272,7 +333,6 @@ const IndustryClass: React.FC = () => {
           padding: isStage ? "12px 16px" : "10px 12px",
           margin: "6px 0",
           borderRadius: 8,
-          // 如果选中：深色边框 + 浅色背景；如果未选中：极浅背景 + 无边框
           background: isSelected ? "#fff" : isStage ? bgColor : "transparent",
           border: isSelected
             ? `1px solid ${primaryColor}`
@@ -328,18 +388,93 @@ const IndustryClass: React.FC = () => {
     );
   };
 
-  // --- Render Sections ---
+  const onSelect = (keys: React.Key[]) => {
+    setSelectedKeys(keys);
+    const key = keys[0] as string;
+    const params = new URLSearchParams(location.search);
+    params.delete("tagId");
+    params.delete("stageKey");
+    if (key) {
+      if (key.startsWith("stage_")) params.set("stageKey", key);
+      else params.set("tagId", key);
+    }
+    navigate(`?${params.toString()}`);
+  };
 
-  // 1. 筛选区块
+  const handleFilterClick = (groupKey: string, value: string) => {
+    setActiveFilters((prev) => ({
+      ...prev,
+      [groupKey]: prev[groupKey] === value ? "" : value,
+    }));
+  };
+
+  const scrollLeft = () =>
+    scrollRef.current?.scrollBy({ left: -320, behavior: "smooth" });
+  const scrollRight = () =>
+    scrollRef.current?.scrollBy({ left: 320, behavior: "smooth" });
+
+  const handleSortChange: MenuProps["onClick"] = (e) => {
+    switch (e.key) {
+      case "default":
+        setSortLabel("默认排序");
+        break;
+      case "capital_desc":
+        setSortLabel("注册资本 (高->低)");
+        break;
+      case "date_desc":
+        setSortLabel("成立日期 (晚->早)");
+        break;
+      case "score_desc":
+        setSortLabel("评分 (高->低)");
+        break;
+    }
+  };
+
+  const sortItems: MenuProps["items"] = [
+    { key: "default", label: "默认排序" },
+    { key: "capital_desc", label: "注册资本 (高->低)" },
+    { key: "date_desc", label: "成立日期 (晚->早)" },
+    { key: "score_desc", label: "企业评分 (高->低)" },
+  ];
+
+  // --- 1. 筛选区块 (优化：全量数据 + 展开收起) ---
   const renderFilterSection = () => {
-    const displayFilters = FILTER_CONFIG.slice(0, 3);
+    // 构造筛选组数据
+    const filterGroups = [
+      {
+        key: "entType",
+        name: "企业类型",
+        options: (metaData.dictionary["ENT_TYPE"] || []).map(
+          (i: any) => i.value,
+        ),
+      },
+      {
+        key: "techAttr",
+        name: "科技属性",
+        options: (metaData.dictionary["TECH_ATTR"] || []).map(
+          (i: any) => i.value,
+        ),
+      },
+      { key: "techField", name: "技术领域", options: MOCK_TECH_FIELDS },
+      {
+        key: "scenario",
+        name: "应用场景",
+        options: metaData.scenarios.map((i: any) => i.value),
+      }, // 全量
+      { key: "financing", name: "融资轮次", options: MOCK_FINANCING_ROUNDS },
+      {
+        key: "street",
+        name: "街道地区",
+        options: metaData.regions.street.map((i: any) => i.value),
+      }, // 全量
+    ];
+
     return (
       <div
         style={{
           background: "#fff",
-          padding: "24px 32px",
+          padding: "20px 32px",
           borderBottom: "1px solid #f0f0f0",
-          marginBottom: 0,
         }}
       >
         <div
@@ -370,68 +505,24 @@ const IndustryClass: React.FC = () => {
             更多筛选条件，试试高级搜索 <RightOutlined />
           </Button>
         </div>
-        <div style={{ fontSize: 14 }}>
-          {displayFilters.map((cat) =>
-            cat.groups.map((group) => (
-              <div
-                key={group.key}
-                style={{
-                  display: "flex",
-                  marginBottom: 16,
-                  lineHeight: "28px",
-                }}
-              >
-                <div
-                  style={{
-                    width: 100,
-                    color: "#8c8c8c",
-                    fontWeight: 500,
-                    flexShrink: 0,
-                  }}
-                >
-                  {group.name}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <Space wrap size={[8, 8]}>
-                    <Tag.CheckableTag
-                      checked={true}
-                      onChange={() => {}}
-                      style={{
-                        border: "none",
-                        background: "#e6f4ff",
-                        color: "#1677ff",
-                        fontWeight: 600,
-                        padding: "2px 12px",
-                        borderRadius: 4,
-                      }}
-                    >
-                      不限
-                    </Tag.CheckableTag>
-                    {group.options.slice(0, 8).map((opt) => (
-                      <Tag.CheckableTag
-                        key={opt}
-                        checked={false}
-                        onChange={() => {}}
-                        style={{
-                          border: "none",
-                          padding: "2px 12px",
-                          color: "#595959",
-                        }}
-                      >
-                        {opt}
-                      </Tag.CheckableTag>
-                    ))}
-                  </Space>
-                </div>
-              </div>
-            )),
-          )}
+
+        <div style={{ fontSize: 13 }}>
+          {filterGroups.map((group) => (
+            <FilterRow
+              key={group.key}
+              label={group.name}
+              groupKey={group.key}
+              options={group.options || []}
+              activeValue={activeFilters[group.key]}
+              onSelect={handleFilterClick}
+            />
+          ))}
         </div>
       </div>
     );
   };
 
-  // 2. 精准结果 (启信宝风格)
+  // --- 2. 推荐结果 ---
   const renderPreciseBlock = () => {
     if (loadingList || preciseList.length === 0) return null;
     return (
@@ -452,7 +543,6 @@ const IndustryClass: React.FC = () => {
             fontSize: 14,
           }}
         >
-          {/* 统计条：使用 Tag 或 图标让数据更生动 */}
           <Space size={24}>
             <Space>
               <ShopOutlined style={{ color: "#1677ff" }} />
@@ -470,7 +560,6 @@ const IndustryClass: React.FC = () => {
             </Space>
           </Space>
         </div>
-
         <div style={{ display: "flex", alignItems: "center" }}>
           <Button
             shape="circle"
@@ -497,7 +586,7 @@ const IndustryClass: React.FC = () => {
           >
             {preciseList.map((item, idx) => (
               <Card
-                key={`precise-${item.company_id}`}
+                key={`p-${item.company_id}`}
                 hoverable
                 onClick={() =>
                   navigate(
@@ -508,12 +597,11 @@ const IndustryClass: React.FC = () => {
                   minWidth: 260,
                   maxWidth: 260,
                   borderRadius: 8,
-                  border: "1px solid #f0f0f0", // 极淡边框
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)", // 柔和阴影
+                  border: "1px solid #f0f0f0",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                 }}
                 bodyStyle={{ padding: "20px" }}
               >
-                {/* 头部：Logo + Name */}
                 <div
                   style={{
                     display: "flex",
@@ -525,12 +613,12 @@ const IndustryClass: React.FC = () => {
                     shape="square"
                     size={40}
                     style={{
-                      backgroundColor: LOGO_COLORS[idx % LOGO_COLORS.length],
+                      backgroundColor: LOGO_COLORS[idx % 6],
                       marginRight: 12,
                       borderRadius: 6,
                     }}
                   >
-                    {item.company_name.substring(0, 1)}
+                    {item.company_name[0]}
                   </Avatar>
                   <div style={{ overflow: "hidden" }}>
                     <Text
@@ -547,14 +635,12 @@ const IndustryClass: React.FC = () => {
                     <Tag
                       color="geekblue"
                       bordered={false}
-                      style={{ margin: 0, fontSize: 10, lineHeight: "18px" }}
+                      style={{ fontSize: 10, lineHeight: "18px", margin: 0 }}
                     >
                       行业龙头
                     </Tag>
                   </div>
                 </div>
-
-                {/* 数据对齐展示 (Grid) */}
                 <Row gutter={[8, 12]}>
                   <Col span={12}>
                     <Text
@@ -579,8 +665,6 @@ const IndustryClass: React.FC = () => {
                     </Text>
                   </Col>
                 </Row>
-
-                {/* 底部：装饰性 Link */}
                 <div
                   style={{
                     marginTop: 16,
@@ -616,56 +700,51 @@ const IndustryClass: React.FC = () => {
     );
   };
 
-  // 3. 列表项渲染
+  // --- 3. 列表项 ---
   const renderListItem = (item: any, index: number) => {
-    const avatarColor = LOGO_COLORS[index % LOGO_COLORS.length];
     return (
       <List.Item
         style={{
-          padding: "48px 32px",
+          padding: "32px",
           background: "#fff",
           borderBottom: "1px solid #f0f0f0",
-          marginBottom: 0,
-          transition: "all 0.3s",
         }}
         className="list-item-hover"
       >
-        <Row gutter={48} style={{ width: "100%" }} align="stretch">
-          {/* 左侧：Logo 和 名称 */}
-          <Col flex="480px">
+        <Row gutter={24} style={{ width: "100%" }}>
+          <Col span={15} style={{ borderRight: "1px dashed #f0f0f0" }}>
             <div style={{ display: "flex", alignItems: "flex-start" }}>
               <div
                 style={{
-                  width: 72,
-                  height: 72,
-                  background: avatarColor,
-                  borderRadius: 12,
+                  width: 68,
+                  height: 68,
+                  background: LOGO_COLORS[index % 6],
+                  borderRadius: 8,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginRight: 24,
-                  flexShrink: 0,
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+                  marginRight: 20,
                   color: "#fff",
-                  fontSize: 30,
+                  fontSize: 28,
                   fontWeight: "bold",
+                  flexShrink: 0,
                 }}
               >
-                {item.company_name.substring(0, 1)}
+                {item.company_name[0]}
               </div>
               <div style={{ flex: 1 }}>
                 <div
                   style={{
-                    marginBottom: 16,
+                    marginBottom: 10,
                     display: "flex",
                     alignItems: "center",
-                    flexWrap: "wrap",
                     gap: 8,
+                    flexWrap: "wrap",
                   }}
                 >
                   <Link
                     strong
-                    style={{ fontSize: 20, color: "#262626" }}
+                    style={{ fontSize: 18, color: "#262626" }}
                     onClick={() =>
                       navigate(
                         `/industry-portrait/enterprise-profile?id=${item.company_id}`,
@@ -676,129 +755,146 @@ const IndustryClass: React.FC = () => {
                   </Link>
                   {item.is_high_tech && (
                     <Tag color="blue" bordered={false}>
-                      高新技术企业
+                      高新
                     </Tag>
                   )}
                   {item.risk_score > 80 && (
                     <Tag color="green" bordered={false}>
-                      信用优秀
+                      信用优
                     </Tag>
                   )}
-                  <Tag bordered={false}>A级纳税人</Tag>
                 </div>
-
-                {/* 关键指标行 */}
-                <Space
-                  size={32}
-                  style={{ fontSize: 14, color: "#595959", marginBottom: 20 }}
-                >
-                  <span style={{ display: "flex", alignItems: "center" }}>
-                    <UserOutlined
-                      style={{ color: "#1677ff", marginRight: 8, fontSize: 16 }}
-                    />{" "}
-                    {item.legalPerson || "王**"}
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center" }}>
-                    <BankOutlined
-                      style={{ color: "#fa8c16", marginRight: 8, fontSize: 16 }}
-                    />{" "}
-                    {item.registeredCapital}1 万人民币
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center" }}>
-                    <GlobalOutlined
-                      style={{ color: "#52c41a", marginRight: 8, fontSize: 16 }}
-                    />{" "}
-                    {item.establishmentDate || "2015-05-20"}
-                  </span>
-                </Space>
-
-                {/* 辅助信息 */}
-                <Space
-                  direction="vertical"
-                  size={8}
-                  style={{ fontSize: 13, color: "#8c8c8c" }}
-                >
-                  <div>
-                    统一社会信用代码：
-                    <Text copyable style={{ color: "#8c8c8c" }}>
-                      91110105MA00XXXXXX
+                <Row gutter={16} style={{ marginBottom: 12 }}>
+                  <Col span={8}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      法定代表人
                     </Text>
-                  </div>
-                  {/* 确保使用 EnvironmentOutlined */}
-                  <div>
-                    <EnvironmentOutlined style={{ marginRight: 6 }} />
-                    注册地址：北京市朝阳区望京街道...
-                  </div>
-                </Space>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginTop: 2,
+                      }}
+                    >
+                      <UserOutlined
+                        style={{ color: token.colorPrimary, marginRight: 6 }}
+                      />
+                      <Text>{item.legalPerson || "-"}</Text>
+                    </div>
+                  </Col>
+                  <Col span={8}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      注册资本
+                    </Text>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginTop: 2,
+                      }}
+                    >
+                      <BankOutlined
+                        style={{ color: "#fa8c16", marginRight: 6 }}
+                      />
+                      <Text>{item.registeredCapital}</Text>
+                    </div>
+                  </Col>
+                  <Col span={8}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      成立日期
+                    </Text>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginTop: 2,
+                      }}
+                    >
+                      <GlobalOutlined
+                        style={{ color: "#52c41a", marginRight: 6 }}
+                      />
+                      <Text>{item.establishmentDate?.substring(0, 7)}</Text>
+                    </div>
+                  </Col>
+                </Row>
+                <div style={{ fontSize: 13, color: "#8c8c8c" }}>
+                  <EnvironmentOutlined style={{ marginRight: 6 }} />
+                  注册地址：北京市朝阳区望京街道...
+                </div>
               </div>
             </div>
           </Col>
 
-          {/* 右侧：更丰富的信息 + 底部按钮 */}
           <Col
-            flex="auto"
+            span={9}
             style={{
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
+              paddingLeft: 24,
             }}
           >
-            {/* 上部分：联系方式 & 状态 */}
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  企业标签
+                </Text>
+                <Tag color="cyan" style={{ margin: 0 }}>
+                  {item.financing_round}
+                </Tag>
+              </div>
+              <Space size={[6, 6]} wrap style={{ minHeight: 60 }}>
+                {(item.tags || [])
+                  .slice(0, 8)
+                  .map((tag: string, tIdx: number) => (
+                    <Tag
+                      key={tIdx}
+                      color={
+                        TAG_COLORS[
+                          Math.floor(Math.random() * TAG_COLORS.length)
+                        ]
+                      }
+                      style={{ cursor: "pointer", borderRadius: 2, margin: 0 }}
+                      onClick={() =>
+                        navigate(`/advanced-search?keyword=${tag}`)
+                      }
+                    >
+                      {tag}
+                    </Tag>
+                  ))}
+              </Space>
+            </div>
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "flex-start",
+                alignItems: "flex-end",
+                marginTop: 12,
               }}
             >
               <Space
                 direction="vertical"
-                size={8}
-                style={{ fontSize: 13, color: "#666" }}
+                size={2}
+                style={{ fontSize: 12, color: "#999" }}
               >
-                <Space>
-                  <MailOutlined /> {item.email || "contact@company.com"}
-                </Space>
-                <Space>
-                  <PhoneOutlined /> {item.phone || "010-88888888"}
-                </Space>
-                <Space>
-                  <GlobalOutlined /> {item.website || "www.company.com"}
-                </Space>
+                <span>
+                  <PhoneOutlined /> {item.phone}
+                </span>
+                <span>
+                  <MailOutlined /> {item.email}
+                </span>
               </Space>
-
-              {/* 状态标 */}
-              <div>
-                {item.risk_score < 60 ? (
-                  <Tag
-                    color="error"
-                    style={{ borderRadius: 10, padding: "2px 10px" }}
-                  >
-                    <SafetyCertificateOutlined /> 高风险
-                  </Tag>
-                ) : (
-                  <Tag
-                    color="success"
-                    style={{ borderRadius: 10, padding: "2px 10px" }}
-                  >
-                    存续
-                  </Tag>
-                )}
-              </div>
-            </div>
-
-            {/* 下部分：操作按钮 (右下角) */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                alignItems: "flex-end",
-                marginTop: 24,
-              }}
-            >
               <Button
                 type="primary"
-                size="large"
+                ghost
+                size="middle"
                 icon={<ArrowRightOutlined />}
                 iconPosition="end"
                 onClick={() =>
@@ -806,12 +902,6 @@ const IndustryClass: React.FC = () => {
                     `/industry-portrait/enterprise-profile?id=${item.company_id}`,
                   )
                 }
-                style={{
-                  borderRadius: 24,
-                  paddingLeft: 32,
-                  paddingRight: 32,
-                  boxShadow: "0 4px 12px rgba(22, 119, 255, 0.3)",
-                }}
               >
                 查看画像
               </Button>
@@ -824,13 +914,12 @@ const IndustryClass: React.FC = () => {
 
   return (
     <Layout style={{ height: "calc(100vh - 64px)", background: "#fff" }}>
-      {/* 侧边栏：增加背景色，视觉上分离 */}
       <Sider
         width={360}
         breakpoint="lg"
         collapsedWidth="0"
         style={{
-          background: "#fafafa", // 浅灰背景
+          background: "#fafafa",
           borderRight: "1px solid #f0f0f0",
           overflowY: "auto",
           padding: screens.md ? "24px 20px" : "12px",
@@ -848,10 +937,9 @@ const IndustryClass: React.FC = () => {
             点击节点筛选，支持多级联动
           </Text>
         </div>
-
         {loadingTree ? (
-          <div style={{ textAlign: "center", marginTop: 60 }}>
-            <Spin tip="加载产业结构..." />
+          <div style={{ textAlign: "center", marginTop: 40 }}>
+            <Spin />
           </div>
         ) : (
           <Tree
@@ -870,82 +958,68 @@ const IndustryClass: React.FC = () => {
         )}
       </Sider>
 
+      {/* 优化点：Content 背景色改回 #fff 以去除底部灰边，并确保内部组件铺满 */}
       <Content
         style={{
           display: "flex",
           flexDirection: "column",
           overflowY: "auto",
-          background: "#f7f8fa",
+          background: "#fff",
         }}
       >
         {renderPreciseBlock()}
         {renderFilterSection()}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          {/* 列表头部功能栏 */}
+
+        <div style={{ flex: 1, background: "#fff", padding: "0 24px" }}>
           <div
             style={{
-              background: "#fff",
-              padding: "16px 32px",
+              padding: "16px 0",
               borderBottom: "1px solid #f0f0f0",
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
             }}
           >
-            <Text style={{ fontSize: 14 }}>
-              朝阳区产业链洞察平台为您找到{" "}
-              <Text strong style={{ color: token.colorPrimary, fontSize: 16 }}>
+            <Text>
+              共找到{" "}
+              <Text strong style={{ color: token.colorPrimary }}>
                 {totalResult}
               </Text>{" "}
-              个搜索结果，用时 <Text>{searchTime}</Text> 秒
+              家企业， 用时 <Text>{searchTime}</Text> 秒
             </Text>
-
-            <Space size="middle">
+            <Space>
               <Dropdown
                 menu={{ items: sortItems, onClick: handleSortChange }}
                 trigger={["click"]}
               >
-                <Button icon={<SortAscendingOutlined />}>
-                  {sortLabel}{" "}
-                  <DownOutlined style={{ fontSize: 10, marginLeft: 4 }} />
+                {/* 优化点：按钮改为 text 类型，视觉更轻量 */}
+                <Button type="text" icon={<SortAscendingOutlined />}>
+                  {sortLabel} <DownOutlined />
                 </Button>
               </Dropdown>
-              <Button icon={<ExportOutlined />}>数据导出</Button>
+              <Button type="text" icon={<ExportOutlined />}>
+                导出数据
+              </Button>
             </Space>
           </div>
 
-          <div style={{ flex: 1, background: "#fff" }}>
-            {loadingList ? (
-              <div style={{ textAlign: "center", padding: 80 }}>
-                <Spin size="large" tip="数据查询中..." />
-              </div>
-            ) : (
-              <List
-                itemLayout="vertical"
-                size="large"
-                dataSource={companyList}
-                renderItem={renderListItem}
-                locale={{
-                  emptyText: (
-                    <Empty
-                      description="未找到相关企业"
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      style={{ margin: "60px 0" }}
-                    />
-                  ),
-                }}
-                pagination={{
-                  pageSize: 10,
-                  total: totalResult,
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  position: "bottom",
-                  align: "center",
-                  style: { padding: "32px 0" },
-                }}
-              />
-            )}
-          </div>
+          {loadingList ? (
+            <div style={{ textAlign: "center", padding: 60 }}>
+              <Spin tip="搜索中..." />
+            </div>
+          ) : (
+            <List
+              itemLayout="vertical"
+              dataSource={companyList}
+              renderItem={renderListItem}
+              locale={{ emptyText: <Empty description="暂无符合条件的企业" /> }}
+              pagination={{
+                pageSize: 10,
+                total: totalResult,
+                align: "center",
+                showSizeChanger: true,
+              }}
+            />
+          )}
         </div>
       </Content>
     </Layout>

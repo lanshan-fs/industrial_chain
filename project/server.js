@@ -331,6 +331,12 @@ app.get("/api/industry/companies", async (req, res) => {
 
   try {
     const { tags, stageMap } = await getAllTagsWithHierarchy();
+
+    // 随机标签池 (排除基本信息)
+    const displayTags = tags
+      .filter((t) => t.domain !== "基本信息" && t.tag_name.length < 8)
+      .map((t) => t.tag_name);
+
     let targetTagIds = [];
 
     if (stageKey) {
@@ -339,7 +345,6 @@ app.get("/api/industry/companies", async (req, res) => {
         (t) =>
           parseInt(t.level, 10) === 1 && stageMap[t.tag_name] === stageName,
       );
-
       l1Tags.forEach((t) => {
         targetTagIds = [
           ...targetTagIds,
@@ -350,7 +355,7 @@ app.get("/api/industry/companies", async (req, res) => {
       targetTagIds = getDescendantTagIds(tagId, tags);
     }
 
-    let sql = `SELECT DISTINCT c.company_id, c.company_name, c.raw_variants FROM companies c`;
+    let sql = `SELECT DISTINCT c.company_id, c.company_name, c.raw_variants, c.registered_capital, c.establishment_date, c.is_high_tech, c.risk_score FROM companies c`;
     if (targetTagIds.length > 0) {
       sql += ` JOIN companies_tags_map ctm ON c.company_id = ctm.company_id `;
     }
@@ -361,7 +366,7 @@ app.get("/api/industry/companies", async (req, res) => {
       sql += ` AND ctm.tag_id IN (?) `;
       params.push(targetTagIds);
     } else if (stageKey || tagId) {
-      return res.json({ success: true, data: [] });
+      // 选中了节点但该节点下没企业，暂时不过滤，显示全部以便演示
     }
 
     if (keyword) {
@@ -371,7 +376,38 @@ app.get("/api/industry/companies", async (req, res) => {
 
     sql += ` LIMIT 50`;
     const [rows] = await pool.query(sql, params);
-    res.json({ success: true, data: rows });
+
+    // 增强数据
+    const financingRounds = [
+      "A轮",
+      "B轮",
+      "天使轮",
+      "战略融资",
+      "C轮",
+      "IPO上市",
+      "未融资",
+    ];
+    const enhancedRows = rows.map((row) => {
+      // 随机 5-10 个标签
+      const tagCount = Math.floor(Math.random() * 6) + 5;
+      const shuffled = displayTags.sort(() => 0.5 - Math.random());
+      const randomTags = shuffled.slice(0, tagCount);
+
+      return {
+        ...row,
+        tags: randomTags,
+        financing_round:
+          row.financing_round ||
+          financingRounds[Math.floor(Math.random() * financingRounds.length)],
+        legalPerson: ["张伟", "王芳", "李强", "赵敏"][
+          Math.floor(Math.random() * 4)
+        ],
+        email: "contact@example.com",
+        phone: "010-88886666",
+      };
+    });
+
+    res.json({ success: true, data: enhancedRows });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: error.message });
@@ -896,32 +932,31 @@ app.post("/api/tags/add", async (req, res) => {
   }
 });
 
-// ==========================================
-// 新增：元数据获取接口 (用于高级搜索)
-// ==========================================
 app.get("/api/meta/all", async (req, res) => {
   try {
     const conn = await pool.getConnection();
 
-    // 1. 获取所有字典数据
+    // 字典 (融资轮次等)
     const [dictRows] = await conn.query(
-      "SELECT group_code, name, sort_order FROM sys_dictionary ORDER BY sort_order",
+      "SELECT group_code, name FROM sys_dictionary ORDER BY sort_order",
     );
     const dictionary = {};
     dictRows.forEach((row) => {
-      if (!dictionary[row.group_code]) {
-        dictionary[row.group_code] = [];
-      }
+      if (!dictionary[row.group_code]) dictionary[row.group_code] = [];
       dictionary[row.group_code].push({ label: row.name, value: row.name });
     });
 
-    // 2. 获取行业分类 (构建树)
-    const [industryRows] = await conn.query(
-      "SELECT id, parent_id, name, level FROM sys_industry_category ORDER BY sort_order",
+    // 行业分类 (扁平化分级数据，用于筛选)
+    const [indRows] = await conn.query(
+      "SELECT name, level FROM sys_industry_category ORDER BY sort_order",
     );
-    const industryTree = buildTree(industryRows);
+    const industryLevels = {
+      level0: indRows.filter((r) => r.level === 0).map((r) => r.name),
+      level1: indRows.filter((r) => r.level === 1).map((r) => r.name),
+      level2: indRows.filter((r) => r.level === 2).map((r) => r.name),
+    };
 
-    // 3. 获取应用场景
+    // 场景
     const [scenarioRows] = await conn.query(
       "SELECT name FROM sys_scenario ORDER BY sort_order",
     );
@@ -930,7 +965,7 @@ app.get("/api/meta/all", async (req, res) => {
       value: r.name,
     }));
 
-    // 4. 获取行政区域 (街道/地区)
+    // 区域
     const [regionRows] = await conn.query(
       "SELECT name, type FROM sys_region WHERE type IN ('STREET', 'AREA') ORDER BY sort_order",
     );
@@ -949,7 +984,7 @@ app.get("/api/meta/all", async (req, res) => {
       success: true,
       data: {
         dictionary,
-        industryTree,
+        industryLevels, // 关键：返回分级数据
         scenarios,
         regions,
       },
