@@ -12,7 +12,6 @@ import {
   Select,
   message,
   Tag,
-  Divider,
   Collapse,
   theme,
   Empty,
@@ -862,7 +861,7 @@ const IndustryScore: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         background: "#fff",
-        minHeight: "100vh", // 确保整个容器有高度
+        minHeight: "100vh", // 允许页面内容超过一屏时滚动
       }}
     >
       {/* 1. 顶部数据概览区块 */}
@@ -870,6 +869,7 @@ const IndustryScore: React.FC = () => {
         style={{
           padding: "20px 32px",
           borderBottom: "1px solid #f0f0f0",
+          flexShrink: 0,
         }}
       >
         <div
@@ -892,7 +892,15 @@ const IndustryScore: React.FC = () => {
             <Title level={4} style={{ margin: 0 }}>
               产业评分全景图
             </Title>
-            <Divider type="vertical" />
+            {/* 替换 Divider 为自定义分隔符，消除控制台警告 */}
+            <div
+              style={{
+                width: 1,
+                height: 16,
+                background: "#f0f0f0",
+                margin: "0 8px",
+              }}
+            />
             <Text type="secondary" style={{ fontSize: 13 }}>
               基于多维数据的实时产业赛道评分监控体系
             </Text>
@@ -936,6 +944,7 @@ const IndustryScore: React.FC = () => {
           alignItems: "center",
           flexWrap: "wrap",
           gap: 16,
+          flexShrink: 0,
         }}
       >
         <Space>
@@ -983,30 +992,29 @@ const IndustryScore: React.FC = () => {
         </Tag>
       </div>
 
-      {/* 3. 标签筛选区块 (修复 Collapse 写法) */}
-      <div style={{ borderBottom: "1px solid #f0f0f0" }}>
+      {/* 3. 标签筛选区块 (默认展开) */}
+      <div style={{ borderBottom: "1px solid #f0f0f0", flexShrink: 0 }}>
         <Collapse
           ghost
           expandIcon={({ isActive }) => (
             <CaretRightOutlined rotate={isActive ? 90 : 0} />
           )}
-          defaultActiveKey={[]}
+          defaultActiveKey={["tags"]} // 默认展开标签筛选
           items={collapseItems}
         />
       </div>
 
-      {/* 4. 可视化图表区块 (自适应填充) */}
+      {/* 4. 可视化图表区块 */}
       <div
         style={{
-          padding: "24px 32px",
+          padding: "12px",
           display: "flex",
           flexDirection: "column",
-          // 关键修改：设置一个基于视口的计算高度，保证 ECharts 有高度渲染
-          height: "calc(100vh - 350px)",
-          minHeight: "600px",
+          flex: 1,
+          background: "#fff",
         }}
       >
-        <div style={{ marginBottom: 16, flexShrink: 0 }}>
+        <div style={{ marginBottom: 8, flexShrink: 0, paddingLeft: 8 }}>
           <Text strong style={{ fontSize: 16 }}>
             赛道热力分布
           </Text>
@@ -1022,24 +1030,31 @@ const IndustryScore: React.FC = () => {
             borderRadius: 8,
             overflow: "hidden",
             border: "1px solid #f0f0f0",
-            position: "relative", // 确保 ECharts 绝对定位子元素参考正常
+            position: "relative",
+            // 这里不需要设置 minHeight，因为 ReactECharts 会撑开它
           }}
         >
           {treeData && treeData.length > 0 ? (
             <ReactECharts
               option={getOption()}
-              style={{ height: "100%", width: "100%" }}
+              // 关键修复：直接在组件样式中设置确切的高度计算和最小高度
+              // calc(100vh - 280px) 确保在大屏上占满剩余空间
+              // minHeight: "700px" 确保在内容多或屏幕小时不被压缩，且初始化时不为0
+              style={{
+                height: "calc(100vh - 280px)",
+                minHeight: "700px",
+                width: "100%",
+              }}
               onEvents={{
                 click: onChartClick,
               }}
-              // 关键：强制更新
               notMerge={true}
               lazyUpdate={true}
             />
           ) : (
             <div
               style={{
-                height: "100%",
+                height: "700px", // 空状态也给一个固定高度
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
