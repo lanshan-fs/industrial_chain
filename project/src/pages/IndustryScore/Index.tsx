@@ -3,7 +3,6 @@ import ReactECharts from "echarts-for-react";
 import * as echarts from "echarts";
 import { useNavigate } from "react-router-dom";
 import {
-  Card,
   Input,
   Row,
   Col,
@@ -11,12 +10,14 @@ import {
   Space,
   Button,
   Select,
-  Statistic,
   message,
   Tag,
   Divider,
   Collapse,
+  theme,
+  Empty,
 } from "antd";
+import type { CollapseProps } from "antd";
 import {
   SearchOutlined,
   ReloadOutlined,
@@ -25,11 +26,12 @@ import {
   ExperimentOutlined,
   UsergroupAddOutlined,
   AppstoreOutlined,
+  FilterOutlined,
+  CaretRightOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { Panel } = Collapse;
 
 // --- 类型定义 ---
 interface IndustryNode {
@@ -39,7 +41,6 @@ interface IndustryNode {
   children?: IndustryNode[];
   companies?: string;
   category?: string;
-  // 允许其他可能的动态属性
   [key: string]: any;
 }
 
@@ -50,6 +51,14 @@ const INDUSTRY_COLORS = {
   医疗器械: "#B3E6B3",
   医疗服务: "#FFE0B3",
 } as const;
+
+// 行业图标映射
+const INDUSTRY_ICONS: Record<string, React.ReactNode> = {
+  数字医疗: <DeploymentUnitOutlined />,
+  药物: <MedicineBoxOutlined />,
+  医疗器械: <ExperimentOutlined />,
+  医疗服务: <UsergroupAddOutlined />,
+};
 
 // 配置常量
 const SCORE_RANGES = {
@@ -349,7 +358,6 @@ const injectValues = (nodes: IndustryNode[]): IndustryNode[] => {
   return nodes.map((node) => {
     if (node.children && node.children.length > 0) {
       const updatedChildren = injectValues(node.children);
-      // 显式声明 acc 和 child 的类型
       const sum = updatedChildren.reduce(
         (acc: number, child: IndustryNode) => acc + (child.value || 0),
         0,
@@ -427,7 +435,6 @@ const filterData = (
 
   // 搜索文本筛选
   if (text) {
-    // 显式声明内部函数的参数和返回类型
     const filterByText = (nodes: IndustryNode[]): IndustryNode[] => {
       return nodes
         .map((node) => {
@@ -447,7 +454,7 @@ const filterData = (
             return null;
           }
         })
-        .filter((n): n is IndustryNode => n !== null); // 使用类型谓词过滤 null
+        .filter((n): n is IndustryNode => n !== null);
     };
 
     filteredNodes = filterByText(filteredNodes);
@@ -498,6 +505,7 @@ const organizeTagsByLevel = (rawData: IndustryNode[]) => {
 
 const IndustryScore: React.FC = () => {
   const navigate = useNavigate();
+  const { token } = theme.useToken();
   const [rawData, setRawData] = useState<IndustryNode[]>([]);
   const [treeData, setTreeData] = useState<IndustryNode[]>([]);
   const [searchText, setSearchText] = useState("");
@@ -692,339 +700,367 @@ const IndustryScore: React.FC = () => {
     };
   };
 
-  // 渲染统计卡片
-  const renderMetricCard = (
-    title: string,
-    icon: React.ReactNode,
-    color: string,
-  ) => {
+  // 渲染统计项（扁平化设计）
+  const renderMetricItem = (title: string, color: string) => {
     const industryName = title.replace("研发", "").replace("服务", "");
     const avgScore = calculateIndustryAverage(rawData, industryName);
+    const icon =
+      INDUSTRY_ICONS[industryName as keyof typeof INDUSTRY_ICONS] ||
+      INDUSTRY_ICONS["数字医疗"];
 
     return (
-      <Card
-        bordered={false}
-        className="metric-card"
-        style={{ borderTop: `4px solid ${color}` }}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+        }}
       >
-        <Statistic
-          title={
-            <Space>
-              {icon}
-              <span>{title}</span>
-            </Space>
-          }
-          value={avgScore}
-          suffix="Avg"
-          valueStyle={{ fontWeight: 600 }}
-        />
-      </Card>
+        <div
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: 6,
+            background: `${color}25`, // 浅色背景
+            color: color,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 20,
+            marginRight: 16,
+          }}
+        >
+          {icon}
+        </div>
+        <div>
+          <div style={{ color: "#8c8c8c", fontSize: 13, marginBottom: 2 }}>
+            {title}
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 600, color: "#262626" }}>
+            {avgScore}{" "}
+            <span style={{ fontSize: 12, fontWeight: 400, color: "#bfbfbf" }}>
+              分
+            </span>
+          </div>
+        </div>
+      </div>
     );
   };
 
-  return (
-    <div style={{ minHeight: "100%", background: "#f0f2f5" }}>
-      {/* 顶部控制栏与统计 */}
-      <div style={{ marginBottom: 24 }}>
-        <Row gutter={[16, 16]} align="middle" justify="space-between">
-          <Col xs={24} md={12}>
-            <Title level={3} style={{ margin: 0 }}>
-              <ExperimentOutlined style={{ marginRight: 12 }} />
-              产业评分全景图 (Industry Heatmap)
-            </Title>
-            <Text type="secondary">基于多维数据的实时产业赛道评分监控体系</Text>
-          </Col>
-          <Col xs={24} md={12} style={{ textAlign: "right" }}>
-            <Space>
-              <Button icon={<ReloadOutlined />} onClick={refreshScores}>
-                刷新评分
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-
-        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-          <Col span={6}>
-            {renderMetricCard(
-              "数字医疗",
-              <DeploymentUnitOutlined />,
-              INDUSTRY_COLORS["数字医疗"],
-            )}
-          </Col>
-          <Col span={6}>
-            {renderMetricCard(
-              "药物研发",
-              <MedicineBoxOutlined />,
-              INDUSTRY_COLORS["药物"],
-            )}
-          </Col>
-          <Col span={6}>
-            {renderMetricCard(
-              "医疗器械",
-              <ExperimentOutlined />,
-              INDUSTRY_COLORS["医疗器械"],
-            )}
-          </Col>
-          <Col span={6}>
-            {renderMetricCard(
-              "医疗服务",
-              <UsergroupAddOutlined />,
-              INDUSTRY_COLORS["医疗服务"],
-            )}
-          </Col>
-        </Row>
-      </div>
-
-      {/* 搜索与筛选 */}
-      <Card bodyStyle={{ padding: "16px 24px" }} style={{ marginBottom: 16 }}>
-        <Row gutter={16} align="middle">
-          <Col flex="auto">
-            <Input
-              placeholder="搜索赛道、细分领域 (如: AI药物, 基因测序...)"
-              prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-              size="large"
-              allowClear
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-          </Col>
-          <Col>
-            <Select
-              defaultValue="all"
-              size="large"
-              style={{ width: 180 }}
-              onChange={handleScoreChange}
-            >
-              <Option value="all">全部分值</Option>
-              <Option value="high">高评分 (85-100)</Option>
-              <Option value="mid">中评分 (70-85)</Option>
-              <Option value="low">低评分 (0-70)</Option>
-            </Select>
-          </Col>
-          <Col>
-            <Select
-              defaultValue="all"
-              size="large"
-              style={{ width: 180 }}
-              onChange={handleIndustryChange}
-            >
-              <Option value="all">全部行业</Option>
-              {INDUSTRIES.map((industry) => (
-                <Option key={industry} value={industry}>
-                  {industry}
-                </Option>
-              ))}
-            </Select>
-          </Col>
-          <Col>
-            <Button type="default" size="large" disabled>
-              矩形面积 = 评分权重
-            </Button>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* 标签筛选区域 - 按层级展示 */}
-      <Card
-        bodyStyle={{ padding: "16px 24px" }}
-        style={{ marginBottom: 16 }}
-        title={
-          <Space>
-            <AppstoreOutlined />
-            <span>细分赛道标签筛选</span>
-            {selectedTags.length > 0 && (
-              <span style={{ color: "#52c41a" }}>
-                (已选择 {selectedTags.length} 个标签)
-              </span>
-            )}
-          </Space>
-        }
-      >
-        <Collapse accordion>
+  // 配置 collapse items (AntD v5 推荐写法)
+  const collapseItems: CollapseProps["items"] = [
+    {
+      key: "tags",
+      label: (
+        <Space>
+          <AppstoreOutlined />
+          <span style={{ fontWeight: 500 }}>细分赛道标签筛选</span>
+          {selectedTags.length > 0 && (
+            <Tag color="blue">{selectedTags.length} 已选</Tag>
+          )}
+        </Space>
+      ),
+      children: (
+        <div style={{ padding: "0 16px 16px 40px" }}>
           {Object.entries(organizedTags).map(([industryName, industryData]) => (
-            <Panel
-              header={
-                <div>
-                  <Tag
-                    color={
-                      selectedTags.includes(industryName) ? "blue" : "default"
-                    }
-                    onClick={() => handleTagChange(industryName)}
-                    style={{
-                      cursor: "pointer",
-                      userSelect: "none",
-                      fontSize: "14px",
-                      padding: "4px 8px",
-                    }}
-                  >
-                    <strong>{industryName}（0级）</strong>
-                  </Tag>
-                </div>
-              }
-              key={industryName}
-            >
-              <div style={{ paddingLeft: "20px" }}>
+            <div key={industryName} style={{ marginBottom: 12 }}>
+              <div style={{ marginBottom: 8 }}>
+                <Tag
+                  color={
+                    selectedTags.includes(industryName) ? "blue" : "default"
+                  }
+                  style={{ cursor: "pointer", fontWeight: "bold" }}
+                  onClick={() => handleTagChange(industryName)}
+                >
+                  {industryName}
+                </Tag>
+              </div>
+              <div style={{ paddingLeft: 12 }}>
                 {Object.entries(industryData).map(
                   ([level1Name, level2Items]) => (
-                    <div key={level1Name} style={{ marginBottom: "10px" }}>
-                      <Tag
-                        color={
-                          selectedTags.includes(level1Name) ? "blue" : "default"
-                        }
-                        onClick={() => handleTagChange(level1Name)}
+                    <div
+                      key={level1Name}
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        alignItems: "baseline",
+                        marginBottom: 6,
+                        fontSize: 13,
+                      }}
+                    >
+                      <span
                         style={{
+                          marginRight: 8,
+                          color: "#8c8c8c",
                           cursor: "pointer",
-                          userSelect: "none",
-                          fontSize: "14px",
-                          padding: "4px 8px",
-                          marginBottom: "8px",
+                          minWidth: 80,
                         }}
+                        onClick={() => handleTagChange(level1Name)}
                       >
-                        <strong>{level1Name}（1级）</strong>
-                      </Tag>
-                      ：
-                      {(level2Items as any[]).map((level2Item, index) => (
-                        <span key={level2Item.name}>
+                        {level1Name}
+                        {selectedTags.includes(level1Name) && (
                           <Tag
-                            color={
-                              selectedTags.includes(level2Item.name)
-                                ? "blue"
-                                : "default"
-                            }
+                            color="blue"
+                            style={{ marginLeft: 4, transform: "scale(0.8)" }}
+                          >
+                            ✓
+                          </Tag>
+                        )}
+                        ：
+                      </span>
+                      <div style={{ flex: 1 }}>
+                        {(level2Items as any[]).map((level2Item) => (
+                          <span
+                            key={level2Item.name}
                             onClick={() => handleTagChange(level2Item.name)}
                             style={{
+                              display: "inline-block",
+                              marginRight: 16,
                               cursor: "pointer",
-                              userSelect: "none",
-                              margin: "2px",
+                              color: selectedTags.includes(level2Item.name)
+                                ? token.colorPrimary
+                                : "#595959",
+                              fontWeight: selectedTags.includes(level2Item.name)
+                                ? 500
+                                : 400,
                             }}
                           >
-                            {level2Item.name}（2级）
-                          </Tag>
-                          {index < (level2Items as any[]).length - 1 && "、"}
-                        </span>
-                      ))}
-                      ；
+                            {level2Item.name}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   ),
                 )}
               </div>
-            </Panel>
-          ))}
-        </Collapse>
-
-        {selectedTags.length > 0 && (
-          <>
-            <Divider style={{ margin: "16px 0" }} />
-            <div>
-              <Text strong>已选择的标签:</Text>
-              <Space style={{ marginLeft: 16 }}>
-                {selectedTags.map((tag) => (
-                  <Tag
-                    key={tag}
-                    color="blue"
-                    closable
-                    onClose={(e) => {
-                      e.preventDefault();
-                      handleTagChange(tag);
-                    }}
-                  >
-                    {tag}
-                  </Tag>
-                ))}
-                <Button
-                  type="link"
-                  size="small"
-                  onClick={() => {
-                    setSelectedTags([]);
-                    const filtered = filterData(
-                      rawData,
-                      searchText,
-                      scoreRange,
-                      selectedIndustry,
-                      [],
-                    );
-                    setTreeData(filtered);
-                  }}
-                >
-                  清除全部
-                </Button>
-              </Space>
             </div>
-          </>
-        )}
-      </Card>
+          ))}
+          {selectedTags.length > 0 && (
+            <div style={{ marginTop: 12, paddingLeft: 12 }}>
+              <Button
+                size="small"
+                type="link"
+                danger
+                onClick={() => {
+                  setSelectedTags([]);
+                  handleSearch(searchText); // 重置筛选
+                }}
+              >
+                清除所有筛选
+              </Button>
+            </div>
+          )}
+        </div>
+      ),
+    },
+  ];
 
-      {/* 核心可视化区域 - 矩形树图 */}
-      <Card
-        bodyStyle={{
-          padding: 0,
-          height: "calc(160vh - 500px)",
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        background: "#fff",
+        minHeight: "100vh", // 确保整个容器有高度
+      }}
+    >
+      {/* 1. 顶部数据概览区块 */}
+      <div
+        style={{
+          padding: "20px 32px",
+          borderBottom: "1px solid #f0f0f0",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
+        >
+          <Space>
+            <div
+              style={{
+                width: 4,
+                height: 18,
+                background: token.colorPrimary,
+                borderRadius: 2,
+              }}
+            ></div>
+            <Title level={4} style={{ margin: 0 }}>
+              产业评分全景图
+            </Title>
+            <Divider type="vertical" />
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              基于多维数据的实时产业赛道评分监控体系
+            </Text>
+          </Space>
+          <Button icon={<ReloadOutlined />} onClick={refreshScores}>
+            刷新评分
+          </Button>
+        </div>
+
+        {/* 统计指标行 */}
+        <Row
+          gutter={0}
+          style={{
+            background: "#fafafa",
+            borderRadius: 8,
+            padding: "16px 0",
+            border: "1px solid #f0f0f0",
+          }}
+        >
+          <Col span={6} style={{ borderRight: "1px solid #e8e8e8" }}>
+            {renderMetricItem("数字医疗", INDUSTRY_COLORS["数字医疗"])}
+          </Col>
+          <Col span={6} style={{ borderRight: "1px solid #e8e8e8" }}>
+            {renderMetricItem("药物研发", INDUSTRY_COLORS["药物"])}
+          </Col>
+          <Col span={6} style={{ borderRight: "1px solid #e8e8e8" }}>
+            {renderMetricItem("医疗器械", INDUSTRY_COLORS["医疗器械"])}
+          </Col>
+          <Col span={6}>
+            {renderMetricItem("医疗服务", INDUSTRY_COLORS["医疗服务"])}
+          </Col>
+        </Row>
+      </div>
+
+      {/* 2. 筛选控制区块 */}
+      <div
+        style={{
+          padding: "16px 32px",
+          borderBottom: "1px solid #f0f0f0",
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 16,
+        }}
+      >
+        <Space>
+          <FilterOutlined style={{ color: token.colorPrimary }} />
+          <span style={{ fontWeight: 500 }}>核心筛选:</span>
+        </Space>
+
+        <Input
+          prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+          placeholder="搜索赛道、细分领域..."
+          style={{ width: 260 }}
+          allowClear
+          onChange={(e) => handleSearch(e.target.value)}
+        />
+
+        <Select
+          defaultValue="all"
+          style={{ width: 150 }}
+          onChange={handleScoreChange}
+          placeholder="分值范围"
+        >
+          <Option value="all">全部分值</Option>
+          <Option value="high">高评分 (85-100)</Option>
+          <Option value="mid">中评分 (70-85)</Option>
+          <Option value="low">低评分 (0-70)</Option>
+        </Select>
+
+        <Select
+          defaultValue="all"
+          style={{ width: 150 }}
+          onChange={handleIndustryChange}
+          placeholder="所属行业"
+        >
+          <Option value="all">全部行业</Option>
+          {INDUSTRIES.map((industry) => (
+            <Option key={industry} value={industry}>
+              {industry}
+            </Option>
+          ))}
+        </Select>
+
+        <div style={{ flex: 1 }}></div>
+        <Tag color="default" style={{ margin: 0 }}>
+          提示：矩形面积 = 评分权重
+        </Tag>
+      </div>
+
+      {/* 3. 标签筛选区块 (修复 Collapse 写法) */}
+      <div style={{ borderBottom: "1px solid #f0f0f0" }}>
+        <Collapse
+          ghost
+          expandIcon={({ isActive }) => (
+            <CaretRightOutlined rotate={isActive ? 90 : 0} />
+          )}
+          defaultActiveKey={[]}
+          items={collapseItems}
+        />
+      </div>
+
+      {/* 4. 可视化图表区块 (自适应填充) */}
+      <div
+        style={{
+          padding: "24px 32px",
+          display: "flex",
+          flexDirection: "column",
+          // 关键修改：设置一个基于视口的计算高度，保证 ECharts 有高度渲染
+          height: "calc(100vh - 350px)",
           minHeight: "600px",
         }}
-        title={
-          <Space>
-            <AppstoreOutlined />
-            <span>产业赛道热力分布</span>
-            {searchText && <span style={{ color: "#faad14" }}>(搜索模式)</span>}
-            {selectedIndustry !== "all" && (
-              <span style={{ color: "#52c41a" }}>
-                (行业: {selectedIndustry})
-              </span>
-            )}
-            {selectedTags.length > 0 && (
-              <span style={{ color: "#1890ff" }}>
-                (标签筛选: {selectedTags.length}个)
-              </span>
-            )}
-          </Space>
-        }
       >
-        {treeData && treeData.length > 0 ? (
-          <ReactECharts
-            option={getOption()}
-            style={{ height: "100%", width: "100%" }}
-            onEvents={{
-              click: onChartClick,
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div>未找到匹配的赛道</div>
-          </div>
-        )}
-      </Card>
+        <div style={{ marginBottom: 16, flexShrink: 0 }}>
+          <Text strong style={{ fontSize: 16 }}>
+            赛道热力分布
+          </Text>
+          {searchText && (
+            <span style={{ marginLeft: 12, color: "#faad14", fontSize: 13 }}>
+              (搜索模式: {searchText})
+            </span>
+          )}
+        </div>
+        <div
+          style={{
+            flex: 1,
+            borderRadius: 8,
+            overflow: "hidden",
+            border: "1px solid #f0f0f0",
+            position: "relative", // 确保 ECharts 绝对定位子元素参考正常
+          }}
+        >
+          {treeData && treeData.length > 0 ? (
+            <ReactECharts
+              option={getOption()}
+              style={{ height: "100%", width: "100%" }}
+              onEvents={{
+                click: onChartClick,
+              }}
+              // 关键：强制更新
+              notMerge={true}
+              lazyUpdate={true}
+            />
+          ) : (
+            <div
+              style={{
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Empty description="未找到匹配的赛道数据" />
+            </div>
+          )}
+        </div>
+      </div>
 
-      {/* 样式覆盖 */}
+      {/* 样式微调 */}
       <style>{`
-          .metric-card {
-            transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-          }
-          .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-          }
-          .ant-statistic-title {
-            margin-bottom: 8px;
-          }
-          
-          /* 优化标签显示 */
           .echarts-for-react div {
-            font-family: 'Arial', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
           }
-          
-          /* 优化折叠面板样式 */
-          .ant-collapse-content-box {
-            padding-top: 10px !important;
-            padding-bottom: 10px !important;
+          /* 调整折叠面板头部高度 */
+          .ant-collapse-header {
+             padding: 12px 32px !important;
           }
-        `}</style>
+      `}</style>
     </div>
   );
 };
