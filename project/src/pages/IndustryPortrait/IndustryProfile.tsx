@@ -18,28 +18,26 @@ import {
   Divider,
   Grid,
   Modal,
-  Tooltip,
   Descriptions,
 } from "antd";
 import {
-  SafetyOutlined,
   FallOutlined,
   TrophyOutlined,
   ExperimentOutlined,
   ThunderboltOutlined,
-  InfoCircleOutlined,
   AppstoreOutlined,
   RiseOutlined,
   BankOutlined,
-  CheckCircleOutlined,
   WarningOutlined,
-  DoubleRightOutlined,
   ContainerOutlined,
   EyeOutlined,
+  ExportOutlined,
+  RightOutlined,
 } from "@ant-design/icons";
 import { Radar } from "@ant-design/plots";
 import type { DataNode } from "antd/es/tree";
 import type { ColumnsType } from "antd/es/table";
+import { useNavigate } from "react-router-dom";
 
 import ReportActionButtons from "../../components/ReportActionButtons";
 
@@ -52,12 +50,14 @@ const COLORS = {
   gold: "#faad14",
   green: "#52c41a",
   riskHigh: "#ff4d4f",
+  riskMedium: "#faad14",
   riskLow: "#52c41a",
-  bg: "#fff", // 背景改为纯白，配合边框设计
-  borderColor: "#f0f0f0", // 统一边框颜色
+  bg: "#fff",
+  borderColor: "#f0f0f0",
 };
 
 const BORDER_STYLE = `1px solid ${COLORS.borderColor}`;
+const CONTENT_BODY_HEIGHT = 320; // 统一定义内容区域高度，确保视觉对齐
 
 // 优化后的主雷达图配置
 const MAIN_RADAR_CONFIG = (data: any[]) => ({
@@ -103,13 +103,11 @@ const DETAIL_RADAR_CONFIG = (data: any[]) => ({
 const IndustryProfile: React.FC = () => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   const [selectedIndustry, setSelectedIndustry] = useState("");
-
-  const [riskModalVisible, setRiskModalVisible] = useState(false);
-  const [riskModalType, setRiskModalType] = useState<"high" | "low">("high");
 
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [currentDetail, setCurrentDetail] = useState<any>(null);
@@ -151,7 +149,7 @@ const IndustryProfile: React.FC = () => {
       );
       const resData = await response.json();
       if (resData.success && resData.data) {
-        // Mock data enhancement if needed
+        // Mock data enhancement
         const enrichedData = {
           ...resData.data,
           basicInfo: {
@@ -163,6 +161,41 @@ const IndustryProfile: React.FC = () => {
             description:
               "聚焦数字化技术在医疗健康全流程的应用，涵盖数字诊疗设备、医疗大数据、远程医疗等关键领域。",
           },
+          weakLinks: [
+            {
+              name: "科技创新短板",
+              level: "高危",
+              reason:
+                "行业内 45% 的企业无自主知识产权，低于全区平均水平，核心技术依赖度高。",
+              type: "innovation",
+            },
+            {
+              name: "资本结构失衡",
+              level: "预警",
+              reason:
+                "小微企业占比超 70%，注册资本低于 500 万的企业抗风险能力较弱。",
+              type: "capital",
+            },
+            {
+              name: "合规经营风险",
+              level: "预警",
+              reason:
+                "近一年行业内行政处罚案件同比上升 15%，主要集中在广告合规领域。",
+              type: "compliance",
+            },
+          ],
+          migrationRisks: Array.from({ length: 15 }).map((_, i) => ({
+            name: `${industry}相关企业${i + 1}有限公司`,
+            riskLevel: i < 3 ? "高" : i < 8 ? "中" : "低",
+            riskScore: 85 - i * 2,
+            labels:
+              i < 3
+                ? ["租约到期", "异地扩张"]
+                : i < 8
+                  ? ["成本敏感"]
+                  : ["政策导向"],
+            id: `ent-${i}`,
+          })),
         };
         setData(enrichedData);
       } else {
@@ -190,7 +223,10 @@ const IndustryProfile: React.FC = () => {
     setDetailModalVisible(true);
   };
 
-  // 渲染评分模型子卡片（包含排序表格）
+  const handleEnterpriseClick = (enterpriseId: string) => {
+    navigate(`/industry-portrait/enterprise/${enterpriseId}`);
+  };
+
   const renderSubModelCard = (
     title: string,
     icon: React.ReactNode,
@@ -211,7 +247,7 @@ const IndustryProfile: React.FC = () => {
         dataIndex: "score",
         width: 100,
         align: "center",
-        sorter: (a, b) => a.score - b.score, // 增加排序功能
+        sorter: (a, b) => a.score - b.score,
         showSorterTooltip: { title: "点击排序" },
         render: (s) => (
           <Text strong style={{ color: s < 60 ? "red" : color }}>
@@ -271,7 +307,7 @@ const IndustryProfile: React.FC = () => {
             pagination={false}
             size="small"
             columns={columns}
-            scroll={{ y: 250 }} // 固定高度
+            scroll={{ y: 250 }}
             bordered={false}
           />
         </div>
@@ -334,7 +370,7 @@ const IndustryProfile: React.FC = () => {
 
       <Content
         style={{
-          padding: 0, // 移除Content内边距，实现全宽设计
+          padding: 0,
           overflowY: "auto",
           height: "calc(100vh - 64px)",
         }}
@@ -374,9 +410,7 @@ const IndustryProfile: React.FC = () => {
               id="industry-report-content"
               style={{ borderBottom: BORDER_STYLE }}
             >
-              {/* 第一行：行业概览 + 雷达图 
-                   使用 Grid 布局模拟“紧贴”效果
-                */}
+              {/* 第一行：行业概览 + 雷达图 */}
               <Row gutter={0} style={{ borderBottom: BORDER_STYLE }}>
                 <Col
                   xs={24}
@@ -513,7 +547,7 @@ const IndustryProfile: React.FC = () => {
                 </Col>
               </Row>
 
-              {/* 第二行：三个评分模型 (无Gutter，紧贴) */}
+              {/* 第二行：三个评分模型 */}
               <Row gutter={0} style={{ borderBottom: BORDER_STYLE }}>
                 <Col xs={24} md={8}>
                   {renderSubModelCard(
@@ -542,26 +576,41 @@ const IndustryProfile: React.FC = () => {
                 </Col>
               </Row>
 
-              {/* 第三行：薄弱环节 & 风险评估 */}
+              {/* 第三行：薄弱环节 & 迁出风险 (已修复视觉对齐) */}
               <Row gutter={0} style={{ borderBottom: BORDER_STYLE }}>
+                {/* 薄弱环节识别 */}
                 <Col
                   span={24}
                   lg={12}
                   style={{ borderRight: !isMobile ? BORDER_STYLE : "none" }}
                 >
-                  <div style={{ padding: 0 }}>
+                  <div
+                    style={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
                     <div
                       style={{
-                        padding: "12px 24px",
+                        padding: "16px 20px",
                         borderBottom: BORDER_STYLE,
                         backgroundColor: "#fafafa",
                       }}
                     >
                       <Space>
-                        <FallOutlined /> <Text strong>薄弱环节识别</Text>
+                        <FallOutlined style={{ color: COLORS.riskHigh }} />
+                        <Text strong>薄弱环节识别</Text>
                       </Space>
                     </div>
-                    <div style={{ padding: 24, minHeight: 250 }}>
+                    {/* 使用固定高度确保与右侧表格对齐 */}
+                    <div
+                      style={{
+                        padding: 24,
+                        height: CONTENT_BODY_HEIGHT,
+                        overflowY: "auto",
+                      }}
+                    >
                       <List
                         dataSource={data.weakLinks}
                         split={false}
@@ -596,6 +645,8 @@ const IndustryProfile: React.FC = () => {
                     </div>
                   </div>
                 </Col>
+
+                {/* 迁出风险识别 */}
                 <Col span={24} lg={12}>
                   <div
                     style={{
@@ -606,91 +657,109 @@ const IndustryProfile: React.FC = () => {
                   >
                     <div
                       style={{
-                        padding: "12px 24px",
+                        padding: "16px 20px",
                         borderBottom: BORDER_STYLE,
                         display: "flex",
                         justifyContent: "space-between",
+                        alignItems: "center",
                         backgroundColor: "#fafafa",
                       }}
                     >
                       <Space>
-                        <SafetyOutlined /> <Text strong>风险评估监控</Text>
-                      </Space>
-                      <Space>
-                        <Tooltip title="查看高风险企业名单">
-                          <Button
-                            type="text"
-                            size="small"
-                            icon={
-                              <WarningOutlined
-                                style={{ color: COLORS.riskHigh }}
-                              />
-                            }
-                            onClick={() => {
-                              setRiskModalType("high");
-                              setRiskModalVisible(true);
-                            }}
-                          />
-                        </Tooltip>
-                        <Tooltip title="查看优质企业名单">
-                          <Button
-                            type="text"
-                            size="small"
-                            icon={
-                              <CheckCircleOutlined
-                                style={{ color: COLORS.green }}
-                              />
-                            }
-                            onClick={() => {
-                              setRiskModalType("low");
-                              setRiskModalVisible(true);
-                            }}
-                          />
-                        </Tooltip>
+                        <ExportOutlined style={{ color: COLORS.riskHigh }} />
+                        <Text strong>迁出风险识别</Text>
                       </Space>
                     </div>
-                    <div style={{ padding: "0 24px", flex: 1 }}>
-                      <List
+                    {/* 表格容器高度统一，表格 Scroll 高度适配 */}
+                    <div style={{ height: CONTENT_BODY_HEIGHT, padding: 0 }}>
+                      <Table
+                        dataSource={data.migrationRisks}
+                        rowKey="name"
+                        pagination={false}
                         size="small"
-                        dataSource={data.risks.high}
-                        renderItem={(item: any, idx: number) => (
-                          <List.Item>
-                            <Space>
+                        // 减去表头大约高度 (40-50px) 保证不出现双重滚动条
+                        scroll={{ y: CONTENT_BODY_HEIGHT - 40 }}
+                        bordered={false}
+                        columns={[
+                          {
+                            title: "排名",
+                            key: "index",
+                            width: 60,
+                            align: "center",
+                            render: (_, __, index) => (
                               <Badge
-                                count={idx + 1}
+                                count={index + 1}
                                 style={{
-                                  backgroundColor: "#fff",
-                                  color: "#999",
-                                  boxShadow: "0 0 0 1px #d9d9d9 inset",
+                                  backgroundColor:
+                                    index < 3 ? COLORS.riskHigh : "#d9d9d9",
+                                  boxShadow: "none",
                                 }}
                               />
-                              <Text style={{ width: 120 }} ellipsis>
-                                {item.name}
-                              </Text>
-                            </Space>
-                            <Space>
-                              <Tag color="red">{item.score}分</Tag>
-                              <Tooltip title={item.reason}>
-                                <InfoCircleOutlined
-                                  style={{ color: "#ccc", cursor: "help" }}
-                                />
-                              </Tooltip>
-                            </Space>
-                          </List.Item>
-                        )}
+                            ),
+                          },
+                          {
+                            title: "企业名称",
+                            dataIndex: "name",
+                            ellipsis: true,
+                            render: (t) => (
+                              <Text style={{ fontSize: 13 }}>{t}</Text>
+                            ),
+                          },
+                          {
+                            title: "风险等级",
+                            dataIndex: "riskLevel",
+                            width: 100,
+                            align: "center",
+                            render: (level) => {
+                              const color =
+                                level === "高"
+                                  ? "red"
+                                  : level === "中"
+                                    ? "orange"
+                                    : "green";
+                              return <Tag color={color}>{level}风险</Tag>;
+                            },
+                          },
+                          {
+                            title: "风险标签",
+                            dataIndex: "labels",
+                            render: (labels) => (
+                              <Space size={2}>
+                                {labels.map((l: string) => (
+                                  <Tag
+                                    key={l}
+                                    bordered={false}
+                                    style={{ fontSize: 10 }}
+                                  >
+                                    {l}
+                                  </Tag>
+                                ))}
+                              </Space>
+                            ),
+                          },
+                          {
+                            title: "",
+                            key: "action",
+                            width: 40,
+                            render: (_, record: any) => (
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={
+                                  <RightOutlined
+                                    style={{ fontSize: 10, color: "#ccc" }}
+                                  />
+                                }
+                                onClick={() => handleEnterpriseClick(record.id)}
+                              />
+                            ),
+                          },
+                        ]}
+                        onRow={(record: any) => ({
+                          onClick: () => handleEnterpriseClick(record.id),
+                          style: { cursor: "pointer" },
+                        })}
                       />
-                      <div style={{ textAlign: "center", padding: "12px 0" }}>
-                        <Button
-                          type="link"
-                          size="small"
-                          onClick={() => {
-                            setRiskModalType("high");
-                            setRiskModalVisible(true);
-                          }}
-                        >
-                          查看更多高风险企业 <DoubleRightOutlined />
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 </Col>
@@ -700,7 +769,7 @@ const IndustryProfile: React.FC = () => {
               <div style={{ padding: 0 }}>
                 <div
                   style={{
-                    padding: "12px 24px",
+                    padding: "16px 20px",
                     borderBottom: BORDER_STYLE,
                     backgroundColor: "#fafafa",
                   }}
@@ -747,7 +816,6 @@ const IndustryProfile: React.FC = () => {
                       title: "综合评分",
                       dataIndex: "score",
                       align: "center",
-                      // sorter: (a, b) => a.score - b.score, // 全局列表也加上排序
                       render: (s) => (
                         <Text
                           strong
@@ -774,7 +842,15 @@ const IndustryProfile: React.FC = () => {
                       title: "操作",
                       width: 100,
                       align: "center",
-                      render: () => <a>查看画像</a>,
+                      render: (_, record: any) => (
+                        <a
+                          onClick={() =>
+                            handleEnterpriseClick(record.id || "mock-id")
+                          }
+                        >
+                          查看画像
+                        </a>
+                      ),
                     },
                   ]}
                 />
@@ -789,7 +865,7 @@ const IndustryProfile: React.FC = () => {
               padding: "24px 0",
               color: "#ccc",
               fontSize: 12,
-              background: "#f5f5f5", // 底部稍微区分一下背景
+              background: "#f5f5f5",
             }}
           >
             - 朝阳区产业链洞察平台生成 -
@@ -841,44 +917,6 @@ const IndustryProfile: React.FC = () => {
                 </Col>
               </Row>
             )}
-          </Modal>
-
-          <Modal
-            title={
-              riskModalType === "high"
-                ? "高风险企业完整名单"
-                : "优质企业完整名单"
-            }
-            open={riskModalVisible}
-            onCancel={() => setRiskModalVisible(false)}
-            footer={null}
-            width={700}
-          >
-            <Table
-              dataSource={data?.risks[riskModalType]}
-              size="small"
-              rowKey="name"
-              pagination={{ pageSize: 10 }}
-              columns={[
-                {
-                  title: "企业名称",
-                  dataIndex: "name",
-                  render: (t) => <b>{t}</b>,
-                },
-                {
-                  title: "评分",
-                  dataIndex: "score",
-                  width: 100,
-                  sorter: (a: any, b: any) => a.score - b.score,
-                  render: (s) => (
-                    <Tag color={riskModalType === "high" ? "red" : "green"}>
-                      {s}
-                    </Tag>
-                  ),
-                },
-                { title: "评估说明", dataIndex: "reason" },
-              ]}
-            />
           </Modal>
         </div>
       </Content>
