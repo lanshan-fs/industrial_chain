@@ -17,6 +17,11 @@ import {
   Tabs,
   Space,
   Divider,
+  Modal,
+  Table,
+  Progress,
+  Avatar,
+  Rate,
 } from "antd";
 import {
   SafetyCertificateOutlined,
@@ -41,8 +46,11 @@ import {
   SearchOutlined,
   CopyrightOutlined,
   GithubOutlined,
+  RightOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import type { ColumnsType } from "antd/es/table";
 
 // 引入自定义组件
 import MoreButton from "../../components/Home/MoreButton";
@@ -55,7 +63,27 @@ import StatsGrid, { type StatItem } from "../../components/Home/StatsGrid";
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
-// ================== 数据准备 ==================
+// ================== 数据定义接口 ==================
+
+// 弹窗用：补链建议数据结构
+interface WeakLinkDetail {
+  id: string;
+  name: string;
+  layer: string;
+  urgency: number;
+  count: number;
+}
+
+// 弹窗用：推荐引育数据结构
+interface RecommendEnterpriseDetail {
+  id: string;
+  name: string;
+  matchScore: number;
+  location: string;
+  tags: string[];
+}
+
+// ================== 静态数据准备 ==================
 
 // 1. 顶部驾驶舱关键指标
 const keyMetrics = [
@@ -163,22 +191,32 @@ const ecologyCategoriesRaw = [
 
 const Overview: React.FC = () => {
   const navigate = useNavigate();
-  // 使用 any 确保 Carousel ref 兼容性，解决TS报错
   const carouselRef = useRef<any>(null);
 
   // 状态管理
   const [loading, setLoading] = useState(true);
   const [chainData, setChainData] = useState<any[]>([]);
+
+  // 首页展示用的简略数据
   const [weakLinksFull, setWeakLinksFull] = useState<SuggestionItem[]>([]);
   const [recommendEnterprisesFull, setRecommendEnterprisesFull] = useState<
     SuggestionItem[]
   >([]);
-  const [searchScope, setSearchScope] = useState("industry");
 
-  // 公告联动状态：当前高亮的索引
+  // 弹窗展示用的详细数据
+  const [weakLinksDetail, setWeakLinksDetail] = useState<WeakLinkDetail[]>([]);
+  const [recEnterprisesDetail, setRecEnterprisesDetail] = useState<
+    RecommendEnterpriseDetail[]
+  >([]);
+
+  const [searchScope, setSearchScope] = useState("industry");
   const [activeNoticeIndex, setActiveNoticeIndex] = useState(0);
 
-  // 企业资质
+  // 弹窗控制
+  const [isWeakLinksModalVisible, setIsWeakLinksModalVisible] = useState(false);
+  const [isRecModalVisible, setIsRecModalVisible] = useState(false);
+
+  // 企业资质统计
   const chaoyangStatsData: StatItem[] = chaoyangStatsRaw.map((item) => ({
     icon: item.icon,
     value: item.value,
@@ -192,7 +230,7 @@ const Overview: React.FC = () => {
     },
   }));
 
-  // 生态圈
+  // 生态圈统计
   const ecologyStatsData: StatItem[] = ecologyCategoriesRaw.map((item) => ({
     icon: item.icon,
     value: item.count,
@@ -202,27 +240,34 @@ const Overview: React.FC = () => {
       navigate(`/industry-class?ecology=${encodeURIComponent(item.name)}`),
   }));
 
-  // 初始化数据
+  // 初始化数据 - 恢复原接口逻辑
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
+        // 1. 尝试调用真实接口
         const response = await fetch(
           "http://localhost:3001/api/dashboard/overview",
         );
         const json = await response.json();
+
         if (json.success) {
           setChainData(json.data.chainData);
+          // 计算补链建议（从接口数据衍生）
           const computedWeakLinks = json.data.chainData.flatMap((layer: any) =>
             layer.subTags
               .filter((t: any) => t.isWeak)
               .map((t: any) => ({ name: t.name, highlight: true })),
           );
           setWeakLinksFull(computedWeakLinks);
+
+          // 如果接口返回了详细数据则使用，否则使用模拟数据填充弹窗
+          generateModalData(computedWeakLinks);
         }
       } catch (error) {
         console.error("Fetch error:", error);
-        // Fallback data
-        setChainData([
+        // 2. 接口失败，使用 Fallback 数据 (原封不动拿回)
+        const fallbackChainData = [
           {
             title: "上游 · 研发与技术",
             type: "upstream",
@@ -252,18 +297,78 @@ const Overview: React.FC = () => {
               { name: "智慧金融", count: 360 },
             ],
           },
-        ]);
-        setWeakLinksFull([
+        ];
+        setChainData(fallbackChainData);
+
+        const fallbackWeakLinks = [
           { name: "光刻机零部件", highlight: true },
           { name: "工业级操作系统", highlight: true },
           { name: "高性能传感器", highlight: true },
-        ]);
+          { name: "车规级芯片", highlight: true },
+          { name: "精密减速器", highlight: true },
+        ];
+        setWeakLinksFull(fallbackWeakLinks);
+        generateModalData(fallbackWeakLinks);
       } finally {
         setLoading(false);
       }
     };
+
+    // 生成弹窗所需的详细数据 (模拟扩展，避免过于复杂)
+    const generateModalData = (basicLinks: any[]) => {
+      // 补链弹窗数据
+      const details = basicLinks.map((item: any, index: number) => ({
+        id: String(index),
+        name: item.name,
+        layer: index % 2 === 0 ? "上游-核心组件" : "中游-关键设备",
+        urgency: index < 3 ? 5 : 4,
+        count: Math.floor(Math.random() * 10),
+      }));
+      setWeakLinksDetail(details);
+
+      // 引育弹窗数据 (静态模拟)
+      setRecEnterprisesDetail([
+        {
+          id: "1",
+          name: "北京神州生物原料有限公司",
+          matchScore: 98,
+          location: "北京·海淀",
+          tags: ["生物医药", "专精特新"],
+        },
+        {
+          id: "2",
+          name: "中关村工业软件研发院",
+          matchScore: 95,
+          location: "北京·海淀",
+          tags: ["工业软件", "国资背景"],
+        },
+        {
+          id: "3",
+          name: "京北医药冷链物流集团",
+          matchScore: 92,
+          location: "北京·顺义",
+          tags: ["物流服务", "独角兽"],
+        },
+        {
+          id: "4",
+          name: "智谱AI科技有限公司",
+          matchScore: 90,
+          location: "北京·海淀",
+          tags: ["人工智能", "大模型"],
+        },
+        {
+          id: "5",
+          name: "寒武纪科技股份有限公司",
+          matchScore: 89,
+          location: "北京·海淀",
+          tags: ["芯片设计", "上市企业"],
+        },
+      ]);
+    };
+
     fetchData();
 
+    // 首页展示的简略推荐企业
     setRecommendEnterprisesFull([
       { name: "北京神州生物原料有限公司", desc: "匹配度 98%" },
       { name: "中关村工业软件研发院", desc: "匹配度 95%" },
@@ -273,7 +378,6 @@ const Overview: React.FC = () => {
     ]);
   }, []);
 
-  // 点击底部列表项 -> 切换顶部轮播
   const handleListNoticeClick = (index: number) => {
     if (carouselRef.current) {
       carouselRef.current.goTo(index);
@@ -295,11 +399,10 @@ const Overview: React.FC = () => {
       padding: "60px 0 60px 0",
       marginBottom: 0,
     },
-    // 独立公告条样式：确保高度足够，颜色醒目
     noticeBarSection: {
       background: "#fffbe6",
       borderBottom: "1px solid #ffe58f",
-      height: 40, // 增加高度
+      height: 40,
     },
     contentInner: {
       maxWidth: 1280,
@@ -348,7 +451,7 @@ const Overview: React.FC = () => {
       background: "#001529",
       padding: "40px 0 20px 0",
       color: "rgba(255,255,255,0.65)",
-      marginTop: 60,
+      marginTop: 24,
       textAlign: "center" as const,
       fontSize: 14,
     },
@@ -358,6 +461,59 @@ const Overview: React.FC = () => {
     message.info(`正在搜索 [${searchScope}]：${value}`);
     navigate(`/industry-class?q=${value}`);
   };
+
+  // 弹窗表格列定义 (简化版)
+  const weakLinkColumns: ColumnsType<WeakLinkDetail> = [
+    {
+      title: "序号",
+      dataIndex: "id",
+      key: "id",
+      width: 80,
+      align: "center",
+      render: (_: any, __: any, index: number) => index + 1,
+    },
+    {
+      title: "行业环节名称",
+      dataIndex: "name",
+      key: "name",
+      render: (text) => <Text strong>{text}</Text>,
+    },
+    {
+      title: "所属产业链层级",
+      dataIndex: "layer",
+      key: "layer",
+      render: (text) => <Tag color="blue">{text}</Tag>,
+    },
+    {
+      title: "紧缺指数",
+      dataIndex: "urgency",
+      key: "urgency",
+      width: 150,
+      sorter: (a, b) => a.urgency - b.urgency,
+      render: (value) => (
+        <Rate
+          disabled
+          defaultValue={value}
+          style={{ fontSize: 14, color: "#fa8c16" }}
+        />
+      ),
+    },
+    {
+      title: "操作",
+      key: "action",
+      width: 100,
+      align: "center",
+      render: (_, record) => (
+        <Button
+          type="link"
+          size="small"
+          onClick={() => navigate(`/industry-class?tag=${record.name}`)}
+        >
+          查看
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <div>
@@ -509,7 +665,7 @@ const Overview: React.FC = () => {
         </div>
       </div>
 
-      {/* 1.5 新增：独立公告轮播条 (搜索区块下方，主体上方) */}
+      {/* 1.5 新增：独立公告轮播条 */}
       <div style={{ ...styles.fullWidthContainer, ...styles.noticeBarSection }}>
         <div
           style={{
@@ -519,7 +675,6 @@ const Overview: React.FC = () => {
             alignItems: "center",
           }}
         >
-          {/* 左侧喇叭图标 */}
           <SoundOutlined
             style={{
               color: "#fa8c16",
@@ -528,8 +683,6 @@ const Overview: React.FC = () => {
               flexShrink: 0,
             }}
           />
-
-          {/* 轮播区域：使用 minWidth:0 防止 flex 溢出，display: block 确保内容渲染 */}
           <div style={{ flex: 1, minWidth: 0, height: 40 }}>
             <Carousel
               ref={carouselRef}
@@ -544,7 +697,6 @@ const Overview: React.FC = () => {
               }}
             >
               {notices.map((n) => (
-                // 关键修正：确保每个 slide 都是一个有内容的 div，不使用 Text 组件包裹
                 <div key={n.id} style={{ width: "100%", height: 40 }}>
                   <div
                     style={{
@@ -591,8 +743,6 @@ const Overview: React.FC = () => {
               ))}
             </Carousel>
           </div>
-
-          {/* 右侧查看全部 */}
           <a
             onClick={() =>
               document
@@ -612,7 +762,7 @@ const Overview: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. 主体内容 - 布局重构 */}
+      {/* 2. 主体内容 */}
       <Spin spinning={loading}>
         <div style={styles.panelContainer}>
           <Row gutter={0}>
@@ -624,9 +774,7 @@ const Overview: React.FC = () => {
                   <span>全景产业链树谱</span>
                   <Tag color="blue">数字医疗</Tag>
                 </Space>
-                <MoreButton
-                  onClick={() => message.info("查看更多产业链详情")}
-                />
+                <MoreButton onClick={() => navigate("/industry-class")} />
               </div>
 
               {/* 关键指标 */}
@@ -788,7 +936,7 @@ const Overview: React.FC = () => {
                       补链建议
                     </span>
                     <MoreButton
-                      onClick={() => message.info("查看更多补链建议")}
+                      onClick={() => setIsWeakLinksModalVisible(true)}
                     />
                   </div>
                   <SuggestionList
@@ -813,9 +961,7 @@ const Overview: React.FC = () => {
                       />
                       推荐引育
                     </span>
-                    <MoreButton
-                      onClick={() => message.info("查看更多引育推荐")}
-                    />
+                    <MoreButton onClick={() => setIsRecModalVisible(true)} />
                   </div>
                   <SuggestionList
                     data={recommendEnterprisesFull}
@@ -868,7 +1014,7 @@ const Overview: React.FC = () => {
         </div>
       </Spin>
 
-      {/* 3. 底部详细公告列表 - 双向联动 + 严格对齐 */}
+      {/* 3. 底部详细公告列表 */}
       <div id="notice-section" style={{ marginTop: 24 }}>
         <div style={{ ...styles.panelContainer, padding: 24 }}>
           {/* Header */}
@@ -886,27 +1032,24 @@ const Overview: React.FC = () => {
             </Button>
           </div>
 
-          {/* 列表内容区域 - 强制两列布局，gutter 60 确保中间有足够空隙 */}
           <List
             grid={{ gutter: 60, column: 2 }}
             dataSource={notices}
             renderItem={(item, index) => (
               <List.Item style={{ marginBottom: 12 }}>
                 <div
-                  // 点击列表项 -> 切换顶部轮播
                   onClick={() => handleListNoticeClick(index)}
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
                     borderBottom: "1px solid #f0f0f0",
-                    height: 52, // 强制固定高度
+                    height: 52,
                     alignItems: "center",
                     width: "100%",
                     padding: "0 16px",
                     borderRadius: 4,
                     cursor: "pointer",
                     transition: "all 0.3s ease",
-                    // 联动高亮状态
                     background:
                       activeNoticeIndex === index ? "#e6f7ff" : "transparent",
                     borderLeft:
@@ -915,14 +1058,13 @@ const Overview: React.FC = () => {
                         : "4px solid transparent",
                   }}
                 >
-                  {/* 左侧：标签+标题（强制左对齐，flex:1 占据剩余空间） */}
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
                       flex: 1,
                       overflow: "hidden",
-                      marginRight: 24, // 与右侧日期的安全距离
+                      marginRight: 24,
                     }}
                   >
                     <Tag
@@ -943,14 +1085,12 @@ const Overview: React.FC = () => {
                         fontSize: 14,
                         color: activeNoticeIndex === index ? "#1890ff" : "#333",
                         fontWeight: activeNoticeIndex === index ? 500 : 400,
-                        flex: 1, // 确保标题填满剩余空间，不留白
+                        flex: 1,
                       }}
                     >
                       {item.title}
                     </Text>
                   </div>
-
-                  {/* 右侧：日期（强制右对齐，不换行） */}
                   <span
                     style={{
                       color: "#999",
@@ -1069,6 +1209,140 @@ const Overview: React.FC = () => {
           type="primary"
         />
       </FloatButton.Group>
+
+      {/* ============== 弹窗 1：补链建议（统一宽度 800，简化表格） ============== */}
+      <Modal
+        title={
+          <Space>
+            <ThunderboltFilled style={{ color: "#fa8c16" }} />
+            <span style={{ fontSize: 16, fontWeight: 600 }}>
+              重点补链行业建议
+            </span>
+          </Space>
+        }
+        open={isWeakLinksModalVisible}
+        onCancel={() => setIsWeakLinksModalVisible(false)}
+        footer={null}
+        width={800} // 统一宽度
+        styles={{ body: { padding: "20px 24px" } }}
+      >
+        <div style={{ marginBottom: 16, color: "#666" }}>
+          <InfoCircleOutlined style={{ marginRight: 6, color: "#1890ff" }} />
+          基于全产业链图谱分析，以下环节存在产能或技术缺口，建议重点关注。
+        </div>
+        <Table
+          dataSource={weakLinksDetail}
+          columns={weakLinkColumns}
+          rowKey="id"
+          pagination={false}
+          size="middle"
+          bordered
+          scroll={{ y: 400 }}
+        />
+      </Modal>
+
+      {/* ============== 弹窗 2：推荐引育（统一宽度 800，简化列表） ============== */}
+      <Modal
+        title={
+          <Space>
+            <ShopOutlined style={{ color: "#1890ff" }} />
+            <span style={{ fontSize: 16, fontWeight: 600 }}>
+              推荐引育企业库
+            </span>
+          </Space>
+        }
+        open={isRecModalVisible}
+        onCancel={() => setIsRecModalVisible(false)}
+        footer={null}
+        width={800} // 统一宽度
+        styles={{ body: { padding: "20px 24px" } }}
+      >
+        <div style={{ marginBottom: 16, color: "#666" }}>
+          <InfoCircleOutlined style={{ marginRight: 6, color: "#1890ff" }} />
+          智能匹配高潜力企业，助力产业强链补链。
+        </div>
+        <List
+          itemLayout="horizontal"
+          dataSource={recEnterprisesDetail}
+          renderItem={(item) => (
+            <List.Item
+              actions={[
+                <Button
+                  key="view"
+                  type="primary"
+                  ghost
+                  size="small"
+                  onClick={() => {
+                    setIsRecModalVisible(false);
+                    navigate(
+                      `/industry-portrait/enterprise-profile?company=${encodeURIComponent(
+                        item.name,
+                      )}`,
+                    );
+                  }}
+                >
+                  查看详情
+                </Button>,
+              ]}
+              style={{
+                padding: "12px 16px",
+                border: "1px solid #f0f0f0",
+                borderRadius: 4,
+                marginBottom: 12,
+                transition: "all 0.3s",
+              }}
+            >
+              <List.Item.Meta
+                avatar={
+                  <Avatar
+                    shape="square"
+                    size="large"
+                    style={{ backgroundColor: "#e6f7ff", color: "#1890ff" }}
+                  >
+                    {item.name.substring(0, 1)}
+                  </Avatar>
+                }
+                title={
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <span style={{ fontWeight: 600 }}>{item.name}</span>
+                  </div>
+                }
+                description={
+                  <Space size={12} style={{ marginTop: 4 }}>
+                    <Tag bordered={false}>{item.location}</Tag>
+                    {item.tags.map((tag) => (
+                      <Tag key={tag} color="blue" bordered={false}>
+                        {tag}
+                      </Tag>
+                    ))}
+                  </Space>
+                }
+              />
+              <div
+                style={{
+                  width: 140,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  justifyContent: "center",
+                  marginRight: 24,
+                }}
+              >
+                <div style={{ fontSize: 12, color: "#999", marginBottom: 4 }}>
+                  匹配度
+                </div>
+                <Progress
+                  percent={item.matchScore}
+                  size="small"
+                  strokeColor="#1890ff"
+                />
+              </div>
+            </List.Item>
+          )}
+        />
+      </Modal>
     </div>
   );
 };
