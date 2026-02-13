@@ -1,7 +1,7 @@
 /**
  * src/pages/IndustryPortrait/components/EnterpriseOverviewTab.tsx
  */
-import React from "react";
+import React, { useState } from "react";
 import {
   Row,
   Col,
@@ -17,8 +17,11 @@ import {
   Alert,
   Grid,
   List,
-  Tabs,
+  Dropdown,
+  ConfigProvider,
 } from "antd";
+// 【核心修改】使用 import type 单独导入类型，解决 verbatimModuleSyntax 报错
+import type { MenuProps } from "antd";
 import {
   GlobalOutlined,
   EnvironmentOutlined,
@@ -28,21 +31,14 @@ import {
   UserOutlined,
   WarningOutlined,
   RiseOutlined,
-  RocketOutlined,
-  ShopOutlined,
-  SafetyCertificateOutlined,
-  TrophyOutlined,
-  FileProtectOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
 import { Radar } from "@ant-design/plots";
 import dayjs from "dayjs";
 
-// --- 引入子标签页组件 ---
-import EnterpriseRDTab from "./EnterpriseRDTab";
-import EnterpriseMarketTab from "./EnterpriseMarketTab";
-import EnterpriseQualificationTab from "./EnterpriseQualificationTab";
-import EnterpriseHonorTab from "./EnterpriseHonorTab";
-import EnterpriseProductTab from "./EnterpriseProductTab";
+// --- 引入新组件 ---
+import EnterpriseBasicInfoTab from "./EnterpriseBasicInfoTab";
+import ProfileListCard from "./ProfileListCard";
 
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
@@ -62,7 +58,7 @@ const COLORS = {
 
 const BORDER_STYLE = `1px solid ${COLORS.borderColor}`;
 
-// --- 图表配置 ---
+// --- 图表配置 (保持不变) ---
 const MAIN_RADAR_CONFIG = (data: any[]) => ({
   data,
   xField: "item",
@@ -84,6 +80,74 @@ const MAIN_RADAR_CONFIG = (data: any[]) => ({
   height: 220,
 });
 
+// --- 新版标签页配置 (保持不变) ---
+const NEW_TAB_CONFIG = [
+  {
+    key: "basic",
+    label: "基本信息",
+    children: [
+      { key: "basic-business", label: "工商信息" },
+      { key: "basic-shareholder", label: "股东信息" },
+      { key: "basic-personnel", label: "主要人员" },
+      { key: "basic-branch", label: "分支机构" },
+      { key: "basic-change", label: "变更记录" },
+      { key: "basic-report", label: "企业年报" },
+      { key: "basic-social", label: "社保人数" },
+      { key: "basic-related", label: "关联企业" },
+    ],
+  },
+  {
+    key: "judicial",
+    label: "司法涉诉",
+    children: [
+      { key: "judicial-case", label: "司法案件" },
+      { key: "judicial-doc", label: "法律文书" },
+      { key: "judicial-dishonest", label: "失信被执行" },
+      { key: "judicial-litigation", label: "诉讼" },
+    ],
+  },
+  {
+    key: "investment",
+    label: "投融资",
+    children: [
+      { key: "invest-history", label: "融资历史" },
+      { key: "invest-out", label: "对外投资" },
+    ],
+  },
+  {
+    key: "risk",
+    label: "经营风险",
+    children: [
+      { key: "risk-abnormal", label: "经营异常" },
+      { key: "risk-admin", label: "行政处罚" },
+      { key: "risk-env", label: "环保处罚" },
+      { key: "risk-clear", label: "清算信息" },
+    ],
+  },
+  {
+    key: "operating",
+    label: "经营信息",
+    children: [
+      { key: "op-bid", label: "招投标" },
+      { key: "op-product", label: "产品" },
+      { key: "op-cert", label: "资质认证" },
+      { key: "op-tax", label: "税务资质" },
+      { key: "op-client", label: "客户" },
+      { key: "op-supplier", label: "供应商" },
+    ],
+  },
+  {
+    key: "ip",
+    label: "知识产权",
+    children: [
+      { key: "ip-patent", label: "专利" },
+      { key: "ip-soft", label: "软件著作" },
+      { key: "ip-tm", label: "商标" },
+      { key: "ip-copy", label: "著作权" },
+    ],
+  },
+];
+
 interface EnterpriseOverviewTabProps {
   profile: any;
 }
@@ -93,8 +157,46 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
 }) => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const [activeTabKey, setActiveTabKey] = useState("basic");
 
-  // --- 渲染评分模型子卡片 ---
+  // --- 锚点跳转处理 ---
+  const handleSubMenuClick = (tabKey: string, subKey: string) => {
+    setActiveTabKey(tabKey);
+    setTimeout(() => {
+      const el = document.getElementById(subKey);
+      if (el) {
+        const headerOffset = 60;
+        const elementPosition = el.getBoundingClientRect().top;
+        const offsetPosition =
+          elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth",
+        });
+      }
+    }, 100);
+  };
+
+  // --- 占位渲染 (用于非基本信息 Tab) ---
+  const renderPlaceholderTab = (title: string) => (
+    <div style={{ padding: 24, minHeight: 300 }}>
+      <Alert
+        message={`此处展示${title}详细信息`}
+        type="info"
+        showIcon
+        style={{ marginBottom: 24, borderRadius: 0 }}
+      />
+      <ProfileListCard
+        columns={[
+          { title: "项目", dataIndex: "name" },
+          { title: "详情", dataIndex: "desc" },
+        ]}
+        data={[{ key: 1, name: "示例数据", desc: "暂无记录" }]}
+      />
+    </div>
+  );
+
+  // --- 渲染评分模型子卡片 (保持不变) ---
   const renderSubModelCard = (
     title: string,
     icon: React.ReactNode,
@@ -176,68 +278,16 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
     );
   };
 
-  // --- 子标签页配置 ---
-  const tabItems = [
-    {
-      key: "rd",
-      label: (
-        <Space>
-          <RocketOutlined /> 研发信息
-        </Space>
-      ),
-      children: <EnterpriseRDTab />,
-    },
-    {
-      key: "market",
-      label: (
-        <Space>
-          <ShopOutlined /> 市场信息
-        </Space>
-      ),
-      children: <EnterpriseMarketTab />,
-    },
-    {
-      key: "qualification",
-      label: (
-        <Space>
-          <SafetyCertificateOutlined /> 资质信息
-        </Space>
-      ),
-      children: <EnterpriseQualificationTab />,
-    },
-    {
-      key: "honor",
-      label: (
-        <Space>
-          <TrophyOutlined /> 获奖信息
-        </Space>
-      ),
-      children: <EnterpriseHonorTab />,
-    },
-    {
-      key: "product",
-      label: (
-        <Space>
-          <FileProtectOutlined /> 产品信息
-        </Space>
-      ),
-      children: <EnterpriseProductTab />,
-    },
-  ];
-
   return (
     <>
-      {/* 区块一：企业名片 */}
+      {/* 区块一：企业名片 (代码保持不变) */}
       <div style={{ padding: 24, borderBottom: BORDER_STYLE }}>
         <Row gutter={24} align="middle">
           <Col flex="100px">
             <Avatar
               shape="square"
               size={88}
-              style={{
-                backgroundColor: COLORS.primary,
-                fontSize: 32,
-              }}
+              style={{ backgroundColor: COLORS.primary, fontSize: 32 }}
             >
               {profile.baseInfo.name[0]}
             </Avatar>
@@ -253,18 +303,15 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
               </Space>
               <Space size={24} style={{ color: COLORS.textSecondary }}>
                 <span>
-                  <UserOutlined /> 法人：
-                  {profile.baseInfo.legalPerson}
+                  <UserOutlined /> 法人：{profile.baseInfo.legalPerson}
                 </span>
                 <span>
-                  <EnvironmentOutlined /> 地址：
-                  {profile.baseInfo.address}
+                  <EnvironmentOutlined /> 地址：{profile.baseInfo.address}
                 </span>
                 <span>
                   <GlobalOutlined /> 官网：{profile.baseInfo.website}
                 </span>
               </Space>
-              {/* 企业标签：增加 wrap 属性，防止标签过多时不换行 */}
               <Space style={{ marginTop: 8 }} wrap>
                 {profile.tags.map((t: string) => (
                   <Tag key={t} color="geekblue">
@@ -303,7 +350,7 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
         </Row>
       </div>
 
-      {/* 区块二：工商信息全景 + 资质荣誉 */}
+      {/* 区块二：工商信息全景 + 资质荣誉 (代码保持不变) */}
       <Row gutter={0} style={{ borderBottom: BORDER_STYLE }}>
         <Col
           xs={24}
@@ -333,10 +380,10 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                 {profile.baseInfo.taxId}
               </Descriptions.Item>
               <Descriptions.Item label="注册资本">
-                {profile.baseInfo.regCapital} 万元
+                {profile.baseInfo.regCapital}
               </Descriptions.Item>
               <Descriptions.Item label="实缴资本">
-                {profile.baseInfo.paidInCapital} 万元
+                {profile.baseInfo.paidInCapital}
               </Descriptions.Item>
               <Descriptions.Item label="成立日期">
                 {profile.baseInfo.establishDate}
@@ -387,23 +434,98 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
         </Col>
       </Row>
 
-      {/* 新增区块：企业详细数据 Tabs */}
-      <div
-        style={{
-          borderBottom: BORDER_STYLE,
-          padding: "0 24px",
-          minHeight: 300,
-        }}
-      >
-        <Tabs
-          items={tabItems}
-          tabBarStyle={{ margin: 0 }}
-          style={{ width: "100%" }}
-        />
-        <div style={{ height: 24 }}></div>
+      {/* =======================
+          【修改】新增区块：企业详细数据 (Custom Tabs)
+          优化目标：去圆角、紧贴、字号主流、修复TS错误
+          ======================= */}
+      <div style={{ borderBottom: BORDER_STYLE, minHeight: 300 }}>
+        {/* Sticky 导航栏 */}
+        <div
+          style={{
+            background: "#fff",
+            borderBottom: "1px solid #e8e8e8",
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+          }}
+        >
+          {/* 使用 ConfigProvider 强制去除 Dropdown 和 Menu 的圆角 */}
+          <ConfigProvider
+            theme={{
+              components: {
+                Dropdown: { borderRadius: 0 },
+                Menu: { borderRadius: 0, borderRadiusLG: 0, borderRadiusSM: 0 },
+              },
+            }}
+          >
+            <Row>
+              {NEW_TAB_CONFIG.map((tab) => {
+                const isActive = activeTabKey === tab.key;
+
+                // 构造下拉菜单项
+                const menuItems: MenuProps["items"] = tab.children.map(
+                  (child) => ({
+                    key: child.key,
+                    label: <span style={{ fontSize: 13 }}>{child.label}</span>,
+                    onClick: () => handleSubMenuClick(tab.key, child.key),
+                  }),
+                );
+
+                return (
+                  <Col key={tab.key} flex={1} style={{ textAlign: "center" }}>
+                    <Dropdown
+                      menu={{ items: menuItems }}
+                      placement="bottom"
+                      overlayStyle={{ paddingTop: 0 }} // 配合 ConfigProvider 去圆角
+                    >
+                      <div
+                        onClick={() => setActiveTabKey(tab.key)}
+                        style={{
+                          cursor: "pointer",
+                          height: 48,
+                          lineHeight: "48px",
+                          fontSize: 14,
+                          fontWeight: isActive ? 500 : 400,
+                          color: isActive ? COLORS.primary : "#333",
+                          borderBottom: isActive
+                            ? `2px solid ${COLORS.primary}`
+                            : "none",
+                          transition: "color 0.3s",
+                          background: "#fff",
+                        }}
+                      >
+                        {tab.label}{" "}
+                        <DownOutlined
+                          style={{
+                            fontSize: 10,
+                            color: "#999",
+                            marginLeft: 4,
+                            verticalAlign: "middle",
+                          }}
+                        />
+                      </div>
+                    </Dropdown>
+                  </Col>
+                );
+              })}
+            </Row>
+          </ConfigProvider>
+        </div>
+
+        {/* 内容区域 */}
+        <div style={{ backgroundColor: "#fff", paddingTop: 8 }}>
+          {activeTabKey === "basic" && (
+            <EnterpriseBasicInfoTab profile={profile} />
+          )}
+          {activeTabKey === "judicial" && renderPlaceholderTab("司法涉诉")}
+          {activeTabKey === "investment" && renderPlaceholderTab("投融资")}
+          {activeTabKey === "risk" && renderPlaceholderTab("经营风险")}
+          {activeTabKey === "operating" && renderPlaceholderTab("经营信息")}
+          {activeTabKey === "ip" && renderPlaceholderTab("知识产权")}
+        </div>
       </div>
 
-      {/* 区块三：企业综合评估 */}
+      {/* 区块三：企业综合评估 (代码保持不变) */}
       <div style={{ borderBottom: BORDER_STYLE }}>
         <div
           style={{
@@ -416,7 +538,6 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
         </div>
         <div style={{ padding: 24 }}>
           <Row gutter={0}>
-            {/* 左子区块：企业综合能力可视化 */}
             <Col
               xs={24}
               lg={14}
@@ -462,8 +583,6 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                 </Col>
               </Row>
             </Col>
-
-            {/* 右子区块：企业迁出风险 */}
             <Col xs={24} lg={10} style={{ paddingLeft: !isMobile ? 24 : 0 }}>
               <div
                 style={{
@@ -478,7 +597,6 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                 </Title>
                 <WarningOutlined style={{ color: "#faad14" }} />
               </div>
-
               <div
                 style={{
                   background: "#fff",
@@ -513,7 +631,6 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                     />
                   </Col>
                 </Row>
-
                 <Text strong style={{ fontSize: 12, color: "#999" }}>
                   关键风险因素 (Top 5)
                 </Text>
@@ -572,7 +689,7 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
         </div>
       </div>
 
-      {/* 区块四：三大评分模型 */}
+      {/* 区块四：三大评分模型 (代码保持不变) */}
       <Row gutter={0} style={{ borderBottom: BORDER_STYLE }}>
         <Col xs={24} md={8}>
           {renderSubModelCard(

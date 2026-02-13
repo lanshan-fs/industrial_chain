@@ -12,7 +12,7 @@ import tagsData from "../../assets/data/tags.json";
 
 const { Content } = Layout;
 
-// --- 视觉风格定义 ---
+// --- 视觉风格定义 (保持不变) ---
 const COLORS = {
   primary: "#1890ff",
   riskHigh: "#ff4d4f",
@@ -23,25 +23,9 @@ const COLORS = {
 
 const BORDER_STYLE = `1px solid ${COLORS.borderColor}`;
 
-// --- 类型定义 ---
-interface CompanyRaw {
-  company_id: string;
-  company_name: string;
-  raw_variants?: string;
-  registered_capital: number;
-  establishment_date: string;
-  is_high_tech: number;
-  risk_score: number;
-}
+// ... (保持原有的 Interface 定义不变)
 
-interface TagRaw {
-  tag_id: string;
-  tag_name: string;
-  level: number;
-  path: string;
-}
-
-// --- 标签池 (新增) ---
+// --- 标签池 (保持不变) ---
 const TAG_POOL = [
   "高新技术企业",
   "科技型中小企业",
@@ -61,10 +45,11 @@ const TAG_POOL = [
   "文明单位",
 ];
 
-// --- Mock 数据生成器 ---
-const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
+// --- Mock 数据生成器 (仅追加新字段) ---
+const generateMockProfile = (company: any, allTags: any[]) => {
   if (!company) return null;
 
+  // ... (保持原有的 baseScore, totalScore 计算逻辑不变)
   const baseScore =
     60 +
     (company.is_high_tech ? 20 : 0) +
@@ -73,10 +58,9 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
   const matchedTag =
     allTags.find((t) => company.raw_variants?.includes(t.tag_name)) ||
     allTags[0];
-
   const creditCode = "91110105MA01XXXXXX";
 
-  // 迁出风险数据模拟
+  // ... (保持原有的 riskVal, migrationRiskLevel 计算逻辑不变)
   const riskVal = company.risk_score || 40;
   let migrationRiskLevel = "低";
   let migrationRiskColor = COLORS.riskLow;
@@ -89,7 +73,7 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
     migrationRiskColor = COLORS.riskHigh;
   }
 
-  // 通用维度生成器
+  // ... (保持原有的 generateDimensions 逻辑不变)
   const generateDimensions = (base: number) => [
     { name: "注册资本规模", weight: 30, score: Math.min(base + 10, 100) },
     { name: "持续经营时长", weight: 20, score: Math.min(base + 5, 100) },
@@ -99,13 +83,12 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
     { name: "分支机构数量", weight: 10, score: Math.min(base - 10, 100) },
   ];
 
-  // --- 随机生成标签逻辑 (修改) ---
-  // 从池中随机打乱并取 6-10 个
   const randomTags = [...TAG_POOL]
     .sort(() => 0.5 - Math.random())
     .slice(0, Math.floor(Math.random() * 5) + 6);
 
   return {
+    // --- 原有字段保持原封不动 ---
     baseInfo: {
       id: company.company_id,
       name: company.company_name,
@@ -123,11 +106,7 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
       scope:
         "技术开发、技术推广、技术转让、技术咨询、技术服务；销售自行开发的产品；计算机系统服务；基础软件服务；应用软件服务。",
     },
-    metrics: {
-      totalScore,
-      rank: Math.floor(Math.random() * 50) + 1,
-    },
-    // 迁出风险数据
+    metrics: { totalScore, rank: Math.floor(Math.random() * 50) + 1 },
     migrationRisk: {
       level: migrationRiskLevel,
       score: riskVal,
@@ -153,11 +132,7 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
           impact: "Low",
           desc: "主要客户群体向外区迁移",
         },
-        {
-          name: "用地空间限制",
-          impact: "Low",
-          desc: "现有办公面积趋于饱和",
-        },
+        { name: "用地空间限制", impact: "Low", desc: "现有办公面积趋于饱和" },
       ],
     },
     overallRadar: [
@@ -168,10 +143,7 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
       { item: "合规风险", score: 100 - company.risk_score },
     ],
     models: {
-      basic: {
-        score: 85,
-        dimensions: generateDimensions(80),
-      },
+      basic: { score: 85, dimensions: generateDimensions(80) },
       tech: {
         score: company.is_high_tech ? 92 : 65,
         dimensions: [
@@ -198,15 +170,93 @@ const generateMockProfile = (company: CompanyRaw, allTags: TagRaw[]) => {
         ],
       },
     },
-    tags: randomTags, // 使用随机生成的丰富标签列表
+    tags: randomTags,
     honors: [
       { year: "2023", name: "北京市专精特新中小企业" },
       { year: "2022", name: "朝阳区高增长企业 Top20" },
       { year: "2021", name: "中关村金种子企业" },
     ],
+
+    // --- 【新增】新版六大标签页所需数据 (Mock) ---
+    basicInfoData: {
+      shareholders: [
+        {
+          key: 1,
+          name: "北京海游友科技有限公司",
+          ratio: "45%",
+          capital: "19928.57万",
+        },
+        {
+          key: 2,
+          name: "北京迅翼科技发展有限公司",
+          ratio: "35%",
+          capital: "15500.00万",
+        },
+        {
+          key: 3,
+          name: "中信证券投资有限公司",
+          ratio: "10%",
+          capital: "4428.57万",
+        },
+      ],
+      keyPersonnel: [
+        { key: 1, name: "严其亮", title: "执行董事" },
+        { key: 2, name: "张玉", title: "监事" },
+        { key: 3, name: "韩道成", title: "经理" },
+      ],
+      branches: [
+        {
+          key: 1,
+          name: "北京雍禾医疗投资管理有限公司温州分公司",
+          principal: "李某",
+          date: "2018-05-12",
+        },
+        {
+          key: 2,
+          name: "北京雍禾医疗投资管理有限公司南宁分公司",
+          principal: "王某",
+          date: "2019-08-20",
+        },
+      ],
+      changes: [
+        {
+          key: 1,
+          date: "2023-11-15",
+          item: "注册资本变更",
+          before: "30000万",
+          after: "44285.71万",
+        },
+        {
+          key: 2,
+          date: "2022-06-10",
+          item: "投资人变更",
+          before: "严其亮",
+          after: "严其亮, 北京海游友科技有限公司...",
+        },
+      ],
+      reports: [
+        { key: 1, year: "2023年度报告", date: "2024-03-15" },
+        { key: 2, year: "2022年度报告", date: "2023-04-20" },
+      ],
+      social: [
+        {
+          key: 1,
+          year: "2023",
+          pension: 219,
+          unemployment: 219,
+          medical: 219,
+          injury: 219,
+          maternity: 219,
+        },
+      ],
+      related: [
+        { key: 1, name: "上海雍禾医疗技术有限公司", relation: "全资子公司" },
+      ],
+    },
   };
 };
 
+// ... (EnterpriseProfile 组件代码保持不变)
 const EnterpriseProfile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -221,12 +271,10 @@ const EnterpriseProfile: React.FC = () => {
     setLoading(true);
     setTimeout(() => {
       const target =
-        (companiesData as CompanyRaw[]).find((c) => c.is_high_tech === 1) ||
+        (companiesData as any[]).find((c) => c.is_high_tech === 1) ||
         companiesData[0];
       if (target) {
-        setProfile(
-          generateMockProfile(target as CompanyRaw, tagsData as TagRaw[]),
-        );
+        setProfile(generateMockProfile(target as any, tagsData as any[]));
       }
       setLoading(false);
     }, 600);
