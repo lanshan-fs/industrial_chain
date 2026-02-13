@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
-
+import React, { useState, useEffect, useRef } from "react";
 import {
   Row,
   Col,
-  Card,
   List,
   Tag,
   Typography,
@@ -66,7 +64,7 @@ const keyMetrics = [
   { label: "协同效率", value: 78.5, suffix: "%", color: "#ffec3d" },
 ];
 
-// 2. 企业资质分布 (将转换为 StatItem 格式)
+// 2. 企业资质分布
 const chaoyangStatsRaw = [
   { label: "上市企业", value: 35, icon: <GlobalOutlined />, color: "#cf1322" },
   { label: "外资企业", value: 128, icon: <GlobalOutlined />, color: "#d48806" },
@@ -148,7 +146,7 @@ const hotTagsData: RankItem[] = [
   { name: "工业互联", count: 45, percent: 15 },
 ];
 
-// 7. 产业生态圈分类 (原始数据)
+// 7. 产业生态圈分类
 const ecologyCategoriesRaw = [
   { name: "科研院校", icon: <BankOutlined />, count: 42 },
   { name: "行业协会", icon: <ClusterOutlined />, count: 15 },
@@ -165,6 +163,8 @@ const ecologyCategoriesRaw = [
 
 const Overview: React.FC = () => {
   const navigate = useNavigate();
+  // 使用 any 确保 Carousel ref 兼容性，解决TS报错
+  const carouselRef = useRef<any>(null);
 
   // 状态管理
   const [loading, setLoading] = useState(true);
@@ -175,13 +175,15 @@ const Overview: React.FC = () => {
   >([]);
   const [searchScope, setSearchScope] = useState("industry");
 
+  // 公告联动状态：当前高亮的索引
+  const [activeNoticeIndex, setActiveNoticeIndex] = useState(0);
+
   // 企业资质
   const chaoyangStatsData: StatItem[] = chaoyangStatsRaw.map((item) => ({
     icon: item.icon,
     value: item.value,
     label: item.label,
     color: item.color,
-    // 点击跳转至产业分类，并携带筛选参数
     onClick: () => {
       message.loading(`正在筛选：${item.label}`);
       navigate(
@@ -271,10 +273,18 @@ const Overview: React.FC = () => {
     ]);
   }, []);
 
+  // 点击底部列表项 -> 切换顶部轮播
+  const handleListNoticeClick = (index: number) => {
+    if (carouselRef.current) {
+      carouselRef.current.goTo(index);
+    }
+    setActiveNoticeIndex(index);
+  };
+
   const styles = {
     fullWidthContainer: {
       width: "100vw",
-      position: "relative" as "relative",
+      position: "relative" as const,
       left: "50%",
       right: "50%",
       marginLeft: "-50vw",
@@ -282,17 +292,41 @@ const Overview: React.FC = () => {
     },
     bannerSection: {
       background: "linear-gradient(135deg, #001529 0%, #003a8c 100%)",
-      padding: "60px 0 100px 0",
-      marginBottom: -60,
+      padding: "60px 0 60px 0",
+      marginBottom: 0,
+    },
+    // 独立公告条样式：确保高度足够，颜色醒目
+    noticeBarSection: {
+      background: "#fffbe6",
+      borderBottom: "1px solid #ffe58f",
+      height: 40, // 增加高度
     },
     contentInner: {
       maxWidth: 1280,
       margin: "0 auto",
       padding: "0 24px",
     },
-    card: {
-      borderRadius: 8,
-      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+    panelContainer: {
+      background: "#fff",
+      border: "1px solid #f0f0f0",
+      marginTop: 24,
+    },
+    panelLeft: {
+      borderRight: "1px solid #f0f0f0",
+      padding: 24,
+    },
+    panelRightItem: {
+      borderBottom: "1px solid #f0f0f0",
+      padding: "16px 24px",
+    },
+    panelHeader: {
+      fontSize: 16,
+      fontWeight: 600,
+      color: "#333",
+      marginBottom: 16,
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
     },
     tagCard: {
       cursor: "pointer",
@@ -315,7 +349,7 @@ const Overview: React.FC = () => {
       padding: "40px 0 20px 0",
       color: "rgba(255,255,255,0.65)",
       marginTop: 60,
-      textAlign: "center" as "center",
+      textAlign: "center" as const,
       fontSize: 14,
     },
   };
@@ -327,7 +361,7 @@ const Overview: React.FC = () => {
 
   return (
     <div>
-      {/* 1. 顶部全屏 Banner */}
+      {/* 1. 顶部全屏 Banner (搜索区块) */}
       <div style={{ ...styles.fullWidthContainer, ...styles.bannerSection }}>
         <div style={styles.contentInner}>
           <div style={{ textAlign: "center" }}>
@@ -472,77 +506,129 @@ const Overview: React.FC = () => {
               </div>
             </div>
           </div>
-
-          <div
-            style={{
-              marginTop: 40,
-              background: "rgba(0,0,0,0.2)",
-              padding: "8px 24px",
-              borderRadius: 4,
-              display: "flex",
-              alignItems: "center",
-              backdropFilter: "blur(4px)",
-            }}
-          >
-            <SoundOutlined style={{ color: "#ffec3d", marginRight: 12 }} />
-            <Carousel
-              autoplay
-              dots={false}
-              effect="scrollx"
-              style={{
-                flex: 1,
-                height: 24,
-                lineHeight: "24px",
-                overflow: "hidden",
-              }}
-            >
-              {notices.map((n) => (
-                <div key={n.id}>
-                  <Text style={{ color: "#fff" }}>
-                    [{n.type}] {n.title}{" "}
-                    <span style={{ opacity: 0.6, fontSize: 12, marginLeft: 8 }}>
-                      {n.date}
-                    </span>
-                  </Text>
-                </div>
-              ))}
-            </Carousel>
-            <a
-              onClick={() =>
-                document
-                  .getElementById("notice-section")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-              style={{
-                color: "#fff",
-                opacity: 0.8,
-                fontSize: 12,
-                marginLeft: 16,
-              }}
-            >
-              全部公告 &gt;
-            </a>
-          </div>
         </div>
       </div>
 
-      {/* 2. 主体内容 */}
+      {/* 1.5 新增：独立公告轮播条 (搜索区块下方，主体上方) */}
+      <div style={{ ...styles.fullWidthContainer, ...styles.noticeBarSection }}>
+        <div
+          style={{
+            ...styles.contentInner,
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          {/* 左侧喇叭图标 */}
+          <SoundOutlined
+            style={{
+              color: "#fa8c16",
+              marginRight: 12,
+              fontSize: 16,
+              flexShrink: 0,
+            }}
+          />
+
+          {/* 轮播区域：使用 minWidth:0 防止 flex 溢出，display: block 确保内容渲染 */}
+          <div style={{ flex: 1, minWidth: 0, height: 40 }}>
+            <Carousel
+              ref={carouselRef}
+              autoplay
+              dots={false}
+              effect="scrollx"
+              afterChange={(current) => setActiveNoticeIndex(current)}
+              style={{
+                width: "100%",
+                height: 40,
+                lineHeight: "40px",
+              }}
+            >
+              {notices.map((n) => (
+                // 关键修正：确保每个 slide 都是一个有内容的 div，不使用 Text 组件包裹
+                <div key={n.id} style={{ width: "100%", height: 40 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      height: "100%",
+                      cursor: "pointer",
+                      paddingRight: 16,
+                    }}
+                    onClick={() =>
+                      document
+                        .getElementById("notice-section")
+                        ?.scrollIntoView({ behavior: "smooth" })
+                    }
+                  >
+                    <Tag
+                      color="orange"
+                      style={{ marginRight: 8, flexShrink: 0 }}
+                    >
+                      {n.type}
+                    </Tag>
+                    <span
+                      style={{
+                        color: "#333",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        marginRight: 8,
+                      }}
+                    >
+                      {n.title}
+                    </span>
+                    <span
+                      style={{
+                        color: "#999",
+                        fontSize: 12,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {n.date}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </Carousel>
+          </div>
+
+          {/* 右侧查看全部 */}
+          <a
+            onClick={() =>
+              document
+                .getElementById("notice-section")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+            style={{
+              color: "#1890ff",
+              fontSize: 13,
+              marginLeft: 24,
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            更多公告 &gt;
+          </a>
+        </div>
+      </div>
+
+      {/* 2. 主体内容 - 布局重构 */}
       <Spin spinning={loading}>
-        <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
-          {/* === 左侧：产业链树谱 + 补链 + 引育 === */}
-          <Col xs={24} lg={16}>
-            <Card
-              bordered={false}
-              style={{ ...styles.card, height: "100%" }}
-              bodyStyle={{ padding: 24 }}
-              title={
+        <div style={styles.panelContainer}>
+          <Row gutter={0}>
+            {/* === 左侧：产业链树谱 + 补链 + 引育 === */}
+            <Col xs={24} lg={16} style={styles.panelLeft}>
+              <div style={styles.panelHeader}>
                 <Space>
                   <EnvironmentOutlined style={{ color: "#1890ff" }} />
-                  <span style={{ fontWeight: 600 }}>全景产业链树谱</span>
+                  <span>全景产业链树谱</span>
                   <Tag color="blue">数字医疗</Tag>
                 </Space>
-              }
-            >
+                <MoreButton
+                  onClick={() => message.info("查看更多产业链详情")}
+                />
+              </div>
+
               {/* 关键指标 */}
               <div
                 style={{
@@ -705,13 +791,11 @@ const Overview: React.FC = () => {
                       onClick={() => message.info("查看更多补链建议")}
                     />
                   </div>
-                  <Card bordered={false} bodyStyle={{ padding: 0 }}>
-                    <SuggestionList
-                      data={weakLinksFull}
-                      icon={<ThunderboltFilled />}
-                      iconColor="#fa8c16"
-                    />
-                  </Card>
+                  <SuggestionList
+                    data={weakLinksFull}
+                    icon={<ThunderboltFilled />}
+                    iconColor="#fa8c16"
+                  />
                 </Col>
 
                 <Col span={24}>
@@ -733,125 +817,112 @@ const Overview: React.FC = () => {
                       onClick={() => message.info("查看更多引育推荐")}
                     />
                   </div>
-                  <Card bordered={false} bodyStyle={{ padding: 0 }}>
-                    <SuggestionList
-                      data={recommendEnterprisesFull}
-                      icon={<ShopOutlined />}
-                      iconColor="#1890ff"
-                    />
-                  </Card>
+                  <SuggestionList
+                    data={recommendEnterprisesFull}
+                    icon={<ShopOutlined />}
+                    iconColor="#1890ff"
+                  />
                 </Col>
               </Row>
-            </Card>
-          </Col>
+            </Col>
 
-          {/* === 右侧：分析看板 === */}
-          <Col xs={24} lg={8}>
-            <Row gutter={[24, 24]}>
-              {/* 1. 资质构成 (添加跳转 + 更多按钮) */}
-              <Col span={24}>
-                <Card
-                  title="企业资质构成"
-                  size="small"
-                  bordered={false}
-                  style={styles.card}
-                  extra={
-                    <MoreButton onClick={() => navigate("/industry-class")} />
-                  }
-                >
+            {/* === 右侧：分析看板 === */}
+            <Col xs={24} lg={8}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                }}
+              >
+                {/* 1. 资质构成 */}
+                <div style={styles.panelRightItem}>
+                  <div style={styles.panelHeader}>企业资质构成</div>
                   <StatsGrid data={chaoyangStatsData} />
-                </Card>
-              </Col>
+                </div>
 
-              {/* 2. 产业生态圈 (添加更多按钮) */}
-              <Col span={24}>
-                <Card
-                  title="产业生态圈"
-                  size="small"
-                  bordered={false}
-                  style={styles.card}
-                  extra={
-                    <MoreButton onClick={() => navigate("/industry-class")} />
-                  }
-                >
+                {/* 2. 产业生态圈 */}
+                <div style={styles.panelRightItem}>
+                  <div style={styles.panelHeader}>产业生态圈</div>
                   <StatsGrid data={ecologyStatsData} />
-                </Card>
-              </Col>
+                </div>
 
-              {/* 3. 热门产业标签 */}
-              <Col span={24}>
-                <Card
-                  title="热门产业标签"
-                  size="small"
-                  bordered={false}
-                  style={styles.card}
-                  extra={
-                    <MoreButton onClick={() => navigate("/industry-score")} />
-                  }
-                >
+                {/* 3. 热门产业标签 */}
+                <div style={styles.panelRightItem}>
+                  <div style={styles.panelHeader}>热门产业标签</div>
                   <RankList data={hotTagsData} colorScale={true} />
-                </Card>
-              </Col>
+                </div>
 
-              {/* 4. 热门区域分布 */}
-              <Col span={24}>
-                <Card
-                  title="热门区域分布"
-                  size="small"
-                  extra={
-                    <MoreButton onClick={() => navigate("/industry-map")} />
-                  }
-                  bordered={false}
-                  style={styles.card}
-                >
+                {/* 4. 热门区域分布 */}
+                <div style={{ ...styles.panelRightItem, borderBottom: "none" }}>
+                  <div style={styles.panelHeader}>热门区域分布</div>
                   <RankList
                     data={hotspotStreets}
                     colorScale={true}
                     limit={10}
                   />
-                </Card>
-              </Col>
-            </Row>
-          </Col>
-        </Row>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
       </Spin>
 
-      {/* 3. 底部详细公告列表 */}
+      {/* 3. 底部详细公告列表 - 双向联动 + 严格对齐 */}
       <div id="notice-section" style={{ marginTop: 24 }}>
-        <Card
-          title={
-            <>
-              <SoundOutlined style={{ color: "#1890ff" }} /> 平台公告中心
-            </>
-          }
-          extra={
-            <Button type="link">
-              查看更多 <ArrowRightOutlined />
+        <div style={{ ...styles.panelContainer, padding: 24 }}>
+          {/* Header */}
+          <div style={styles.panelHeader}>
+            <Space>
+              <SoundOutlined style={{ color: "#1890ff" }} />
+              <span>平台公告中心</span>
+            </Space>
+            <Button
+              type="link"
+              style={{ padding: 0, height: "auto" }}
+              onClick={() => message.info("查看全部公告")}
+            >
+              查看全部 <ArrowRightOutlined />
             </Button>
-          }
-          bordered={false}
-          style={styles.card}
-        >
+          </div>
+
+          {/* 列表内容区域 - 强制两列布局，gutter 60 确保中间有足够空隙 */}
           <List
-            grid={{ gutter: 24, column: 2 }}
+            grid={{ gutter: 60, column: 2 }}
             dataSource={notices}
-            renderItem={(item) => (
-              <List.Item>
+            renderItem={(item, index) => (
+              <List.Item style={{ marginBottom: 12 }}>
                 <div
+                  // 点击列表项 -> 切换顶部轮播
+                  onClick={() => handleListNoticeClick(index)}
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
                     borderBottom: "1px solid #f0f0f0",
-                    paddingBottom: 12,
+                    height: 52, // 强制固定高度
+                    alignItems: "center",
                     width: "100%",
+                    padding: "0 16px",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                    // 联动高亮状态
+                    background:
+                      activeNoticeIndex === index ? "#e6f7ff" : "transparent",
+                    borderLeft:
+                      activeNoticeIndex === index
+                        ? "4px solid #1890ff"
+                        : "4px solid transparent",
                   }}
                 >
+                  {/* 左侧：标签+标题（强制左对齐，flex:1 占据剩余空间） */}
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
                       flex: 1,
                       overflow: "hidden",
+                      marginRight: 24, // 与右侧日期的安全距离
                     }}
                   >
                     <Tag
@@ -862,27 +933,42 @@ const Overview: React.FC = () => {
                             ? "red"
                             : "green"
                       }
+                      style={{ marginRight: 12, flexShrink: 0 }}
                     >
                       {item.type}
                     </Tag>
                     <Text
                       ellipsis
-                      style={{ cursor: "pointer", maxWidth: "80%" }}
+                      style={{
+                        fontSize: 14,
+                        color: activeNoticeIndex === index ? "#1890ff" : "#333",
+                        fontWeight: activeNoticeIndex === index ? 500 : 400,
+                        flex: 1, // 确保标题填满剩余空间，不留白
+                      }}
                     >
                       {item.title}
                     </Text>
                   </div>
-                  <span style={{ color: "#999", fontSize: 13, marginLeft: 16 }}>
+
+                  {/* 右侧：日期（强制右对齐，不换行） */}
+                  <span
+                    style={{
+                      color: "#999",
+                      fontSize: 13,
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
+                    }}
+                  >
                     {item.date}
                   </span>
                 </div>
               </List.Item>
             )}
           />
-        </Card>
+        </div>
       </div>
 
-      {/* 4. 新增底部信息栏 (Footer) */}
+      {/* 4. Footer */}
       <div style={{ ...styles.fullWidthContainer, ...styles.footer }}>
         <div style={styles.contentInner}>
           <Row gutter={[32, 32]}>
@@ -895,13 +981,13 @@ const Overview: React.FC = () => {
                   marginBottom: 16,
                 }}
               >
-                产业链洞察平台
+                朝阳区产业链洞察平台
               </div>
               <div style={{ marginBottom: 8 }}>
-                专注于区域产业数据分析与辅助决策
+                专注于朝阳区产业数据分析与辅助决策
               </div>
               <div>
-                <CopyrightOutlined /> 2026 朝阳区科学技术和信息化局
+                <CopyrightOutlined /> 2026
               </div>
             </Col>
             <Col xs={24} md={8} style={{ textAlign: "left" }}>
@@ -913,7 +999,7 @@ const Overview: React.FC = () => {
                 style={{ color: "rgba(255,255,255,0.65)" }}
               >
                 <a style={{ color: "inherit" }} onClick={() => navigate("/")}>
-                  首页概览
+                  首页
                 </a>
                 <a
                   style={{ color: "inherit" }}
@@ -923,9 +1009,21 @@ const Overview: React.FC = () => {
                 </a>
                 <a
                   style={{ color: "inherit" }}
+                  onClick={() => navigate("/industry-score")}
+                >
+                  产业评分
+                </a>
+                <a
+                  style={{ color: "inherit" }}
                   onClick={() => navigate("/industry-portrait")}
                 >
-                  产业画像
+                  行业画像
+                </a>
+                <a
+                  style={{ color: "inherit" }}
+                  onClick={() => navigate("/industry-diag")}
+                >
+                  智能诊断
                 </a>
               </Space>
             </Col>
