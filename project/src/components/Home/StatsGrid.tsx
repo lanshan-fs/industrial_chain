@@ -57,7 +57,7 @@ const StatsGrid: React.FC<StatsGridProps> = ({ data, columns = 3 }) => {
             <div style={{ fontWeight: "bold", color: "#333", fontSize: 16 }}>
               {item.value}
             </div>
-            <div style={{ fontSize: 12, color: "#999" }}>{item.label}</div>
+            <div style={{ fontSize: 14, color: "#333" }}>{item.label}</div>
           </div>
         </Col>
       ))}

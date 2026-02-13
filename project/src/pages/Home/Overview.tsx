@@ -972,12 +972,14 @@ const Overview: React.FC = () => {
             </Col>
 
             {/* === 右侧：分析看板 === */}
+            {}
             <Col xs={24} lg={8}>
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
+                  // fontSize: 15,
                 }}
               >
                 {/* 1. 资质构成 */}

@@ -20,7 +20,6 @@ import {
   Dropdown,
   ConfigProvider,
 } from "antd";
-// 【核心修改】使用 import type 单独导入类型，解决 verbatimModuleSyntax 报错
 import type { MenuProps } from "antd";
 import {
   GlobalOutlined,
@@ -436,7 +435,7 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
 
       {/* =======================
           【修改】新增区块：企业详细数据 (Custom Tabs)
-          优化目标：去圆角、紧贴、字号主流、修复TS错误
+          优化目标：下拉选框配色、阴影优化，以及字号行高加大
           ======================= */}
       <div style={{ borderBottom: BORDER_STYLE, minHeight: 300 }}>
         {/* Sticky 导航栏 */}
@@ -449,12 +448,26 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
             zIndex: 10,
           }}
         >
-          {/* 使用 ConfigProvider 强制去除 Dropdown 和 Menu 的圆角 */}
+          {/* 使用 ConfigProvider 覆盖下拉菜单样式 */}
           <ConfigProvider
             theme={{
               components: {
-                Dropdown: { borderRadius: 0 },
-                Menu: { borderRadius: 0, borderRadiusLG: 0, borderRadiusSM: 0 },
+                Dropdown: {
+                  borderRadius: 0,
+                },
+                Menu: {
+                  borderRadius: 0,
+                  borderRadiusLG: 0,
+                  borderRadiusSM: 0,
+                  itemSelectedBg: "#f5f9ff",
+                  itemSelectedColor: COLORS.primary,
+                  itemHoverBg: "#fafafa",
+                  boxShadowSecondary: "0 4px 12px rgba(0,0,0,0.06)",
+
+                  // 【核心修改】加大字号和行高(选项高度)
+                  itemHeight: 42, // 原 38
+                  fontSize: 14, // 原 13
+                },
               },
             }}
           >
@@ -466,7 +479,9 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                 const menuItems: MenuProps["items"] = tab.children.map(
                   (child) => ({
                     key: child.key,
-                    label: <span style={{ fontSize: 13 }}>{child.label}</span>,
+                    label: (
+                      <span style={{ fontWeight: 400 }}>{child.label}</span>
+                    ),
                     onClick: () => handleSubMenuClick(tab.key, child.key),
                   }),
                 );
@@ -474,9 +489,15 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                 return (
                   <Col key={tab.key} flex={1} style={{ textAlign: "center" }}>
                     <Dropdown
-                      menu={{ items: menuItems }}
+                      menu={{
+                        items: menuItems,
+                        style: {
+                          border: "1px solid #ebebeb",
+                          borderTop: "none",
+                        },
+                      }}
                       placement="bottom"
-                      overlayStyle={{ paddingTop: 0 }} // 配合 ConfigProvider 去圆角
+                      overlayStyle={{ paddingTop: 0 }}
                     >
                       <div
                         onClick={() => setActiveTabKey(tab.key)}
@@ -485,12 +506,12 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                           height: 48,
                           lineHeight: "48px",
                           fontSize: 14,
-                          fontWeight: isActive ? 500 : 400,
+                          fontWeight: isActive ? 600 : 400,
                           color: isActive ? COLORS.primary : "#333",
                           borderBottom: isActive
                             ? `2px solid ${COLORS.primary}`
-                            : "none",
-                          transition: "color 0.3s",
+                            : "2px solid transparent",
+                          transition: "all 0.2s",
                           background: "#fff",
                         }}
                       >
@@ -498,7 +519,7 @@ const EnterpriseOverviewTab: React.FC<EnterpriseOverviewTabProps> = ({
                         <DownOutlined
                           style={{
                             fontSize: 10,
-                            color: "#999",
+                            color: "#ccc",
                             marginLeft: 4,
                             verticalAlign: "middle",
                           }}
