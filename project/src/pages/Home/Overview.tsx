@@ -46,7 +46,6 @@ import {
   SearchOutlined,
   CopyrightOutlined,
   GithubOutlined,
-  RightOutlined,
   InfoCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
