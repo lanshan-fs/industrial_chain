@@ -7,6 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,111 +30,120 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-// --- 用户认证接口 ---
+// --- 验证码内存存储 (生产环境建议使用 Redis 或数据库表) ---
+const codeCache = new Map();
 
-/**
- * 1. 注册
- */
-app.post("/api/auth/register", async (req, res) => {
-  const { username, password, email, realName, inviteCode } = req.body;
-  const FIXED_INVITE_CODE = "CY2026";
-
-  try {
-    // 校验邀请码
-    if (inviteCode !== FIXED_INVITE_CODE) {
-      return res.status(400).json({ success: false, message: "邀请码无效" });
-    }
-
-    // 检查用户是否存在
-    const [existing] = await pool.query("SELECT id FROM users WHERE username = ? OR email = ?", [username, email]);
-    if (existing.length > 0) {
-      return res.status(400).json({ success: false, message: "用户名或邮箱已存在" });
-    }
-
-    // 加密密码
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    await pool.query(
-      "INSERT INTO users (username, password, email, real_name) VALUES (?, ?, ?, ?)",
-      [username, hashedPassword, email, realName]
-    );
-
-    res.json({ success: true, message: "注册成功" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+// --- 邮件发送器配置 ---
+const emailPort = parseInt(process.env.EMAIL_PORT) || 465;
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || "smtp.163.com",
+  port: emailPort,
+  secure: emailPort === 465, // 465 端口必须为 true, 587/25 必须为 false
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false 
   }
 });
 
-/**
- * 2. 登录
- */
+// --- 用户认证接口 ---
+
+app.post("/api/auth/register", async (req, res) => {
+  const { username, password, email, realName, inviteCode } = req.body;
+  if (inviteCode !== "CY2026") return res.status(400).json({ success: false, message: "邀请码无效" });
+  try {
+    const [existing] = await pool.query("SELECT id FROM users WHERE username = ? OR email = ?", [username, email]);
+    if (existing.length > 0) return res.status(400).json({ success: false, message: "用户名或邮箱已存在" });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    await pool.query("INSERT INTO users (username, password, email, real_name) VALUES (?, ?, ?, ?)", [username, hashedPassword, email, realName]);
+    res.json({ success: true, message: "注册成功" });
+  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+});
+
 app.post("/api/auth/login", async (req, res) => {
   const { username, password } = req.body;
   try {
     const [rows] = await pool.query("SELECT * FROM users WHERE username = ?", [username]);
-    if (rows.length === 0) {
-      return res.status(400).json({ success: false, message: "用户不存在" });
-    }
-
+    if (rows.length === 0) return res.status(400).json({ success: false, message: "用户不存在" });
     const user = rows[0];
+    let isMatch = (user.password === password) ? true : await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ success: false, message: "密码错误" });
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: "24h" });
+    res.json({ success: true, data: { token, user: { id: user.id, username: user.username, role: user.role, realName: user.real_name } } });
+  } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+});
+
+/**
+ * 找回密码：1. 发送验证码
+ */
+app.post("/api/auth/send-code", async (req, res) => {
+  const { username, email } = req.body;
+  try {
+    // 校验用户和邮箱是否匹配
+    const [rows] = await pool.query("SELECT id FROM users WHERE username = ? AND email = ?", [username, email]);
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, message: "用户名与绑定的邮箱不匹配" });
+    }
+
+    // 生成6位验证码
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // 验证密码 (兼容初始导入的明文 admin123)
-    let isMatch = false;
-    if (user.password === password) {
-      isMatch = true; // 处理初始明文账号
+    // 缓存验证码 (5分钟有效)
+    codeCache.set(username, { code, email, expire: Date.now() + 5 * 60 * 1000 });
+
+    // 发送邮件
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      await transporter.sendMail({
+        from: `"朝阳产业链平台" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "【安全验证】找回您的登录密码",
+        html: `<p>您好，您正在申请重置密码。</p><p>您的验证码是：<b>${code}</b></p><p>请在5分钟内完成验证。如非本人操作，请忽略此邮件。</p>`
+      });
+      res.json({ success: true, message: "验证码已发送至您的邮箱" });
     } else {
-      isMatch = await bcrypt.compare(password, user.password);
+      console.log(`[开发模式] 验证码为: ${code}`);
+      res.json({ success: true, message: `(开发环境) 验证码已模拟发送：${code}` });
     }
-
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: "密码错误" });
-    }
-
-    // 生成 JWT
-    const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "24h" }
-    );
-
-    res.json({
-      success: true,
-      data: {
-        token,
-        user: { id: user.id, username: user.username, role: user.role, realName: user.real_name }
-      }
-    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Send code error:", error);
+    res.status(500).json({ success: false, message: "发送验证码失败：" + error.message });
   }
 });
 
 /**
- * 3. 忘记密码 (简单实现：重置为 123456 或验证邮箱后返回成功)
+ * 找回密码：2. 提交重置
  */
-app.post("/api/auth/forgot-password", async (req, res) => {
-  const { username, email } = req.body;
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { username, code, newPassword } = req.body;
   try {
-    const [rows] = await pool.query("SELECT id FROM users WHERE username = ? AND email = ?", [username, email]);
-    if (rows.length === 0) {
-      return res.status(400).json({ success: false, message: "用户名与邮箱不匹配" });
+    const cached = codeCache.get(username);
+    
+    if (!cached || cached.code !== code) {
+      return res.status(400).json({ success: false, message: "验证码无效或已过期" });
+    }
+    if (Date.now() > cached.expire) {
+      codeCache.delete(username);
+      return res.status(400).json({ success: false, message: "验证码已过期" });
     }
 
-    // 在真实场景中，这里应该发送重置邮件。演示场景直接重置密码为 123456
+    // 更新密码
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash("123456", salt);
-    
-    await pool.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, rows[0].id]);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    await pool.query("UPDATE users SET password = ? WHERE username = ?", [hashedPassword, username]);
 
-    res.json({ success: true, message: "密码已重置为 123456，请登录后及时修改" });
+    // 清除缓存
+    codeCache.delete(username);
+
+    res.json({ success: true, message: "密码重置成功，请使用新密码登录" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// --- 其他业务接口 ---
-
+// --- 其他业务接口 (保持原样) ---
 app.get("/api/meta/all", async (req, res) => {
   try {
     const [dictRows] = await pool.query("SELECT group_code, name FROM sys_dictionary ORDER BY sort_order");
