@@ -27,14 +27,25 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
 
-  const onFinish = (values: any) => {
-    console.log("Register values: ", values);
-    // 模拟注册逻辑
-    message.loading("正在提交注册申请...", 1).then(() => {
-      message.success("注册成功！请等待管理员审核。");
-      // 注册成功后跳转登录页
-      navigate("/login");
-    });
+  const onFinish = async (values: any) => {
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        message.success("注册成功！即将跳转登录页面...");
+        setTimeout(() => navigate("/login"), 1500);
+      } else {
+        message.error(data.message || "注册失败");
+      }
+    } catch (error) {
+      console.error("Register error:", error);
+      message.error("网络连接异常");
+    }
   };
 
   return (
@@ -164,13 +175,13 @@ const Register: React.FC = () => {
                   name="inviteCode"
                   label="邀请码"
                   rules={[{ required: true, message: "请输入邀请码!" }]}
-                  tooltip="平台采用封闭注册制，需持有邀请码"
+                  tooltip="请使用固定邀请码：CY2026"
                 >
                   <Input
                     prefix={
                       <KeyOutlined style={{ color: "rgba(0,0,0,.25)" }} />
                     }
-                    placeholder="请输入邀请码"
+                    placeholder="请输入邀请码 CY2026"
                   />
                 </Form.Item>
               </Col>

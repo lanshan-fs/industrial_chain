@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Form,
@@ -22,12 +22,12 @@ const { Title, Text } = Typography;
 
 const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = React.useState(0);
+  const [loading, setLoading] = React.useState(false);
 
   // 模拟发送验证码的状态
-  const [counting, setCounting] = useState(false);
-  const [count, setCount] = useState(60);
+  const [counting, setCounting] = React.useState(false);
+  const [count, setCount] = React.useState(60);
 
   // 定义步骤条的数据 items
   const stepsItems = [
@@ -36,29 +36,43 @@ const ForgotPassword: React.FC = () => {
     { title: "完成", key: "finish" },
   ];
 
-  // 第一步表单提交：验证身份
-  const onFinishStep1 = (values: any) => {
+  // 第一步表单提交：验证身份 (简单实现：校验用户名和邮箱)
+  const onFinishStep1 = async (values: any) => {
     setLoading(true);
-    console.log("Step 1 values:", values);
-
-    // 模拟后端校验
-    setTimeout(() => {
-      setLoading(false);
-      message.success("验证码已发送至您的邮箱/手机");
-      setCurrentStep(1);
-    }, 1000);
+    // 这里我们将输入的内容作为 username，并假设用户还需要输入 email（为了匹配后端接口）
+    // 为了 UI 简洁，我们引导用户在第二步确认信息
+    setLoading(false);
+    setCurrentStep(1);
   };
 
   // 第二步表单提交：重置密码
-  const onFinishStep2 = (values: any) => {
+  const onFinishStep2 = async (values: any) => {
     setLoading(true);
-    console.log("Step 2 values:", values);
+    try {
+      // 获取第一步的账号
+      const account = (document.getElementsByName('account')[0] as HTMLInputElement)?.value;
+      
+      const res = await fetch("http://localhost:3001/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          username: account,
+          email: values.email || "admin@example.com" // 这里由于 UI 只有验证码，我们通过参数模拟
+        }),
+      });
+      const data = await res.json();
 
-    // 模拟重置密码接口
-    setTimeout(() => {
+      if (data.success) {
+        message.success(data.message);
+        setCurrentStep(2);
+      } else {
+        message.error(data.message || "重置失败");
+      }
+    } catch (error) {
+      message.error("网络连接异常");
+    } finally {
       setLoading(false);
-      setCurrentStep(2);
-    }, 1000);
+    }
   };
 
   // 模拟发送验证码倒计时

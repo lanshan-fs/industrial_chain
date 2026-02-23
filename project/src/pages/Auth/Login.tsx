@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Form, Input, Button, Select, Typography, Divider } from "antd";
+import { Form, Input, Button, Select, Typography, Divider, message } from "antd";
 import {
   UserOutlined,
   LockOutlined,
@@ -15,12 +15,32 @@ const { Option } = Select;
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = React.useState(false);
 
-  const onFinish = (values: any) => {
-    console.log("Received values of form: ", values);
-    // TODO: 这里接入后端登录接口进行校验
-    // 模拟登录成功，跳转到首页
-    navigate("/home/overview");
+  const onFinish = async (values: any) => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        message.success("登录成功");
+        localStorage.setItem("token", data.data.token);
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+        navigate("/home");
+      } else {
+        message.error(data.message || "登录失败");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      message.error("网络连接异常");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,7 +56,7 @@ const Login: React.FC = () => {
       <div
         style={{
           flex: 1,
-          backgroundColor: "#18181b", // 深色背景，参考 Shadcn 风格
+          backgroundColor: "#18181b",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -45,7 +65,6 @@ const Login: React.FC = () => {
           color: "white",
         }}
       >
-        {/* 背景纹理或装饰，可选用图片替代 */}
         <div
           style={{
             position: "absolute",
@@ -61,7 +80,6 @@ const Login: React.FC = () => {
         />
 
         <div style={{ zIndex: 1, marginBottom: 40 }}>
-          {/* 大 Logo */}
           <div
             style={{
               width: 64,
@@ -89,7 +107,6 @@ const Login: React.FC = () => {
           </Text>
         </div>
 
-        {/* 底部版权信息 */}
         <div
           style={{
             position: "absolute",
@@ -115,7 +132,6 @@ const Login: React.FC = () => {
         }}
       >
         <div style={{ width: "100%", maxWidth: 440 }}>
-          {/* 右上角操作区 */}
           <div style={{ position: "absolute", top: 40, right: 40 }}>
             <Button type="text">
               <Link to="/register">注册新账号</Link>
@@ -137,7 +153,6 @@ const Login: React.FC = () => {
             layout="vertical"
             requiredMark="optional"
           >
-            {/* 领域选择 (业务核心需求) */}
             <Form.Item
               name="domain"
               label="所属领域"
@@ -156,7 +171,6 @@ const Login: React.FC = () => {
               </Select>
             </Form.Item>
 
-            {/* 用户名 */}
             <Form.Item
               name="username"
               label="用户名"
@@ -168,7 +182,6 @@ const Login: React.FC = () => {
               />
             </Form.Item>
 
-            {/* 密码 */}
             <Form.Item
               name="password"
               label="密码"
@@ -185,6 +198,7 @@ const Login: React.FC = () => {
                 type="primary"
                 htmlType="submit"
                 block
+                loading={loading}
                 style={{ height: 44, fontSize: 16, fontWeight: 500 }}
               >
                 登 录
@@ -198,7 +212,6 @@ const Login: React.FC = () => {
             </div>
           </Form>
 
-          {/* 第三方登录（UI 占位，复刻参考图） */}
           <Divider plain>
             <Text type="secondary" style={{ fontSize: 12 }}>
               或通过以下方式登录

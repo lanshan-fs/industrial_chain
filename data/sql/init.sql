@@ -139,7 +139,52 @@ CREATE TABLE `company_tag_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
--- 4. 系统基础表 (街道、字典、评分模型)
+-- 4. 用户与权限表
+-- ----------------------------
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `username` VARCHAR(50) NOT NULL COMMENT '用户名',
+  `password` VARCHAR(255) NOT NULL COMMENT '加密密码',
+  `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
+  `role` ENUM('ADMIN', 'USER') DEFAULT 'USER' COMMENT '角色',
+  `real_name` VARCHAR(50) DEFAULT NULL COMMENT '真实姓名',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_username` (`username`),
+  UNIQUE KEY `uk_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 初始管理员账号 (密码: admin123, 稍后在后端验证)
+INSERT INTO `users` (`username`, `password`, `email`, `role`, `real_name`) VALUES 
+('admin', 'admin123', 'admin@example.com', 'ADMIN', '系统管理员');
+
+-- ----------------------------
+-- 5. 智能诊断对话表
+-- ----------------------------
+DROP TABLE IF EXISTS `chat_messages`;
+DROP TABLE IF EXISTS `chat_sessions`;
+
+CREATE TABLE `chat_sessions` (
+  `session_id` VARCHAR(50) NOT NULL,
+  `title` VARCHAR(255) DEFAULT NULL,
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`session_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `chat_messages` (
+  `message_id` INT NOT NULL AUTO_INCREMENT,
+  `session_id` VARCHAR(50) NOT NULL,
+  `role` ENUM('user', 'assistant') NOT NULL,
+  `content` TEXT NOT NULL,
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`message_id`),
+  CONSTRAINT `fk_chat_session` FOREIGN KEY (`session_id`) REFERENCES `chat_sessions` (`session_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------
+-- 5. 系统基础表 (街道、字典、评分模型)
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_dictionary`;
 CREATE TABLE `sys_dictionary` (
@@ -168,39 +213,8 @@ CREATE TABLE `tags_chain_stage_map` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-DROP TABLE IF EXISTS `evaluation_models`;
-CREATE TABLE `evaluation_models` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `model_key` VARCHAR(50) NOT NULL,
-  `model_name` VARCHAR(100) NOT NULL,
-  `target_type` ENUM('ENTERPRISE', 'INDUSTRY') NOT NULL,
-  `description` TEXT,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_model_key` (`model_key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-DROP TABLE IF EXISTS `evaluation_dimensions`;
-CREATE TABLE `evaluation_dimensions` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `model_key` VARCHAR(50) DEFAULT NULL,
-  `dimension_name` VARCHAR(100) NOT NULL,
-  `weight` DECIMAL(5,2) DEFAULT 0.00,
-  `is_deduction` TINYINT(1) DEFAULT 0,
-  `sort_order` INT DEFAULT 0,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-DROP TABLE IF EXISTS `evaluation_rules`;
-CREATE TABLE `evaluation_rules` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `dimension_id` INT DEFAULT NULL,
-  `rule_label` VARCHAR(255) NOT NULL,
-  `score` DECIMAL(5,2) DEFAULT 0.00,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- ==============================================================
--- 5. 行业分类全量录入 (严格 328 节点)
+-- 6. 行业分类全量录入 (严格 328 节点)
 -- ==============================================================
 -- 5.1 数字医疗 (100+)
 INSERT INTO `industry_categories` VALUES (1, NULL, '数字医疗', 0, 1);
@@ -617,10 +631,10 @@ INSERT INTO `industry_categories` VALUES (6050102, 60501, 'AI 驱动的药物选
 INSERT INTO `industry_categories` VALUES (6050103, 60501, 'AI 平台用于大分子药物研发', 3, 3);
 
 -- ==============================================================
--- 6. 全量标签数据录入 (8大维度逻辑统一)
+-- 7. 全量标签数据录入 (8大维度逻辑统一)
 -- ==============================================================
 
--- 6.1 维度总表 (Metadata Linking)
+-- 7.1 维度总表
 INSERT INTO `tag_dimensions` (`id`, `name`, `source_table`, `sort_order`) VALUES
 (1, '基本信息', NULL, 1),
 (2, '经营状况', NULL, 2),
@@ -631,7 +645,7 @@ INSERT INTO `tag_dimensions` (`id`, `name`, `source_table`, `sort_order`) VALUES
 (7, '应用场景', NULL, 7),
 (8, '产业链环节', NULL, 8);
 
--- 6.2 子维度分表录入
+-- 7.2 子维度分表
 INSERT INTO `tag_sub_dimensions` (`id`, `dimension_id`, `name`, `sort_order`) VALUES
 (101, 1, '成立年限', 1), (102, 1, '注册资本', 2), (103, 1, '实缴资本', 3), (104, 1, '经营状态', 4), (105, 1, '企业类型', 5), (106, 1, '组织类型', 6), (107, 1, '企业规模', 7), (108, 1, '分支机构', 8), (109, 1, '地址信息', 9), (110, 1, '投融资轮次', 10),
 (201, 2, '员工人数', 1), (202, 2, '参保人数', 2), (203, 2, '上市状态', 3), (204, 2, '规上企业', 4), (205, 2, '联系方式', 5), (206, 2, '空号过滤', 6), (207, 2, '联系邮箱', 7), (208, 2, '小微企业', 8), (209, 2, '变更信息', 9), (210, 2, '一般纳税人', 10), (211, 2, '融资信息', 11), (212, 2, '招投标', 12), (213, 2, '招聘', 13), (214, 2, '税务评级', 14), (215, 2, '进出口信息', 15), (216, 2, '开户行', 16),
@@ -640,17 +654,34 @@ INSERT INTO `tag_sub_dimensions` (`id`, `dimension_id`, `name`, `sort_order`) VA
 (501, 7, '应用领域', 1),
 (601, 8, '环节位置', 1);
 
--- 6.3 标签库 (补全 38 个应用场景 & 26 个科技属性)
+-- 7.3 标签库补全 (知识产权 & 风险信息)
 
--- 应用场景 (全量 38个)
+-- 应用场景 (501)
 INSERT INTO `tag_library` (`sub_dimension_id`, `tag_name`, `sort_order`) VALUES
 (501, '健康管理', 1), (501, '患者社区', 2), (501, '健康和疾病咨询', 3), (501, '就诊挂号', 4), (501, '就诊服务', 5), (501, '转诊服务', 6), (501, '诊后服务', 7), (501, '疾病诊断', 8), (501, '疾病治疗', 9), (501, '康复治疗', 10), (501, '疾病预防', 11), (501, '中医科', 12), (501, '口腔科', 13), (501, '眼科', 14), (501, '疼痛科', 15), (501, '辅助科室', 16), (501, '精神科', 17), (501, '行政管理', 18), (501, '后勤支持', 19), (501, '肿瘤', 20), (501, '心血管疾病', 21), (501, '感染性疾病', 22), (501, '内分泌系统疾病', 23), (501, '代谢性疾病', 24), (501, '精神类疾病', 25), (501, '神经系统疾病', 26), (501, '呼吸系统疾病', 27), (501, '血液系统疾病', 28), (501, '消化系统疾病', 29), (501, '眼部疾病', 30), (501, '皮肤疾病', 31), (501, '生殖系统疾病', 32), (501, '罕见病', 33), (501, '泌尿系统疾病', 34), (501, '慢性病', 35), (501, '脑部疾病', 36), (501, '运动系统疾病', 37), (501, '骨科', 38);
 
--- 企业科技属性 (全量 26个)
+-- 企业科技属性 (302)
 INSERT INTO `tag_library` (`sub_dimension_id`, `tag_name`, `sort_order`) VALUES
 (302, '高新企业', 1), (302, '科技型中小企业', 2), (302, '瞪羚企业', 3), (302, '国家级技术创新示范企业', 4), (302, '省级技术创新示范企业', 5), (302, '国家级企业技术中心', 6), (302, '省级企业技术中心', 7), (302, '国家备案众创空间', 8), (302, '国家级科技企业孵化器', 9), (302, '省级科技企业孵化器', 10), (302, '国家火炬计划项目', 11), (302, '技术先进型服务企业', 12), (302, '民营科技企业', 13), (302, '专精特新企业', 14), (302, '科技小巨人企业', 15), (302, '专精特新小巨人', 16), (302, '创新型企业', 17), (302, '创新型试点企业', 18), (302, '创新型领军企业', 19), (302, '雏鹰企业', 20), (302, '隐形冠军', 21), (302, '牛羚企业', 22), (302, '独角兽企业', 23), (302, '未来独角兽企业', 24), (302, '潜在独角兽企业', 25), (302, '种子独角兽企业', 26);
 
--- 风险信息全量标签
+-- 知识产权其他维度 (301, 303-315)
+INSERT INTO `tag_library` (`sub_dimension_id`, `tag_name`) VALUES
+(301, '发明公布'), (301, '发明授权'), (301, '实用新型'), (301, '外观设计'),
+(303, '进网许可证'), (303, '排污许可证'), (303, '采矿权许可证'), (303, '金融许可证'), (303, '食品生产许可证'), (303, '食品经营许可证'),
+(304, '有商标'), (304, '无商标'),
+(305, '有专利'), (305, '无专利'),
+(306, '有作品著作权'), (306, '无作品著作权'),
+(307, '有软件著作权'), (307, '无软件著作权'),
+(308, '是高新技术企业'), (308, '非高新技术企业'),
+(309, '有微信公众号'), (309, '无微信公众号'),
+(310, '有制定标准'), (310, '无制定标准'),
+(311, '有集成电路布图'), (311, '无集成电路布图'),
+(312, '有建筑资质'), (312, '无建筑资质'),
+(313, '有网址信息'), (313, '无网址信息'),
+(314, '有 ICP 备案'), (314, '无 ICP 备案'),
+(315, '有商业特许经营'), (315, '无商业特许经营');
+
+-- 风险信息 (401-411)
 INSERT INTO `tag_library` (`sub_dimension_id`, `tag_name`) VALUES
 (401, '有失信被执行'), (401, '无失信被执行'),
 (402, '有动产抵押'), (402, '无动产抵押'),
@@ -664,43 +695,41 @@ INSERT INTO `tag_library` (`sub_dimension_id`, `tag_name`) VALUES
 (410, '有被执行人'), (410, '无被执行人'),
 (411, '有限制高消费'), (411, '无限制高消费');
 
--- 基本信息标签 (全量映射)
+-- 基本信息标签映射补全 (103-110)
 INSERT INTO `tag_library` (`sub_dimension_id`, `tag_name`) VALUES
-(101, '1年内'), (101, '1-5年'), (101, '5-10年'), (101, '10-15年'), (101, '15年以上'),
-(102, '0万-100万'), (102, '100万-200万'), (102, '200万-500万'), (102, '500万-1000万'), (102, '1000万以上'),
-(103, '有实缴资本'), (103, '无实缴资本'), (103, '0万-100万'), (103, '100万-200万'), (103, '200万-500万'), (103, '500万-1000万'), (103, '1000万-5000万'), (103, '5000万以上'),
-(104, '存续'), (104, '在营'), (104, '开业'),
-(105, '国有企业'), (105, '集体所有制企业'), (105, '股份合作企业'), (105, '联营企业'), (105, '有限责任公司'), (105, '股份有限公司'), (105, '私营企业'), (105, '民营企业'), (105, '个体工商户'), (105, '外商投资'),
-(106, '新三板'), (106, '上市公司'), (106, '社会组织'), (106, '机关单位'), (106, '事业单位'), (106, '学校'),
-(107, '大型'), (107, '中型'), (107, '小型'), (107, '微型'),
+(103, '有实缴资本'), (103, '无实缴资本'),
+(104, '存续'), (104, '在营'), (104, '开业'), (104, '迁出'),
+(105, '有限责任公司'), (105, '股份有限公司'), (105, '国有企业'), (105, '私营企业'), (105, '外商投资'), (105, '港澳台投资'), (105, '联营企业'), (105, '集体所有制'), (105, '个体工商户'),
+(106, '上市公司'), (106, '新三板'), (106, '社会组织'), (106, '事业单位'), (106, '机关单位'), (106, '律师事务所'), (106, '学校'),
 (108, '是分支机构'), (108, '非分支机构'),
 (109, '有企业地址'), (109, '无企业地址'),
-(110, '种子轮'), (110, '天使轮'), (110, 'A轮'), (110, 'B轮'), (110, 'C轮'), (110, 'D轮及以上'), (110, '新三板'), (110, '上市');
+(110, '种子轮'), (110, '天使轮'), (110, 'A轮'), (110, 'B轮'), (110, 'C轮'), (110, 'D轮及以上'), (110, '战略融资'), (110, '未融资');
 
--- 经营状况标签 (全量映射)
+-- 经营状况标签映射补全 (201-216)
 INSERT INTO `tag_library` (`sub_dimension_id`, `tag_name`) VALUES
-(201, '小于50人'), (201, '50-99人'), (201, '100-499人'), (201, '500人以上'), (201, '未披露'),
-(202, '小于50人'), (202, '50-99人'), (202, '100-499人'), (202, '500人以上'),
+(201, '小于 50 人'), (201, '50-99 人'), (201, '100-499 人'), (201, '500 人以上'), (201, '未披露'),
+(202, '小于 50 人'), (202, '50-99 人'), (202, '100-499 人'), (202, '500 人以上'),
 (203, 'A股'), (203, '中概股'), (203, '港股'), (203, '科创板'), (203, '新三板'), (203, '未上市'),
-(204, '有资质的建筑业'), (204, '规模以上服务业'), (204, '规模以上工业'), (204, '限额以上批发和零售业'),
-(205, '有联系电话'), (205, '有固定电话'), (205, '有手机号'),
-(206, '正常号码'), (206, '不可用或无号码'), (206, '同电话'),
+(204, '规模以上工业'), (204, '规模以上服务业'), (204, '限额以上批零'), (204, '有资质建筑业'),
+(205, '有联系电话'), (205, '有手机号'), (205, '有固定电话'),
+(206, '正常号码'), (206, '空号/停机'), (206, '风险号码'),
 (207, '有联系邮箱'), (207, '无联系邮箱'),
 (208, '是小微企业'), (208, '非小微企业'),
 (209, '有变更信息'), (209, '无变更信息'),
-(210, '一般纳税人'), (210, '非一般纳税人'),
+(210, '一般纳税人'), (210, '小规模纳税人'),
 (211, '有融资'), (211, '无融资'),
 (212, '有招投标'), (212, '无招投标'),
 (213, '有招聘'), (213, '无招聘'),
-(214, 'A级'),
-(215, '有进出口信息'), (215, '无进出口信息');
+(214, 'A级纳税人'), (214, 'B级纳税人'), (214, 'M级纳税人'),
+(215, '有进出口信息'), (215, '无进出口信息'),
+(216, '国有大型银行'), (216, '股份制商业银行'), (216, '地方商业银行');
 
 -- 产业链环节标签
 INSERT INTO `tag_library` (`sub_dimension_id`, `tag_name`) VALUES
 (601, '上游'), (601, '中游'), (601, '下游');
 
 -- ----------------------------
--- 7. 街道、字典、映射数据
+-- 8. 街道、字典、映射数据
 -- ----------------------------
 INSERT INTO `sys_region` (`name`, `type`, `sort_order`) VALUES
 ('朝外街道', 'STREET', 1), ('劲松街道', 'STREET', 2), ('建外街道', 'STREET', 3), ('呼家楼街道', 'STREET', 4), ('八里庄街道', 'STREET', 5), ('三里屯街道', 'STREET', 6), ('团结湖街道', 'STREET', 7), ('双井街道', 'STREET', 8), ('垡头街道', 'STREET', 9), ('左家庄街道', 'STREET', 10), ('小关街道', 'STREET', 11), ('和平街街道', 'STREET', 12), ('酒仙桥街道', 'STREET', 13), ('首都机场街道', 'STREET', 14), ('潘家园街道', 'STREET', 15), ('六里屯街道', 'STREET', 16), ('麦子店街道', 'STREET', 17), ('香河园街道', 'STREET', 18), ('亚运村街道', 'STREET', 19), ('望京街道', 'STREET', 20), ('安贞街道', 'STREET', 21), ('大屯街道', 'STREET', 22), ('奥运村街道', 'STREET', 23), ('东湖街道', 'STREET', 24),
@@ -716,18 +745,3 @@ INSERT INTO `tags_chain_stage_map` (`level1`, `chain_stage`) VALUES
 ('智慧医疗', '中游'), ('互联网+健康', '下游'), ('数字疗法', '下游'), ('前沿技术融合', '上游'), ('体外诊断 (IVD)', '中游'), ('影像设备', '中游'), ('治疗设备', '中游'), ('生命信息支持设备', '中游'), ('康复设备', '中游'), ('辅助设备', '中游'), ('家用医疗设备', '下游'), ('高值医用耗材', '中游'), ('植入器械/材料', '中游'), ('低值医用耗材', '中游'), ('装备制造', '上游'), ('医药商业 / 流通', '下游'), ('医疗零售', '下游'), ('严肃医疗', '下游'), ('消费医疗', '下游'), ('互联网医疗', '下游'), ('第三方中心', '下游'), ('保险支付', '下游'), ('化学制药', '中游'), ('生物制品', '中游'), ('中药', '中游'), ('AI 药物研发平台', '上游'), ('AI CRO / 技术服务商', '上游'), ('AI 自研管线企业', '中游'), ('AI 软件 / 工具平台', '上游'), ('AI + 特定领域研发', '上游');
 
 SET FOREIGN_KEY_CHECKS = 1;
-
--- ----------------------------
--- 8. 导入数据
--- ----------------------------
-USE industrial_chain;
- SHOW VARIABLES LIKE 'local_infile';
-SET GLOBAL local_infile = 1;
-
-LOAD DATA LOCAL INFILE '../example/data_example100.csv'
-INTO TABLE companies
-CHARACTER SET utf8mb4
-FIELDS TERMINATED BY ','
-ENCLOSED BY '"'
-LINES TERMINATED BY '\r\n'
-IGNORE 1 LINES; 

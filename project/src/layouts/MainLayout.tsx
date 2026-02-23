@@ -165,9 +165,16 @@ const MainLayout: React.FC = () => {
   const handleSiderClick = (e: { key: string }) =>
     navigate(`/${currentTopNav}/${e.key}`);
 
+  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+
   const handleUserMenuClick: MenuProps["onClick"] = (e) => {
-    if (e.key === "logout") navigate("/login");
-    else if (e.key === "system-mgmt") navigate("/system-mgmt");
+    if (e.key === "logout") {
+      localStorage.removeItem("token");
+      localStorage.setItem("user", "{}");
+      navigate("/login");
+    } else if (e.key === "system-mgmt") {
+      navigate("/system-mgmt");
+    }
   };
 
   const renderNavItems = () => {
@@ -377,7 +384,7 @@ const MainLayout: React.FC = () => {
                     size="small"
                   />
                   <span className="hidden-xs" style={{ fontSize: 14 }}>
-                    管理员
+                    {userData.realName || userData.username || "未登录"}
                   </span>
                 </Space>
               </div>
