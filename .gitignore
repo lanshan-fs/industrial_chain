@@ -1,0 +1,37 @@
+# Security
+.env
+.gemini/*
+*.local
+
+# Node.js
+project/node_modules/
+project/dist/
+project/dist-ssr/
+project/npm-debug.log*
+project/yarn-debug.log*
+project/yarn-error.log*
+project/pnpm-debug.log*
+project/lerna-debug.log*
+
+# Python
+**/__pycache__/
+*.py[cod]
+*$py.class
+data/py/venv/
+data/py/.venv/
+
+# Logs
+logs
+*.log
+
+# Editor & OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db

@@ -1,0 +1,983 @@
+
+<map>
+  <node ID="root" TEXT="数据原型 V1">
+    <node TEXT="使用须知 README" ID="69add1cac14fda6bc5f187e113323887" STYLE="bubble" POSITION="right">
+      <node TEXT="发起者：沈展博" ID="df678af51308965335a5c1725af5cca8" STYLE="fork"/>
+      <node TEXT="贡献者：" ID="147e857dcfcf3ff77d2b8086f834a98c" STYLE="fork"/>
+      <node TEXT="本数据原型暂时基于启信宝的高级搜索构建，可即时更新" ID="e66eff16e79c0acf1ba2615dbcf36c04" STYLE="fork"/>
+      <node TEXT="有不完整的、没有考虑到的、需要本地化的情况，请及时反馈、补充" ID="35440916a097f7e0f6fd1f90cada75d4" STYLE="fork"/>
+      <node TEXT="构建时的一些灵感（暂存）" ID="a9c3bc9f33242256e7cdfbb3630f87de" STYLE="fork">
+        <node TEXT="评分模型可以参考这个数据原型来构建规则、权重、分值" ID="0e7946eb42ac16f878a1026238d1cf51" STYLE="fork"/>
+      </node>
+      <node TEXT="成立年限、注册、实缴资本等涉及实际数值的字段，用实际的数值填值，下有示例" ID="b7a5869b42de00c915a3246ead765231" STYLE="fork"/>
+      <node TEXT="行业分类为四级标签分类" ID="3bf59d0be17698334278bbe2b4d523f5" STYLE="fork">
+        <node TEXT="0 级" ID="7f2f4fb30c0a6634727a9769188d86e4" STYLE="fork">
+          <node TEXT="数字医疗、前沿技术等并列的标签" ID="fc13826964ea165c93361c7394e38ed4" STYLE="fork"/>
+        </node>
+        <node TEXT="1 级" ID="d0b08adfa36189b71ba6f786239a7c60" STYLE="fork">
+          <node TEXT="所有 0 级标签的下一级节点" ID="e1065c559df2fcf7c13121ff83315eb5" STYLE="fork"/>
+        </node>
+        <node TEXT="2 级" ID="018cb38696114214cfe87552addb6ee1" STYLE="fork">
+          <node TEXT="所有 1 级标签的下一级节点" ID="2e653bf844dd14b6904535ed51a3bcf1" STYLE="fork"/>
+        </node>
+        <node TEXT="3 级" ID="32e40c439a34b4f71af36864bb613ab1" STYLE="fork">
+          <node TEXT="所有 2 级标签的下一级节点" ID="1daa39e40b18c045bf241c952bb9327c" STYLE="fork"/>
+        </node>
+      </node>
+    </node>
+    <node TEXT="企业数据原型" ID="1b39404edec1d51a26b9eed742d3bc79" STYLE="bubble" POSITION="right">
+      <node TEXT="基本信息" ID="cddfe97cbbdf1a53b737ca5fb929f29b" STYLE="fork">
+        <node TEXT="名称 √" ID="19275059eb872bed78acd4000a3b5724" STYLE="fork"/>
+        <node TEXT="统一社会信用代码 √" ID="8b9a04258ce94f454b38f08c45dc1b52" STYLE="fork"/>
+        <node TEXT="成立年限 √" ID="0f85a3c1babc39a0c7037d219081b589" STYLE="fork">
+          <node TEXT="1 年内" ID="c1cade95c3a6d3f4718af0827e9a7938" STYLE="fork"/>
+          <node TEXT="1-5 年" ID="feb719116ce8879f8dabc4cd85832006" STYLE="fork"/>
+          <node TEXT="5-10 年" ID="a3b08f29cea95b490c8577f057ffdece" STYLE="fork"/>
+          <node TEXT="10-15 年" ID="40c43e5feb32ba6825815627e36208d3" STYLE="fork"/>
+          <node TEXT="15 年以上" ID="6ecdc9e618de961fb87d9362eb2e15c8" STYLE="fork"/>
+        </node>
+        <node TEXT="注册 √ 但需要处理一下单位（单位已统一-马烨）" ID="fa411ec17597873da4b6dd370679e1ec" STYLE="fork">
+          <node TEXT="0 万-100 万" ID="90751bc9a6f26d33713341315cea9940" STYLE="fork"/>
+          <node TEXT="100 万-200 万" ID="632643374589f57c1ebb1b12e0a95212" STYLE="fork"/>
+          <node TEXT="200 万- 500 万" ID="70e7e85f3f7fa08780b354fab72dd731" STYLE="fork"/>
+          <node TEXT="500 万- 1000 万" ID="aa0312cfc851df344d0039773ee3b1c2" STYLE="fork"/>
+          <node TEXT="1000 万以上" ID="6897d2c312f0f1c32a96a5755860dcc6" STYLE="fork"/>
+        </node>
+        <node TEXT="实缴资本 √ 单位(单位已经统一-马烨)" ID="a761621e404e1e05a3f627e7b0079e20" STYLE="fork">
+          <node TEXT="有实缴资本" ID="37365df5a703b512b5360d969663b5a2" STYLE="fork"/>
+          <node TEXT="无实缴资本" ID="6b8870ce53a9ab49c735aababbe093bf" STYLE="fork"/>
+          <node TEXT="0 万-100 万" ID="a9cec5bc13d2fce1b2992a0a511a2486" STYLE="fork"/>
+          <node TEXT="100 万-200 万" ID="b3391be1636ae1daba14ecc95d44ce77" STYLE="fork"/>
+          <node TEXT="200 万-500 万" ID="9051a4edd64123cdf17f58c7dc563035" STYLE="fork"/>
+          <node TEXT="500 万-1000 万" ID="2af5f0a78b14dbfd12204e79c67e4cf3" STYLE="fork"/>
+          <node TEXT="1000 万-5000 万" ID="76d5c8b3276bb0cfeb6266027a66cea0" STYLE="fork"/>
+          <node TEXT="5000 万以上" ID="7f4b9b54957d95823b1d2dbacaf673ca" STYLE="fork"/>
+          <node TEXT="自定义" ID="1707b199f028f4a6b42275915adfafd5" STYLE="fork"/>
+        </node>
+        <node TEXT="经营状态 √ " ID="0328e4be389590efe1b78f9d2455400b" STYLE="fork">
+          <node TEXT="存续" ID="79fc8845cd1b674bcbe255aa60911688" STYLE="fork"/>
+        </node>
+        <node TEXT="企业类型 √" ID="1a8d1aa9ec823fbad557d23fd5b232d9" STYLE="fork">
+          <node TEXT="国有企业" ID="2fd050fdab5fab20c87ef2f7c58a1e28" STYLE="fork"/>
+          <node TEXT="集体所有制企业" ID="b1b8ce9b61f177359265e767bd6121bf" STYLE="fork"/>
+          <node TEXT="股份合作企业" ID="f1dc6366444b2bbf25ff93f1f874f171" STYLE="fork"/>
+          <node TEXT="联营企业" ID="d386d338398821e5edf46ed4ef76f579" STYLE="fork"/>
+          <node TEXT="有限责任公司" ID="6039f441f41c3497b5183757835fb1d6" STYLE="fork"/>
+          <node TEXT="普通合伙" ID="b145817706d669aa0ba057dbf226cee9" STYLE="fork"/>
+          <node TEXT="有限合伙" ID="0c31c97d0e369fdab5bb7d9247d707c0" STYLE="fork"/>
+          <node TEXT="股份有限公司" ID="84bf474263546d2dc2091ef7d0b5ae2e" STYLE="fork"/>
+          <node TEXT="私营企业" ID="f33aeb1f48713f852aceadb020b841d6" STYLE="fork"/>
+          <node TEXT="民营企业" ID="1020b7809c301be5664fbb3e06a72379" STYLE="fork"/>
+          <node TEXT="个体工商户" ID="43eb1c17e3a733fcb63a903c1dfc4e3b" STYLE="fork"/>
+          <node TEXT="港澳台投资" ID="239ce6c86066ebbbd558effbb48ba954" STYLE="fork"/>
+          <node TEXT="外商投资" ID="afc291a29dbb98af5ba81bd686bbe480" STYLE="fork"/>
+          <node TEXT="全民所有制" ID="3523de88e735bfe37b72534f1255b4fd" STYLE="fork"/>
+          <node TEXT="个人独资企业" ID="2ea6e90ca9661b0a8238d7198cfd4c4b" STYLE="fork"/>
+          <node TEXT="农民专业合作社（联合社）" ID="bbb1f75b82fafe79f3b9886eb07d7abe" STYLE="fork"/>
+          <node TEXT="其他" ID="ab709a58aa94ecb5e0262124fce3cb1a" STYLE="fork"/>
+        </node>
+        <node TEXT="组织类型 √ （具体内容不一致）（已经将括号内内容划分出来，命名为投资类型-马烨）" ID="a1428825dc6da77f324755e3c7729735" STYLE="fork">
+          <node TEXT="新三板" ID="4bfca9f5a53893d2cfb5736918002021" STYLE="fork"/>
+          <node TEXT="上市公司" ID="7a61533776aef62ad7eb9c0aa870cd71" STYLE="fork"/>
+          <node TEXT="社会组织" ID="2725574f6f507bbc3cc59f23d624789e" STYLE="fork"/>
+          <node TEXT="律师事务所" ID="e4b0c459bdfa8f04c6b3701652bb644b" STYLE="fork"/>
+          <node TEXT="香港企业" ID="f6d8437454336fefbab803f676b61cbd" STYLE="fork"/>
+          <node TEXT="台湾企业" ID="de244ac0d6c623af2d1452b2b18b73a0" STYLE="fork"/>
+          <node TEXT="机关单位" ID="706a15f9cbbb341e853e11f8e4f826a6" STYLE="fork"/>
+          <node TEXT="事业单位" ID="8eae94f23175149c31b795ee1ba499a8" STYLE="fork"/>
+          <node TEXT="学校" ID="7ea65be882b90ade4956fa0477a31088" STYLE="fork"/>
+        </node>
+        <node TEXT="企业规模 √ （具体内容不一致）" ID="276436c7a4f753b1aedda40f546e369f" STYLE="fork">
+          <node TEXT="不限" ID="8d45b6211920dc913ce741cb1b0dfdb3" STYLE="fork"/>
+          <node TEXT="大型" ID="a6a66794a82499e9fe9467561bbe02f7" STYLE="fork"/>
+          <node TEXT="中型" ID="99212b27ef7c0d6d3ccbc633a4134f2b" STYLE="fork"/>
+          <node TEXT="小型" ID="f44da0865775d3507259952aec89be32" STYLE="fork"/>
+          <node TEXT="微型" ID="96e3900b223631d716cdc654323f818f" STYLE="fork"/>
+        </node>
+        <node TEXT="分支机构 √ （有具体内容）（将分支机构数量单独划分出来一列，因为表中的内容太多所以划分出来，现在一共两列“分支机构数量”与“分支机构名称”-马烨）" ID="ba16f5df491a77a7911e82c3bc41754c" STYLE="fork">
+          <node TEXT="不限" ID="dbcee514d8c9a1c3586086dc91535520" STYLE="fork"/>
+          <node TEXT="是分支机构" ID="c913f76f9bd963ff1deb4006d9878e88" STYLE="fork"/>
+          <node TEXT="非分支机构" ID="5c7ade1fedec1202243ef03dfcc5f95d" STYLE="fork"/>
+        </node>
+        <node TEXT="地址信息 √  （在……）（加入了两列为“街道”与“地区”-马烨）" ID="55b88983dae3fccac8c47ffda537634d" STYLE="fork">
+          <node TEXT="不限" ID="c4a74957970c3b772cc7ec20292a7844" STYLE="fork"/>
+          <node TEXT="有企业地址" ID="d3c916f1df2c8d8a6bc59aa50bec8696" STYLE="fork"/>
+          <node TEXT="无企业地址" ID="fec8adbcf7023d2240615e89365bae1a" STYLE="fork"/>
+        </node>
+        <node TEXT="投融资轮次 √ （有具体内容）" ID="5f29164c6855cab2c9951ce30c8f6234" STYLE="fork"/>
+      </node>
+      <node TEXT="经营状况" ID="5a4fc5b987b6a63acb2b15f1e256e43e" STYLE="fork">
+        <node TEXT="员工人数 √ （有具体内容）" ID="559c5bd872735c5a29c8482f5252580b" STYLE="fork">
+          <node TEXT="小于 50 人" ID="be6cdaf59d8ebbdd3217922a7d8db647" STYLE="fork"/>
+          <node TEXT="50-99 人" ID="1b7d7be0ea931baf49a0e5aea61ba2f1" STYLE="fork"/>
+          <node TEXT="100-499 人" ID="2610d85bea629562ec28dc6c2b441d1a" STYLE="fork"/>
+          <node TEXT="500 人以上" ID="1e92c5c89decb62986ef11eb53a60640" STYLE="fork"/>
+          <node TEXT="未披露" ID="c328073437686a403069de9663577a4f" STYLE="fork"/>
+          <node TEXT="自定义" ID="fbf66ed66153206d4d78394342d4db9e" STYLE="fork"/>
+        </node>
+        <node TEXT="参保人数 √ （社保人数 vs 参保人数？）(留下社保人数，因为爬取的数据就只有社保人数-马烨)" ID="d0428e45db3d92c7e0793b78d87c45fb" STYLE="fork">
+          <node TEXT="小于 50 人" ID="4bed65e18eebff8fca9e9fa207812f9d" STYLE="fork"/>
+          <node TEXT="50-99 人" ID="16de6009a838d5a1339b3d16264bbb0a" STYLE="fork"/>
+          <node TEXT="100-499 人" ID="74175ffcf8fb50c9bf55060614c900bd" STYLE="fork"/>
+          <node TEXT="500 人以上" ID="f835388abad6200fe94daa0dee31819c" STYLE="fork"/>
+          <node TEXT="自定义" ID="c2d4b5c50573980bed0bca8ab423b01d" STYLE="fork"/>
+        </node>
+        <node TEXT="上市状态（无）" ID="e6e86a77170c0e81e9a6e338ba76fa69" STYLE="fork">
+          <node TEXT="A 股" ID="1c248f8f4335b6236799869618e1c047" STYLE="fork"/>
+          <node TEXT="中概股" ID="8885c9d2bb0fcaec677d5173b881aa9b" STYLE="fork"/>
+          <node TEXT="港股" ID="812ae2f4855f7df6b19b4998a8a6a077" STYLE="fork"/>
+          <node TEXT="科创板" ID="033538802509b327891c17d9d61bed38" STYLE="fork"/>
+          <node TEXT="新三板" ID="c533f945ff10d62e7ee8f52d5288a67c" STYLE="fork"/>
+        </node>
+        <node TEXT="规上企业（替换为国标行业）" ID="050725c9f94d8d9b2ddfbaa1ff173937" STYLE="fork">
+          <node TEXT="有资质的建筑业" ID="e4c6c24196892fc7da06e1597a83dc11" STYLE="fork"/>
+          <node TEXT="规模以上服务业" ID="031e7a474de7c334929234eae04b94a2" STYLE="fork"/>
+          <node TEXT="规模以上工业" ID="e8b06617baf90a51b063b0739937c440" STYLE="fork"/>
+          <node TEXT="限额以上批发和零售业" ID="2bf5c39dcff05e82a06a783cad46db2a" STYLE="fork"/>
+          <node TEXT="房地产开发经营业" ID="c56c764ad1541b14e08c6743087be78e" STYLE="fork"/>
+          <node TEXT="限额以上住宿和餐饮业" ID="d54b01b05883e65da67c1e2eecc3878c" STYLE="fork"/>
+        </node>
+        <node TEXT="联系方式 √" ID="d0ad76af89591e514f11d13be5442f51" STYLE="fork">
+          <node TEXT="不限" ID="43e3bd0b8a1e02aa7eb880c9fa72133a" STYLE="fork"/>
+          <node TEXT="有联系电话" ID="b5795d91a2704a0654a2a69068a89e90" STYLE="fork"/>
+          <node TEXT="有固定电话" ID="fb9a6a3468f115cef506ae0df4e722e4" STYLE="fork"/>
+          <node TEXT="有手机号" ID="29a55a8d9b5ccd8b4103d557da24db3f" STYLE="fork"/>
+        </node>
+        <node TEXT="空号过滤（替换为同电话企业）" ID="55196b0831e1a05cf55ceab6721ab9a2" STYLE="fork">
+          <node TEXT="不限" ID="2dcd5f5e59ddd207dc29041f8892b36e" STYLE="fork"/>
+          <node TEXT="正常号码" ID="da90b580cbd6f26036cd7d0ea02379a9" STYLE="fork"/>
+          <node TEXT="不可用或无号码" ID="745d551e68e5fd37cbde9eddaba8344d" STYLE="fork"/>
+          <node TEXT="同电话" ID="c438c2e6fe298b34f47806a2e69ba41e" STYLE="fork"/>
+        </node>
+        <node TEXT="联系邮箱 √" ID="a5520d8f4c9ea9d550fd14dbbcaaad66" STYLE="fork">
+          <node TEXT="不限" ID="f6900e0c131d75ffd095ee24fd924f3e" STYLE="fork"/>
+          <node TEXT="有联系邮箱" ID="319a01623f089f7dc3aef990a554f323" STYLE="fork"/>
+          <node TEXT="无联系邮箱" ID="8dabf53281a2ab6b3f3bfce41f5a1c55" STYLE="fork"/>
+        </node>
+        <node TEXT="小微企业 √" ID="5edc50a13c569b1a0d41917ecf2db198" STYLE="fork">
+          <node TEXT="不限" ID="7ab0d9905afcf5b3ef17d99557dce4ba" STYLE="fork"/>
+          <node TEXT="是小微企业" ID="462f724ad51c3ad3378bd6a2ce43418d" STYLE="fork"/>
+          <node TEXT="非小微企业" ID="f41d2a8d28d85d777431ce028a5315f0" STYLE="fork"/>
+        </node>
+        <node TEXT="变更信息 √" ID="18bb125d1d5a9acf80b386ad436b50b7" STYLE="fork">
+          <node TEXT="不限" ID="b8efbe15feadb8337a834b52f17e9173" STYLE="fork"/>
+          <node TEXT="有变更信息" ID="54fef0e39710892cdd6a88c3b728f31f" STYLE="fork"/>
+          <node TEXT="无变更信息" ID="80ac1b431251679e897b174e375040d9" STYLE="fork"/>
+        </node>
+        <node TEXT="一般纳税人 √" ID="52c6c45794026044253706da2eaed54f" STYLE="fork">
+          <node TEXT="不限" ID="ef4b2c57a5c6b8b219251a568f1a87aa" STYLE="fork"/>
+          <node TEXT="一般纳税人" ID="a0a8779fb923ad3a73f6103730791f11" STYLE="fork"/>
+          <node TEXT="非一般纳税人" ID="5a863ddc0395d714c12d913d2cb1d034" STYLE="fork"/>
+        </node>
+        <node TEXT="融资信息 √" ID="6019ca056cd9ea6d31324ef419aad52b" STYLE="fork">
+          <node TEXT="不限" ID="81ec4148747b0559da0383135f644fd3" STYLE="fork"/>
+          <node TEXT="有融资" ID="0c6fd6276cb15fbc5b76d5f8a66b4b53" STYLE="fork"/>
+          <node TEXT="无融资" ID="a9d85189f28ea81c716f307a22a918c2" STYLE="fork"/>
+        </node>
+        <node TEXT="招投标 √（有具体数量）" ID="2eb417db94c744c2d28b0276f0f6b082" STYLE="fork">
+          <node TEXT="不限" ID="738975f9e4fc9cd07a0e2bce4221e853" STYLE="fork"/>
+          <node TEXT="有招投标" ID="b6d3d7f926150f378781adacf8535cc8" STYLE="fork"/>
+          <node TEXT="无招投标" ID="f17a221dd83345588748080fda402f27" STYLE="fork"/>
+        </node>
+        <node TEXT="招聘 √ （有具体数量）（招聘具体信息已经重新建立了一个表-马烨）" ID="a0349161e0f1066eaea19623e9c0e122" STYLE="fork">
+          <node TEXT="不限" ID="639ef75be7d5cd363156cdf9a8b03b2a" STYLE="fork"/>
+          <node TEXT="有招聘" ID="85d70b08d54c20b689416a93f2344057" STYLE="fork"/>
+          <node TEXT="无招聘" ID="16a66cbdafd394b748b74fe37d54bd1b" STYLE="fork"/>
+        </node>
+        <node TEXT="税务评级 √" ID="b786d148cb9520ca2a39dc8441b6e47b" STYLE="fork">
+          <node TEXT="不限" ID="b93e1d38070d98826412097229f1f971" STYLE="fork"/>
+          <node TEXT="A 级" ID="1efa128d5f6fcbd1b78cc3d2c5b0cfc9" STYLE="fork"/>
+        </node>
+        <node TEXT="进出口信息" ID="3b2941d3b9b3e8b5f6958d75754e1eb1" STYLE="fork">
+          <node TEXT="不限" ID="6c7161b6482b84e9dd6b3e8efac726b9" STYLE="fork"/>
+          <node TEXT="有进出口信息" ID="14de84cf304c23d2e9acadc12e2e80be" STYLE="fork"/>
+          <node TEXT="无进出口信息" ID="af570e025cc65f7e71dd56050fd96522" STYLE="fork"/>
+        </node>
+        <node TEXT="开户行" ID="ee75fd200e0ef6bd8bcbee5ffe9503ad" STYLE="fork">
+          <node TEXT="国有大型企业" ID="142c27df63097fd6d4218e3b7ad260e2" STYLE="fork"/>
+          <node TEXT="股份制商业银行" ID="738641ead7cdf7060b62afd6bdcc6c8b" STYLE="fork"/>
+          <node TEXT="城市商业银行" ID="18c32760ca8b01dc5e0551a17b480a71" STYLE="fork"/>
+          <node TEXT="农业商业银行" ID="ab69a698bbf74a5db5a6ad78363c749f" STYLE="fork"/>
+        </node>
+      </node>
+      <node TEXT="知识产权" ID="dcc406ef0e91514c4625b4799499c7b7" STYLE="fork">
+        <node TEXT="专利类型（这部分应该在专利详细界面里面-马烨）" ID="5fdd4a62d53dae606fa1aab3d88c3cb7" STYLE="fork">
+          <node TEXT="发明公布" ID="ca7f4dac9c61225297621e1651532d27" STYLE="fork"/>
+          <node TEXT="发明授权" ID="9eeda3c9f1a6513ba0ef4e4851032ecb" STYLE="fork"/>
+          <node TEXT="实用新型" ID="6c7a5e6fd7ce2c74c834ddb7cd937725" STYLE="fork"/>
+          <node TEXT="外观设计" ID="0dceb4780da19e4f9dcccf1351fa4dc0" STYLE="fork"/>
+        </node>
+        <node TEXT="企业科技属性 √ " ID="23fbe359362bd482f137968ac4246997" STYLE="fork">
+          <node TEXT="高新企业" ID="aa70737e56ef2201996941fb72aa5fce" STYLE="fork"/>
+          <node TEXT="科技型中小企业" ID="9dbb8898ddb3a939512ab3cd1b6d2355" STYLE="fork"/>
+          <node TEXT="瞪羚企业" ID="f5489a6f57d4ab6618497f9fa369400d" STYLE="fork"/>
+          <node TEXT="国家级技术创新示范企业" ID="c6e413f9e2f662c5be4450a4e9ccc591" STYLE="fork"/>
+          <node TEXT="省级技术创新示范企业" ID="31574656eddad953767eab4975da564a" STYLE="fork"/>
+          <node TEXT="国家级企业技术中心" ID="c71c6819402e53e716730baaa281942a" STYLE="fork"/>
+          <node TEXT="省级企业技术中心" ID="8939ed36acce0da30c160984fb9e9007" STYLE="fork"/>
+          <node TEXT="国家备案众创空间" ID="b02a841e1f449863b76522f53b3a055c" STYLE="fork"/>
+          <node TEXT="国家级科技企业孵化器" ID="07cdff958af4b20bb044afe8156b36b6" STYLE="fork"/>
+          <node TEXT="省级科技企业孵化器" ID="f5e53664d71eb8ab81070d5c171599bd" STYLE="fork"/>
+          <node TEXT="国家火炬计划项目" ID="26015ae18cc0c7c4bf3bff7acec3c8bf" STYLE="fork"/>
+          <node TEXT="技术先进型服务企业" ID="e133b1ef3e383d8d131fb894038269b1" STYLE="fork"/>
+          <node TEXT="民营科技企业" ID="455033e2774e7f33752a99867197c855" STYLE="fork"/>
+          <node TEXT="专精特新企业" ID="d2e71ad1584bc170bda4981fdfd9137b" STYLE="fork"/>
+          <node TEXT="科技小巨人企业" ID="ef4e7a3509c1d0f8f9a116b543944696" STYLE="fork"/>
+          <node TEXT="专精特新小巨人" ID="652c285a8ff28ec125dc9c11d306c735" STYLE="fork"/>
+          <node TEXT="创新型企业" ID="ed1db9deb684478e559f1a3be7007b00" STYLE="fork"/>
+          <node TEXT="创新型试点企业" ID="d83d6a3f3f56cf327d6299dc5ad086c9" STYLE="fork"/>
+          <node TEXT="创新型领军企业" ID="46ef4f53daf603bfe2449215cf6b5414" STYLE="fork"/>
+          <node TEXT="雏鹰企业" ID="f6a1d432b603fa67c6f89c25e9550c4e" STYLE="fork"/>
+          <node TEXT="隐形冠军" ID="521f9cfd1038d2fc5fbe0f6c263e287d" STYLE="fork"/>
+          <node TEXT="牛羚企业" ID="616d66f3068874914ba986650363ec15" STYLE="fork"/>
+          <node TEXT="独角兽企业" ID="f70e529a95cbf0cf4ec72a73c95e0719" STYLE="fork"/>
+          <node TEXT="未来独角兽企业" ID="00121e14c58f03673080919ccaec3db3" STYLE="fork"/>
+          <node TEXT="潜在独角兽企业" ID="aac1f2c7945d23699bfe1121f9fa8227" STYLE="fork"/>
+          <node TEXT="种子独角兽企业" ID="5704be28b555d9159587ad6d0dff2a43" STYLE="fork"/>
+        </node>
+        <node TEXT="资质证书" ID="f397efc7389be043c339b5cd12b75551" STYLE="fork">
+          <node TEXT="进网许可证" ID="ce3ad5af41749cf60be0cbecf6fdd017" STYLE="fork"/>
+          <node TEXT="排污许可证" ID="14adf5998cf4a65306bd6f26bf797108" STYLE="fork"/>
+          <node TEXT="采矿权许可证" ID="d0251969d0295950e9c04fca812b0986" STYLE="fork"/>
+          <node TEXT="金融许可证" ID="fdf0dc7b6cd77ba29e18daecdfc1622a" STYLE="fork"/>
+          <node TEXT="食品生产许可证" ID="b0e679b9bb22cb11eb6d650b3c27d748" STYLE="fork"/>
+          <node TEXT="食品经营许可证" ID="0da382f857ee14cf28c3e512ab3d2206" STYLE="fork"/>
+        </node>
+        <node TEXT="商标信息√ " ID="6ebb5fc2a7c4560d9046ed229cca7011" STYLE="fork">
+          <node TEXT="不限" ID="8241fe50063052bea6d990a87c9de5c2" STYLE="fork"/>
+          <node TEXT="有商标" ID="1f655aec779bd4c6acb3805ec75d0d0a" STYLE="fork"/>
+          <node TEXT="无商标" ID="8b67727f25f840557b2b97104a8fd9b7" STYLE="fork"/>
+        </node>
+        <node TEXT="专利信息 √ " ID="cb82b56618592cde811b31906a9c3d4b" STYLE="fork">
+          <node TEXT="不限" ID="e50051a6899b67a0d096599a6db54c5c" STYLE="fork"/>
+          <node TEXT="有专利" ID="a137f1551d1009269527b803361e3713" STYLE="fork"/>
+          <node TEXT="无专利" ID="223c0a5f2f6dd79eda609ff4f76b3f10" STYLE="fork"/>
+        </node>
+        <node TEXT="作品著作权 √ " ID="97c97b77855e96390c1178a616b3e00c" STYLE="fork">
+          <node TEXT="不限" ID="d1d1527f45772c67b1fb98999fa0ed71" STYLE="fork"/>
+          <node TEXT="有作品著作权" ID="1ce95493245d415043394476b4d0374c" STYLE="fork"/>
+          <node TEXT="无作品著作权" ID="587a3fc9a682c4160749b3c5fa312993" STYLE="fork"/>
+        </node>
+        <node TEXT="软件著作权 √ " ID="56d409d783692d70209134d07bdcc261" STYLE="fork">
+          <node TEXT="不限" ID="d282b520661c3bdaaf82239f90b0e12a" STYLE="fork"/>
+          <node TEXT="有软件著作权" ID="c973bf4ee2fc829d159c0bfab475b1db" STYLE="fork"/>
+          <node TEXT="无软件著作权" ID="69d0d20b582d58ef5eb155cd4dc91c0d" STYLE="fork"/>
+        </node>
+        <node TEXT="高新技术企业 √ " ID="9fa6c34d5c13be203071032ad5cd7be2" STYLE="fork">
+          <node TEXT="不限" ID="837978cefe47e32a89772e87301b9e10" STYLE="fork"/>
+          <node TEXT="是高新技术企业" ID="6c35b2c1ae79569387a6be5e6490324f" STYLE="fork"/>
+          <node TEXT="不是高新技术企业" ID="97aca82c0228a40193d655e276ee1277" STYLE="fork"/>
+        </node>
+        <node TEXT="微信公众号" ID="164754ea292f902e0c35547042e13181" STYLE="fork">
+          <node TEXT="不限" ID="cd6aa125144a8efef2926aef49ae5c29" STYLE="fork"/>
+          <node TEXT="有微信公众号" ID="800117363aa1e361f35ed5fd4facfb2a" STYLE="fork"/>
+          <node TEXT="无微信公众号" ID="d4841c71285a74d6d9024313bc7f3b14" STYLE="fork"/>
+        </node>
+        <node TEXT="标准制定" ID="0bfaa7324f2b684cf92fc5461496e6b9" STYLE="fork">
+          <node TEXT="不限" ID="2de2ec9931d26870f9cf4acadcca343a" STYLE="fork"/>
+          <node TEXT="有制定标准" ID="ab41cca2be4e663fa1bdc50e71b4bc18" STYLE="fork"/>
+          <node TEXT="无制定标准" ID="df644263bc47d5e105a20e7015c8b209" STYLE="fork"/>
+        </node>
+        <node TEXT="集成电路布图" ID="fac65c980b3dc11bdc660a76c57fa814" STYLE="fork">
+          <node TEXT="有集成电路布图" ID="9887feed491c81c0e5ef22d85c3f6343" STYLE="fork"/>
+          <node TEXT="无集成电路布图" ID="3315dee3372d8c8bb637e0de96437e28" STYLE="fork"/>
+        </node>
+        <node TEXT="建筑资质" ID="63186980d235a97756621d1ca0b131fd" STYLE="fork">
+          <node TEXT="不限" ID="debc5c358635d79aa54082487357a54f" STYLE="fork"/>
+          <node TEXT="有建筑资质" ID="bb76df72f14aa0abed66fab2c140b4fd" STYLE="fork"/>
+          <node TEXT="无建筑资质" ID="1444c20a1d72185107759b493ff4dbc3" STYLE="fork"/>
+        </node>
+        <node TEXT="网址信息 " ID="f73697716bd7f55cdbc27a44d7cb8f57" STYLE="fork">
+          <node TEXT="不限" ID="d88a8bedccc4072ede3fafd710963d6f" STYLE="fork"/>
+          <node TEXT="有网址信息" ID="a9fdb375ce688ac45e28d08d23bed758" STYLE="fork"/>
+          <node TEXT="无网址信息" ID="103b44a9807c3a898e6b5af8a2a9d9d7" STYLE="fork"/>
+        </node>
+        <node TEXT="备案网站检测" ID="aee87fb178be1ce2f2a1af4a9bef307f" STYLE="fork">
+          <node TEXT="不限" ID="6f4b6ab062b49e2c7ad370931a7e8cc6" STYLE="fork"/>
+          <node TEXT="有 ICP 备案" ID="f889462f0f01bdb19e8fe07c0eb5a1d2" STYLE="fork"/>
+          <node TEXT="无 ICP 备案" ID="0bbc7ae33fd8ddd2ed107363b8570283" STYLE="fork"/>
+        </node>
+        <node TEXT="商业特许经营" ID="3e9beec36f463361785ea5432031cc68" STYLE="fork">
+          <node TEXT="不限" ID="a517f8437fe759e9bd72ac4d6f9dfcc2" STYLE="fork"/>
+          <node TEXT="有商业特许经营" ID="61108d1858e04ce1edfb77a5ac054000" STYLE="fork"/>
+          <node TEXT="无商业特许经营" ID="da76a18be59e6c911c00471e9824d6c6" STYLE="fork"/>
+        </node>
+      </node>
+      <node TEXT="风险信息 " ID="6c4b1e3427a4484faddd4f3f56ca00df" STYLE="fork">
+        <node TEXT="失信被执行 √" ID="b7a537a886feb06d15eeea3c0675c6bd" STYLE="fork">
+          <node TEXT="不限" ID="00d1390295c36f382ccb7f1ebffe0f3c" STYLE="fork"/>
+          <node TEXT="有失信被执行" ID="f785f71d111729f39caab28c9e4c7aed" STYLE="fork"/>
+          <node TEXT="无失信被执行" ID="6e1a49800a48c842a15994eb6f56fd73" STYLE="fork"/>
+        </node>
+        <node TEXT="动产抵押 √" ID="ba2321870ffd855f66f4bc94500ee489" STYLE="fork">
+          <node TEXT="不限" ID="d1d6e78a748c7f9ad1d414484a7161f4" STYLE="fork"/>
+          <node TEXT="有动产抵押" ID="6cad1d84fe6f9c971384362df4e0e898" STYLE="fork"/>
+          <node TEXT="无动产抵押" ID="a8679adab17a790c60fee3a75cf7933a" STYLE="fork"/>
+        </node>
+        <node TEXT="经营异常 √" ID="bb73d8bb8615c8c139d4d80bae1d61b1" STYLE="fork">
+          <node TEXT="不限" ID="069c5e01390ead22697ae8f7760fa626" STYLE="fork"/>
+          <node TEXT="有经营异常" ID="2c2de2659c712c0775e5f00f5507269d" STYLE="fork"/>
+          <node TEXT="无经营异常" ID="c2e8743fa79a887d8236b4d0a8119304" STYLE="fork"/>
+        </node>
+        <node TEXT="法律文书 √（有分司法案件、裁判文书、合计）" ID="a2decc22b1607774eeda67d41dbbebaa" STYLE="fork">
+          <node TEXT="不限" ID="8cd611a4598506b05e874be6e1b4400e" STYLE="fork"/>
+          <node TEXT="有法律文书" ID="7438d146c039d6e1e2f6223376432f03" STYLE="fork"/>
+          <node TEXT="无法律文书" ID="0cdbab79b6ffd9ca2031f46298ea0794" STYLE="fork"/>
+        </node>
+        <node TEXT="行政处罚 √" ID="baf32a83f94b5d7184efc084c263984e" STYLE="fork">
+          <node TEXT="不限" ID="757ce42a9f613f69bdd8142b4cb5225c" STYLE="fork"/>
+          <node TEXT="有行政处罚" ID="c554e0920a85845f9302b44618f495f9" STYLE="fork"/>
+          <node TEXT="无行政处罚" ID="519c30f86ef1cb21b0e9fee67ed7ff9d" STYLE="fork"/>
+        </node>
+        <node TEXT="破产重叠 √" ID="16ad46b6178e6830fd6b24f7dddb1a46" STYLE="fork">
+          <node TEXT="不限" ID="6315a96347ebce43ad6833ef6e39b862" STYLE="fork"/>
+          <node TEXT="有破产重叠" ID="22afe36a8275c4a9f98d3384dc17c144" STYLE="fork"/>
+          <node TEXT="无破产重叠" ID="07c432518f4a110bafd28c0746a99a2d" STYLE="fork"/>
+        </node>
+        <node TEXT="清算信息 √" ID="490b592d9c02de1390def35b2ac7899d" STYLE="fork">
+          <node TEXT="不限" ID="15a3ecc05f8514f1a8e10d62d3554346" STYLE="fork"/>
+          <node TEXT="有清算信息" ID="fdbca3047a2a53f82918501e82351bcf" STYLE="fork"/>
+          <node TEXT="无清算信息" ID="987311024ea635cee42c08fe1575fd68" STYLE="fork"/>
+        </node>
+        <node TEXT="环保处罚 √" ID="669aff0795bc559de0535f3d0b1101ae" STYLE="fork">
+          <node TEXT="不限" ID="0027fd63df6b327d7e87f2b4324f89f5" STYLE="fork"/>
+          <node TEXT="有环保处罚" ID="e06df3253192c37594b738f9781a9cfb" STYLE="fork"/>
+          <node TEXT="无环保处罚" ID="ec6dab6c940c6caa1013e0e5967e7883" STYLE="fork"/>
+        </node>
+        <node TEXT="股权冻结 √" ID="5f6110464d37a1542da755b1fb57624e" STYLE="fork">
+          <node TEXT="不限" ID="28b333f4778b7aa4412130f445361df2" STYLE="fork"/>
+          <node TEXT="有股权冻结" ID="3efb7cab7b44703715bd4d887b0a53c5" STYLE="fork"/>
+          <node TEXT="无股权冻结" ID="7b64534e1facf51214a3f477c6773d5f" STYLE="fork"/>
+        </node>
+        <node TEXT="被执行人 √" ID="9a2a56712e45c4b15197b9e2aed6ad6b" STYLE="fork">
+          <node TEXT="不限" ID="29998cdc661909f7ae52429f15cfdc38" STYLE="fork"/>
+          <node TEXT="有被执行人" ID="0040c76137b3b046e8bf670e714d7cd4" STYLE="fork"/>
+          <node TEXT="无被执行人" ID="b05ee173daed4788bc48afb4f9dab62b" STYLE="fork"/>
+        </node>
+        <node TEXT="限制高消费 √" ID="9545531f4cde33b3b68eb2bc0b555356" STYLE="fork">
+          <node TEXT="不限" ID="548e7fbfcbb639af8b4adfc6bb269232" STYLE="fork"/>
+          <node TEXT="有限制高消费" ID="6553a826c30650b303f2cecd0536bf33" STYLE="fork"/>
+          <node TEXT="无限制高消费" ID="7dc1da3fbe772024c65f764bf292e9b8" STYLE="fork"/>
+        </node>
+      </node>
+      <node TEXT="街道地区 √（不规范，用模型处理？）" ID="188343ec62f52f97aeb309c11b458362" STYLE="fork">
+        <node TEXT="街道" ID="714a1184a8570c196f8e88bfeb1f07ba" STYLE="fork">
+          <node TEXT="朝外街道" ID="57d6388e879e3837dbf3b9bde68194e4" STYLE="fork"/>
+          <node TEXT="劲松街道" ID="fa24bd5e76c144571e6b24c25449fdad" STYLE="fork"/>
+          <node TEXT="建外街道" ID="a769086c52440bf2bbe29362652f4335" STYLE="fork"/>
+          <node TEXT="呼家楼街道" ID="1487f218787fb7a0336664747f420d85" STYLE="fork"/>
+          <node TEXT="八里庄街道" ID="9b981234a98ca209f69f17a2a10065bb" STYLE="fork"/>
+          <node TEXT="三里屯街道" ID="7a8933bc2c146b4c236eeeaff0f86480" STYLE="fork"/>
+          <node TEXT="团结湖街道" ID="26b9ebab8b9624a8c1843be42d050430" STYLE="fork"/>
+          <node TEXT="双井街道" ID="abf9115cc8f38a2f958d6f14ef420f61" STYLE="fork"/>
+          <node TEXT="垡头街道" ID="7c9881741399f52ca3e5ce6901233798" STYLE="fork"/>
+          <node TEXT="左家庄街道" ID="3f3327848085de7ede57abca4e5b81a7" STYLE="fork"/>
+          <node TEXT="小关街道" ID="8d2f074487ce6bcc5107c18225b6c5c3" STYLE="fork"/>
+          <node TEXT="和平街街道" ID="2db4459eb35c42fbdb0cd6871a7df9b7" STYLE="fork"/>
+          <node TEXT="酒仙桥街道" ID="a19975ec9a76eee4929cd4d4c0787a16" STYLE="fork"/>
+          <node TEXT="首都机场街道" ID="e82e6ab07f6d0921ad155f594d816b41" STYLE="fork"/>
+          <node TEXT="潘家园街道" ID="f5e11583e205bc627ce62e980d965313" STYLE="fork"/>
+          <node TEXT="六里屯街道" ID="c13993adab17a91c4c4503254e5a377c" STYLE="fork"/>
+          <node TEXT="麦子店街道" ID="61b4cba13564dcfc114488f96c64a9d0" STYLE="fork"/>
+          <node TEXT="香河园街道" ID="f3dee59a7ab487b15177bda40d80038c" STYLE="fork"/>
+          <node TEXT="亚运村街道" ID="b99ca94914d7e6e05ad4223623832793" STYLE="fork"/>
+          <node TEXT="望京街道" ID="56090e7dd2389797ef03e6c64e9a9a3b" STYLE="fork"/>
+          <node TEXT="安贞街道" ID="11df28031ab3b67af02577f2f82efb24" STYLE="fork"/>
+          <node TEXT="大屯街道" ID="36b15cc74f56e65e5dc66e6fc04ddd08" STYLE="fork"/>
+          <node TEXT="奥运村街道" ID="27c687cd3f1db639d82544a7f41494da" STYLE="fork"/>
+          <node TEXT="东湖街道" ID="b365df13b1d2d45aacde4f8087a123e4" STYLE="fork"/>
+        </node>
+        <node TEXT="地区" ID="5cc0fb575586fe30c8539cb2eac05723" STYLE="fork">
+          <node TEXT="南磨房地区" ID="b1e4e609939a5793f2378a6821058454" STYLE="fork"/>
+          <node TEXT="高碑店地区" ID="28b7155bed731f1ae2c54dcec68071d4" STYLE="fork"/>
+          <node TEXT="将台地区" ID="bb2854b8c0e8eca0e4ab750f9ab51c63" STYLE="fork"/>
+          <node TEXT="太阳宫地区" ID="768705c35e037ae45d79e2462dff2cc1" STYLE="fork"/>
+          <node TEXT="小红门地区" ID="14dcdb1d42068205d3289c6d1aaf1442" STYLE="fork"/>
+          <node TEXT="十八里店地区" ID="aff830649d609cbc48e124bf2accbc2d" STYLE="fork"/>
+          <node TEXT="三间房地区" ID="8d15b1a61ad4256335bfef50f0a14d26" STYLE="fork"/>
+          <node TEXT="东风地区" ID="05adb7071b065a3936cd9d55417d8eba" STYLE="fork"/>
+          <node TEXT="常营地区" ID="cdd2174e7a0559110d8e03d11e7111ed" STYLE="fork"/>
+          <node TEXT="管庄地区" ID="2e153c897c531c0e86e2ebc700477f00" STYLE="fork"/>
+          <node TEXT="孙河地区" ID="a24a1811a21ae6a5b5add6ea23e11f62" STYLE="fork"/>
+          <node TEXT="王四营地区" ID="c8ea7c6ffe1fcf1d29b08789d7d49499" STYLE="fork"/>
+          <node TEXT="东坝地区" ID="23eb180f156df8941d2b4eb856f3e008" STYLE="fork"/>
+          <node TEXT="黑庄户地区" ID="e33eefea296f6837f3100ab4963d1f6a" STYLE="fork"/>
+          <node TEXT="崔各庄地区" ID="83996034261f0f947fc2a86f66f1d68a" STYLE="fork"/>
+          <node TEXT="豆各庄地区" ID="2daabd9ac407e0058f485a3bbc69988f" STYLE="fork"/>
+          <node TEXT="金盏地区" ID="4c29f1e71803ab93dcbb63484fba6646" STYLE="fork"/>
+          <node TEXT="平房地区 " ID="b8ae8fdc4a8642ec97ccd1fd8063ed32" STYLE="fork"/>
+          <node TEXT="来广营地区" ID="de5965bc586c97c4f8149e5823808da7" STYLE="fork"/>
+        </node>
+      </node>
+      <node TEXT="行业分类" ID="fc8508a55846003b759f1d6b9e52bb3e" STYLE="fork">
+        <node TEXT="数字医疗" ID="26bc4fa391d5072e108ec8b7daf54f22" STYLE="fork">
+          <node TEXT="智慧医疗" ID="70759f564a30769f62894c0c4ddf615a" STYLE="fork">
+            <node TEXT="智慧CDSS" ID="12b2aaae67c16e02473c8047e6d06c68" STYLE="fork">
+              <node TEXT="主动干预：临床诊断与治疗" ID="d3b8dfbb7f74d7431125762fb6a0b437" STYLE="fork"/>
+              <node TEXT="合理用药管理" ID="26c2ab4fcb0330cd16d6ab63c97c5ef5" STYLE="fork"/>
+              <node TEXT="被动检索：知识库" ID="11b99d0b53f26bdb4c311200fb7fc86b" STYLE="fork"/>
+            </node>
+            <node TEXT="智慧电子病历" ID="e31ead2803c2fd96e114524ed8ee038f" STYLE="fork">
+              <node TEXT="信息化企业" ID="24c4285102d34cb6a213bebcffc04007" STYLE="fork"/>
+              <node TEXT="云服务提供商" ID="d1dc692514514eb82d7a4f017b129193" STYLE="fork"/>
+            </node>
+            <node TEXT="健康医疗大数据" ID="3b9b9615a87dedce0b33c98edd682573" STYLE="fork">
+              <node TEXT="信息化厂商" ID="08e3e393b2c2c9a1ffe3c0583ba7bd3a" STYLE="fork"/>
+              <node TEXT="数据处理服务商" ID="c18093e4cf5d1b380e59d9e7b3434240" STYLE="fork"/>
+              <node TEXT="数据安全服务提供商" ID="ca6130ff1747fb52f3490bfe15dd2332" STYLE="fork"/>
+              <node TEXT="智能硬件厂商" ID="03e51e9cb80b08dcd86db4efddd73d7d" STYLE="fork"/>
+              <node TEXT="物联网厂商" ID="b19ef6915297bd3892a15a2e6a556662" STYLE="fork"/>
+            </node>
+            <node TEXT="智慧病理" ID="565aab53be008aa53090bd918a044b73" STYLE="fork">
+              <node TEXT="全切片成像系统与设备" ID="bae888b391ae76279ba63e0618ec93e9" STYLE="fork"/>
+              <node TEXT="独立病理中心" ID="da4ed7a926922fe16d0fd14831ecb3fb" STYLE="fork"/>
+              <node TEXT="辅助病理诊断" ID="e72efb573117ff415fe375513e3a1a91" STYLE="fork"/>
+            </node>
+            <node TEXT="远程医疗" ID="52c16495e23217a41015ddd7a09fc9a6" STYLE="fork">
+              <node TEXT="信息化系统厂商" ID="f8eb8fafb8c6b5c1e04cf8237b44cfbc" STYLE="fork"/>
+              <node TEXT="硬件设备生产商" ID="c6a1deec5247ee3453074d77f2abd936" STYLE="fork"/>
+              <node TEXT="通信服务商" ID="daa8855ad2908b8e89c49941216a1192" STYLE="fork"/>
+            </node>
+            <node TEXT="智慧医学影像" ID="93a613343662f4c0ffe3eb084dec1119" STYLE="fork">
+              <node TEXT="人工智能辅助/线上诊断分析平台" ID="54bea4202ad716ac77a20397846bf1c1" STYLE="fork"/>
+              <node TEXT="医学影像存储系统PACS供应商" ID="a797b97133b3c9721277d53c636aac77" STYLE="fork"/>
+              <node TEXT="智慧CT" ID="be86e7c66bf93e00be22d20e0b451870" STYLE="fork"/>
+              <node TEXT="智慧DR" ID="edd361ca7784d698c3e82846aecb7520" STYLE="fork"/>
+              <node TEXT="智慧MRI" ID="b600a7ea82824938145049b399df3059" STYLE="fork"/>
+              <node TEXT="智慧OCT" ID="c4c4c43eb84c5211ddcd7a23ab54da40" STYLE="fork"/>
+              <node TEXT="智慧内窥镜" ID="9ed9995ad4ddaa6b1adb1eaaa06ecdaa" STYLE="fork"/>
+              <node TEXT="智慧超声" ID="ef84fcc148607fbbfe7dbd99f4c39492" STYLE="fork"/>
+              <node TEXT="独立医学影像中心" ID="ea04f99c95146d7b552459ae3d7e2cea" STYLE="fork"/>
+            </node>
+            <node TEXT="智慧护理" ID="6570b5ed95bd15759066a2eaa9657100" STYLE="fork">
+              <node TEXT="专项护理-养老" ID="d4b9eb097547b119690bda38510efb46" STYLE="fork"/>
+              <node TEXT="专项护理-慢病管理" ID="96ffa5e8f3b0e2144c050e0e3e415fae" STYLE="fork"/>
+              <node TEXT="专项护理-母婴" ID="ae4e2e428ab8e60cd086cb9fe1a36409" STYLE="fork"/>
+              <node TEXT="护理资源调配平台" ID="7b91400df7d57d7a233047f38927996e" STYLE="fork"/>
+              <node TEXT="智能硬件+护理服务" ID="9c1ebe4079c075cc167a4837ad76b323" STYLE="fork"/>
+              <node TEXT="综合家庭护理" ID="3108274a8c39576c56bf8e1f45ec93ec" STYLE="fork"/>
+            </node>
+            <node TEXT="智慧区域卫生" ID="03a59cf8a30628615ddf58e905b5a23c" STYLE="fork">
+              <node TEXT="区域医疗数据信息中心" ID="f68b5341cf89778315027bf0c024ca37" STYLE="fork"/>
+              <node TEXT="医疗大数据共享与交换平台" ID="879e6d9af0e43ce986b98fc2472d6220" STYLE="fork"/>
+              <node TEXT="医疗线上平台应用系统" ID="1e3e44fcaaaa512001b41ceffb698fb1" STYLE="fork"/>
+              <node TEXT="综合卫生监管平台" ID="de6365d6ba8b15a3a15a43dea1a51bb0" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="互联网+健康" ID="13813ade25d3d19492b1b844b2e2812e" STYLE="fork">
+            <node TEXT="互联网医院" ID="559d8d7b331eb7c4b7b41953e278a4aa" STYLE="fork">
+              <node TEXT="信息化服务商" ID="564a4a5ac05b06f3e656e5a390d49cc0" STYLE="fork"/>
+              <node TEXT="处方流转平台" ID="2257052e2993d8b107d6c5cf5b86eb57" STYLE="fork"/>
+              <node TEXT="患者管理平台" ID="8819030de1319a65b7f82efce8b23e2e" STYLE="fork"/>
+              <node TEXT="药品流通商" ID="ff06bb8181d0c6ea6c72a8062d82515a" STYLE="fork"/>
+            </node>
+            <node TEXT="互联网保险" ID="f013d7061fb5db363df9e4165a54fcf8" STYLE="fork">
+              <node TEXT="IOT" ID="13b71bd04bb01adfba90033d8f521ddd" STYLE="fork"/>
+              <node TEXT="企业团险" ID="c9b7bdb3d957b9c1f5c788f634ffdfa5" STYLE="fork"/>
+              <node TEXT="保单和理赔服务" ID="c54927e39206489b57bb59057cf3359e" STYLE="fork"/>
+              <node TEXT="健康险企" ID="787ebcee511f616f505fb20056974e5c" STYLE="fork"/>
+              <node TEXT="比价/线上销售平台" ID="8acaf09587aea8c256204df414775bbb" STYLE="fork"/>
+              <node TEXT="网络互助保险平台" ID="a25f72b5bb6410de337101ee3b9ae80e" STYLE="fork"/>
+            </node>
+            <node TEXT="公共卫生服务" ID="4fd6ffeaaab4d4978438f98ea8ecc193" STYLE="fork">
+              <node TEXT="公卫服务相关智能设备" ID="9dbcbd01ecf483e0dc2544c17350692e" STYLE="fork"/>
+              <node TEXT="大数据与公卫服务" ID="2bbd3e301caab198c0c8a4cfbdfde9e7" STYLE="fork"/>
+              <node TEXT="疾病知识科普" ID="ab68660dd8c6eb07fc94bf5f3cd7fef0" STYLE="fork"/>
+            </node>
+            <node TEXT="检验检测" ID="c08e19854f552298206e30fbc1e6dafc" STYLE="fork">
+              <node TEXT="互联网公司" ID="7ec1ea14340a1fd6f5edc0fd7a52e3c6" STYLE="fork"/>
+              <node TEXT="医院内检验机构" ID="32888d8e249417d0152a8c8a4c27cc94" STYLE="fork"/>
+              <node TEXT="第三方检验中心" ID="b3db5fb2b1fe7e62304ef9fccaf356a0" STYLE="fork"/>
+            </node>
+            <node TEXT="医药电商" ID="55670eb6adbb594653cc554924f57876" STYLE="fork">
+              <node TEXT="B2B" ID="ae777fbb2ed08f1015e904e36108c69e" STYLE="fork"/>
+              <node TEXT="B2C" ID="334ce33cdca0daba82d39572b972069e" STYLE="fork"/>
+              <node TEXT="O2O" ID="6413a2cb5a6eb7c9e30a8abaa2b248e0" STYLE="fork"/>
+            </node>
+            <node TEXT="患者教育" ID="39831caaf30cfb658557e5a6ef6dd999" STYLE="fork">
+              <node TEXT="其他疾病患教" ID="585fcfefb33dee8a163915d4b6bf901f" STYLE="fork"/>
+              <node TEXT="图文在线健康科普" ID="f719e6f9b5e2e377e69a3ae8d53fffef" STYLE="fork"/>
+              <node TEXT="患者社区" ID="b433b579b87370ff0202fad3157621dc" STYLE="fork"/>
+              <node TEXT="用药指导" ID="cefbab1be04e202002bb906ef2d9cc60" STYLE="fork"/>
+              <node TEXT="糖尿病患教" ID="1c7e855901809c7c465c51496af9dbde" STYLE="fork"/>
+              <node TEXT="肿瘤患教" ID="369ca17f46cf8e8fa3b57092e22db0ba" STYLE="fork"/>
+              <node TEXT="视/音频健康科普" ID="ba51047c2ccc08bdc17f2d865f406aed" STYLE="fork"/>
+            </node>
+            <node TEXT="家庭医生" ID="ddf0a7b3362a186b16e18ac28490588a" STYLE="fork">
+              <node TEXT="医生在线预约平台" ID="fbfbe98dc3284f9248d4a2ba575bc7e9" STYLE="fork"/>
+              <node TEXT="家庭医生信息化厂商和签约服务平台" ID="b3dabb666ecac7d884d0d2b581b6a91c" STYLE="fork"/>
+              <node TEXT="诊所与家庭医生" ID="a82255b8e41e0b18312f28c4e89921ec" STYLE="fork"/>
+            </node>
+            <node TEXT="数字营销" ID="58d0ec6d5c57726f7f58da140c93ba08" STYLE="fork">
+              <node TEXT="医药企业" ID="b83bfbdade9bfa799bf409cf11835508" STYLE="fork"/>
+              <node TEXT="数字营销-以医生为导向" ID="45a342b4c876926563ce8a46c47eed1c" STYLE="fork"/>
+              <node TEXT="数字营销-以患者和消费者为导向" ID="85b866882ce406c1fc8d10386e5483fb" STYLE="fork"/>
+              <node TEXT="硬件和云服务" ID="3ec8353aae0785bf3347119615ea7c9f" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="数字疗法" ID="7285a221e2e3ec2cd9e591d246e6eb81" STYLE="fork">
+            <node TEXT="可穿戴设备" ID="2287aa09ecd4febc9182631908b0487d" STYLE="fork">
+              <node TEXT="其他可穿戴设备" ID="460c23294f393f74dc11739177202fde" STYLE="fork"/>
+              <node TEXT="头戴式设备" ID="00e457403e110a33aa2a8f7908faace6" STYLE="fork"/>
+              <node TEXT="智能手环" ID="7175e1f95cb516c936f64a13473230c1" STYLE="fork"/>
+              <node TEXT="智能手表" ID="31cfb9663ea7c687bd95482596283c78" STYLE="fork"/>
+              <node TEXT="智能服饰" ID="b320c55271d62dff736084b4bcc5f18d" STYLE="fork"/>
+              <node TEXT="智能眼镜" ID="2a9d9db98bb5d84f7bebf0c40acd6b5f" STYLE="fork"/>
+              <node TEXT="耳戴式设备" ID="5d43d8f4ad20edd7d483e5075ab89d2c" STYLE="fork"/>
+              <node TEXT="胸贴式设备" ID="f37fef6d04a2765534feec032fa1d9f3" STYLE="fork"/>
+              <node TEXT="臂戴式设备" ID="8a425d89a4ae7af41c8aedd8826e55be" STYLE="fork"/>
+            </node>
+            <node TEXT="糖尿病" ID="8cf78a5b209f314d308b04591b7df12c" STYLE="fork">
+              <node TEXT="其他黑科技" ID="452dd8993d41364599572390078fe50f" STYLE="fork"/>
+              <node TEXT="智能胰岛素泵" ID="357387a20c27ad9df4b6fa8492708384" STYLE="fork"/>
+              <node TEXT="糖尿病患者服务平台" ID="ff4fb21758a80bb7bc11f1f7a559dd0d" STYLE="fork"/>
+              <node TEXT="糖尿病管理App" ID="24f04b449ba5450313b414300e4675e5" STYLE="fork"/>
+              <node TEXT="血糖监测系统" ID="b4572eb4c8de7982fe7bf2c53313d99c" STYLE="fork"/>
+            </node>
+            <node TEXT="肥胖症" ID="00f7157ba3425fe60727e4f30f38d654" STYLE="fork">
+              <node TEXT="体重管理App及管理平台" ID="fe77eff47073252ce3f9f553066a4aba" STYLE="fork"/>
+              <node TEXT="智能可穿戴设备及其他智能减肥设备" ID="121195ccac510e7e97bad4830636be0a" STYLE="fork"/>
+              <node TEXT="肥胖症治疗器械" ID="c4721727e7b34e1682bda562ad0626cc" STYLE="fork"/>
+            </node>
+            <node TEXT="哮喘/COPD" ID="70b5051adccf9fa61ab18c7907000d6a" STYLE="fork">
+              <node TEXT="呼吸监测设备" ID="47550b54fabe5fedac8589a699681098" STYLE="fork"/>
+              <node TEXT="哮喘/COPD吸入器传感器" ID="03a3309ab9eb79e01e05bee1af3520af" STYLE="fork"/>
+              <node TEXT="哮喘/COPD相关App、线上平台" ID="1cb3fe54776ebaf3f0a4101893b91e0c" STYLE="fork"/>
+            </node>
+            <node TEXT="抑郁症" ID="0adb2a64339ce39da2168f81d1045e51" STYLE="fork">
+              <node TEXT="抑郁症诊断和分析" ID="6a625a7010e42cd14505284dd9ce6036" STYLE="fork"/>
+              <node TEXT="线上轻量级咨询" ID="0e961f93958f1b37a63537821d0460b4" STYLE="fork"/>
+              <node TEXT="黑科技数字疗法" ID="e82ba2dbcdc2edd61c5a3a19f01b2248" STYLE="fork"/>
+            </node>
+            <node TEXT="高血压" ID="7f7af1e2a10a8fe335ef8663964cf78d" STYLE="fork">
+              <node TEXT="App、线上服务" ID="75151eb37942eee94980512ba94ec8f3" STYLE="fork"/>
+              <node TEXT="血压监测分析系统" ID="5602f59a0bea688e3578e80f9ae6e28a" STYLE="fork"/>
+              <node TEXT="智能血压计" ID="fd2aa214645942ec3aa6ed84ddf60464" STYLE="fork"/>
+            </node>
+            <node TEXT="自闭症" ID="8537f4455521cd223072638ae1cb082d" STYLE="fork">
+              <node TEXT="AI及VR/AR治疗" ID="636f3c62f587a3f640e9ba236a2763e3" STYLE="fork"/>
+              <node TEXT="自闭症APP管理" ID="9de705a09b5b871da6990db5e1d2b101" STYLE="fork"/>
+              <node TEXT="自闭症患者社区" ID="4b5cce95662ed132c7218bfbdc2827c9" STYLE="fork"/>
+              <node TEXT="语言/行为康复治疗" ID="1ed91998fa2f06e2ac9b509f6217a927" STYLE="fork"/>
+            </node>
+          </node>
+        </node>
+        <node TEXT="前沿技术" ID="b473b6272f129282de56d17c38a6e211" STYLE="fork">
+          <node TEXT="前沿技术融合" ID="9e5e256c0220394520932ae5d854f3a0" STYLE="fork">
+            <node TEXT="脑机接口(BCI)" ID="425e2c4829e5afee4c8faaaf938a0ebf" STYLE="fork">
+              <node TEXT="侵入式脑机接口" ID="e4ebf001e386feb05f6edf0f64603405" STYLE="fork"/>
+              <node TEXT="半侵入式/介入式脑机接口" ID="06f9cd07f79995e54988a70e897c59fc" STYLE="fork"/>
+              <node TEXT="非侵入式脑机接口" ID="96b4cde657d6aea5a4ef67fea0a547f3" STYLE="fork"/>
+            </node>
+            <node TEXT="人工智能" ID="fbf8d72ba9fefbadbbcc10fb467b4083" STYLE="fork">
+              <node TEXT="AI临床试验解决方案" ID="de3f574d83160237f4b7b5be8daa5adf" STYLE="fork"/>
+              <node TEXT="AI健康管理平台" ID="3d459910b11923a8625dee02cd5c27ee" STYLE="fork"/>
+              <node TEXT="医疗垂直大模型" ID="e2d7825b68e846d5e21ec0e4584676d3" STYLE="fork"/>
+              <node TEXT="价值导向型医疗生态系统构建" ID="51bb2b5e7551cf9d4f837063772cd796" STYLE="fork"/>
+            </node>
+          </node>
+        </node>
+        <node TEXT="医疗器械" ID="8472c674890a7ab34bfdf0802833bb7f" STYLE="fork">
+          <node TEXT="体外诊断 (IVD)" ID="53a8eb9adaa52a87e7d1907ec08887da" STYLE="fork">
+            <node TEXT="生化" ID="04554ee249c19f5b5083ac404980f564" STYLE="fork">
+              <node TEXT="生化分析仪、试剂等" ID="f448e5e149eb3da3552e92553484905f" STYLE="fork"/>
+            </node>
+            <node TEXT="免疫" ID="82c8f49b04abe71ab6bb211bc03a0e4a" STYLE="fork">
+              <node TEXT="免疫分析仪、试剂等" ID="4c943df31c93a9f503302389b5a44026" STYLE="fork"/>
+            </node>
+            <node TEXT="分子" ID="0d9b89c3fe09941b541b8e796717f197" STYLE="fork">
+              <node TEXT="PCR仪、基因测序设备等" ID="52e1c0545e343715df17e8572ea90252" STYLE="fork"/>
+            </node>
+            <node TEXT="微生物" ID="2d0e7484117cbddab079a678ebf65329" STYLE="fork">
+              <node TEXT="微生物检测系统、培养箱等" ID="e3c9b536d9e9d36d3a8178e43e31ae40" STYLE="fork"/>
+            </node>
+            <node TEXT="血液、体液" ID="43aa0257338a4442deb8a2a1c08c666a" STYLE="fork">
+              <node TEXT="血球仪、尿液分析仪等" ID="a725556e9f808f9fc3cfd20eb5cd9fc2" STYLE="fork"/>
+            </node>
+            <node TEXT="POCT" ID="05b51e6d27ed616e35f408c244db0289" STYLE="fork">
+              <node TEXT="便携式血糖仪、快速检测卡等" ID="624e5858afdacfc3831d56a4ac3a0006" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="影像设备" ID="14182252f6a35ed7ba205ce61f143f87" STYLE="fork">
+            <node TEXT="X射线成像设备" ID="8a6e3806149cd4939773f11be04f3209" STYLE="fork">
+              <node TEXT="CT、DR" ID="4dd2b50a87f8ef390349a08b50d300f7" STYLE="fork"/>
+              <node TEXT="DSA" ID="09c005b21025b65e669bede26a251909" STYLE="fork"/>
+            </node>
+            <node TEXT="超声诊断设备" ID="3bcaf3166250698961d58d8bfa4ccce3" STYLE="fork">
+              <node TEXT="超声影像诊断设备" ID="3e9068c665f655ef27feafb544c89fb4" STYLE="fork"/>
+              <node TEXT="超声血管流量计" ID="7d180d1b7df738feefd9c6969ce5cd2d" STYLE="fork"/>
+            </node>
+            <node TEXT="核磁共振设备" ID="7fb2b721a571408af7573f74290f9a23" STYLE="fork">
+              <node TEXT="MRI" ID="afd7556b023a105dc25b53ed866646cb" STYLE="fork"/>
+            </node>
+            <node TEXT="核医学检查设备" ID="5ec72f92d1b091ca5f9bb048df2e85b9" STYLE="fork">
+              <node TEXT="PET-CT" ID="38792ee9300b81028468afc7c98f670e" STYLE="fork"/>
+            </node>
+            <node TEXT="内窥镜检查设备" ID="031e636e667dcd1fa89daa08bfa3f127" STYLE="fork">
+              <node TEXT="医用内窥镜" ID="6b34a2edec1ded9342529a4c435ec2cc" STYLE="fork"/>
+              <node TEXT="血管内超声诊断设备" ID="88444d2c9bdacb8d7c01541263a05de7" STYLE="fork"/>
+              <node TEXT="电凝切割内窥镜" ID="3360cd15fb0c46f9568cc87f3fa64045" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="治疗设备" ID="bf1310387db786a46f0f8eafe06e6e6e" STYLE="fork">
+            <node TEXT="手术机器人" ID="3ced170b334085086c95a4d42b5d88de" STYLE="fork">
+              <node TEXT="腔镜手术机器人" ID="06b25f9188c647681745e5304bd802fa" STYLE="fork"/>
+              <node TEXT="骨科手术机器人" ID="3c4dabb53870036869e1c55e4fec7364" STYLE="fork"/>
+              <node TEXT="泛血管介入手术机器人" ID="1af29bfed230951fc204efcc499b49cb" STYLE="fork"/>
+              <node TEXT="经自然腔道手术机器人" ID="4487ad5a31f71cc0d866d30fdb1d5908" STYLE="fork"/>
+              <node TEXT="经皮穿刺手术机器人" ID="924b9f9b9609416036dd7bc9159fb75c" STYLE="fork"/>
+            </node>
+            <node TEXT="能量源设备" ID="e9dea77f484045e97ef70276c409ddfb" STYLE="fork">
+              <node TEXT="高频手术设备" ID="2d393863ed979ffa01164caf4e6d8c5b" STYLE="fork"/>
+              <node TEXT="激光治疗设备" ID="8dc1b843edcabf0906276f269dc7738c" STYLE="fork"/>
+              <node TEXT="射频治疗设备" ID="3b876b3532b006d6a6dd39806390f1a3" STYLE="fork"/>
+              <node TEXT="脉冲电场消融设备" ID="d1fece60cd73bee723ed6d22e507c8ae" STYLE="fork"/>
+              <node TEXT="超声波治疗设备" ID="8896a7c331fff25feeee64a2e0afa833" STYLE="fork"/>
+            </node>
+            <node TEXT="放射设备" ID="e4d0f20b10e6592b21fd50fcdf044179" STYLE="fork">
+              <node TEXT="放疗设备" ID="097df640f301a629dcc6e322104d2c08" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="生命信息支持设备" ID="bc62e0544d0b4731a7a8b08d86491722" STYLE="fork">
+            <node TEXT="监护仪" ID="461c50ac32be284d98c89752b7a13e08" STYLE="fork">
+              <node TEXT="监护设备" ID="e77a23f1a9dbb5c58fc0344fb771effa" STYLE="fork"/>
+            </node>
+            <node TEXT="呼吸机" ID="a50d526d9236b6ccb0f7af7824226e09" STYLE="fork">
+              <node TEXT="呼吸机" ID="14c628efae8c4240da27fc3ba22baae6" STYLE="fork"/>
+            </node>
+            <node TEXT="麻醉机" ID="b1f93654e1aa021dac9761048a82092d" STYLE="fork">
+              <node TEXT="麻醉机" ID="9f09b756bb20bc4ed641dbd597a561be" STYLE="fork"/>
+            </node>
+            <node TEXT="ECMO" ID="d20dd197af1ab0ffa1feb3f8676cb245" STYLE="fork">
+              <node TEXT="体外膜肺氧合设备" ID="40eb0ca9728e001799702b0c4f8f28e5" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="康复设备" ID="f1fe5ac150ae96156dc59b7a1b44aa8c" STYLE="fork">
+            <node TEXT="康复机器人" ID="3606207bca12526f5286b9850a093984" STYLE="fork">
+              <node TEXT="运动康复、视听障碍康复" ID="3dcad12d2d6e5c0137fadd275358518f" STYLE="fork"/>
+            </node>
+            <node TEXT="物理治疗设备" ID="03b47ece316295dd49fd6bbadfe7bfd5" STYLE="fork">
+              <node TEXT="声、光、电、磁疗" ID="0be1dd68e9438c716fe96237764e6426" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="辅助设备" ID="06b5483b743fc9357c6baf692ec4aab1" STYLE="fork">
+            <node TEXT="诊断辅助软件" ID="e890be232b99c08257a26c7c8a24afe3" STYLE="fork">
+              <node TEXT="AI影像处理软件" ID="d0da33e6a1c8aeca543f115d0c903e24" STYLE="fork"/>
+              <node TEXT="AI决策支持软件" ID="dce19d07b3eb84c16589b5eafaa8aa9d" STYLE="fork"/>
+              <node TEXT="AI手术计划软件" ID="fac8ab486168b6fb712025672586a571" STYLE="fork"/>
+              <node TEXT="采用脑机接口技术的医疗器械" ID="df043fa7c2317dcc2f34af609a4a26c7" STYLE="fork"/>
+              <node TEXT="应用纳米材料的医疗器械" ID="86b2e7e1dea781f0a7baa1b693bd9e9f" STYLE="fork"/>
+              <node TEXT="医疗器械软件（SaMD）" ID="b2253c74d528b646c73d8ca22c7cd075" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="家用医疗设备" ID="f4535b8031a7fbd9796456609476b352" STYLE="fork">
+            <node TEXT="呼吸治疗" ID="ca552764abbf44636c3de2bd40ede37c" STYLE="fork">
+              <node TEXT="制氧机、呼吸机" ID="f7621c98b944fd28421cc507741dfbf6" STYLE="fork"/>
+            </node>
+            <node TEXT="血糖监测" ID="6588b90d06cbbc7c4a1d3973d93ca96e" STYLE="fork">
+              <node TEXT="血糖仪" ID="d3f9915f4e502c3cf5526caf140557dd" STYLE="fork"/>
+            </node>
+            <node TEXT="健康检测" ID="ee1470f603d9ebe977cd25e29016c732" STYLE="fork">
+              <node TEXT="电子血压计" ID="f3ed11c0775e7faa7d84b47c5105a71e" STYLE="fork"/>
+            </node>
+            <node TEXT="助听设备" ID="5764eca2ce45adff6e51eb791d532484" STYLE="fork">
+              <node TEXT="助听器" ID="a9b71c80be18b7a7344fd03a5738e8c1" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="高值医用耗材" ID="9ea233d759eb3d96d1e699bb2c476e19" STYLE="fork">
+            <node TEXT="血管介入类" ID="cf8bbbfd521763a243d415138a7399fe" STYLE="fork">
+              <node TEXT="冠脉介入球囊/支架" ID="445f7430ef860ad310a7f70624abde26" STYLE="fork"/>
+              <node TEXT="外周血管介入" ID="7e40e2ff90c9dba883e9473180885ca0" STYLE="fork"/>
+              <node TEXT="神经血管介入" ID="ac58348e9cfa1a04eda325031dad2ce0" STYLE="fork"/>
+              <node TEXT="肺动脉血栓取出系统" ID="aa885931754de0161bb345960de77b10" STYLE="fork"/>
+            </node>
+            <node TEXT="非血管介入类" ID="8cceee346c5e9cde2b8d41f2001b1529" STYLE="fork">
+              <node TEXT="内窥镜下耗材" ID="74813a5b4fd6d207edce8de94cae5f6e" STYLE="fork"/>
+              <node TEXT="其他介入耗材" ID="99c79c02cb2d4a9983935e72579fc7bc" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="植入器械/材料" ID="423b34c1820a140cace456f7d52a1ed3" STYLE="fork">
+            <node TEXT="有源植入物" ID="8ebc895da3d63f4a6f58d573e24296dc" STYLE="fork">
+              <node TEXT="心脏起搏器" ID="aa0f224166282744b6c5a4ab7c1ad823" STYLE="fork"/>
+              <node TEXT="植入式心律转复除颤器" ID="2d06c3ce3c2efb2c1757a5f7b26e880d" STYLE="fork"/>
+              <node TEXT="心室辅助装置" ID="87c65dad60934c49ddd6f6b16182e8b7" STYLE="fork"/>
+              <node TEXT="脑深部电刺激器" ID="af3bd2a8299ae85db77265a37afdbaf5" STYLE="fork"/>
+              <node TEXT="脊髓刺激器" ID="a5dc1f9aaf522f1fcb709d7e7318f90b" STYLE="fork"/>
+              <node TEXT="听觉植入物" ID="440d7c903bd8fb4bc9353feef45b6b75" STYLE="fork"/>
+            </node>
+            <node TEXT="无源植入物" ID="289fb22ee8055d73fe395a241dda49f2" STYLE="fork">
+              <node TEXT="心脏瓣膜" ID="fec87ab9dd2b63b2f836a38e4a3c11fe" STYLE="fork"/>
+              <node TEXT="封堵器" ID="e9b6272b859474d45adf60088ee50114" STYLE="fork"/>
+              <node TEXT="关节植入物" ID="bae66534795050736efc06733636172c" STYLE="fork"/>
+              <node TEXT="脊柱植入物" ID="b7a639b10ba35f0cc7d163e0676071cf" STYLE="fork"/>
+              <node TEXT="创伤植入物" ID="65dc094ed66e84ac92d248f9c629180c" STYLE="fork"/>
+              <node TEXT="运动医学植入器械" ID="bb0a70821ea262020817141951b01391" STYLE="fork"/>
+              <node TEXT="整形外科植入物" ID="57da22ee8d87fef55f93a78de8ad5cb5" STYLE="fork"/>
+              <node TEXT="眼科植入物" ID="f0da41f894e41280e1ed33431e7361ba" STYLE="fork"/>
+              <node TEXT="其他植入物" ID="30155d1dac743455cc8d26f17baa5c44" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="低值医用耗材" ID="ddef4b26528ce751cd007baaa4afd0e2" STYLE="fork">
+            <node TEXT="注射穿刺类" ID="5752b91ec99e4cabcab9e8bbde3c56ae" STYLE="fork">
+              <node TEXT="注射器、输液器" ID="98a51a1646ed34b7e812054b56c027d5" STYLE="fork"/>
+            </node>
+            <node TEXT="医用卫生材料" ID="e8e7a7299362152a68c08d64b49e3ef6" STYLE="fork">
+              <node TEXT="敷料、口罩" ID="e13884dc75bc7c187ec26e0defa10e54" STYLE="fork"/>
+            </node>
+            <node TEXT="医用高分子制品" ID="958d8317f7e57c26e0f52420a744c6a3" STYLE="fork">
+              <node TEXT="导管、引流袋" ID="d54d5bf8985b7e505c0ecf28d0992581" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="装备制造" ID="409d6ed4ad28c2b7d6071a2bd7087269" STYLE="fork">
+            <node TEXT="制药装备" ID="76ca2d3d2719945b909cb5cdd83577c2" STYLE="fork">
+              <node TEXT="生物反应器/系统" ID="ff7957f8aaf788b22556f399452513f4" STYLE="fork"/>
+              <node TEXT="实验室自动化" ID="44cc64c9b1d9e1e207b6f6df896f82ea" STYLE="fork"/>
+              <node TEXT="智慧工厂方案" ID="aedbf03b71c7070a9bf006170d407812" STYLE="fork"/>
+            </node>
+          </node>
+        </node>
+        <node TEXT="医疗服务" ID="97879ca0dfdca08dd0d8f365eab374da" STYLE="fork">
+          <node TEXT="医药商业 / 流通" ID="86f341fbe0df4538e648fd99b0c3cd41" STYLE="fork">
+            <node TEXT="医药配送企业" ID="65f5c561171df31b1baad5f48d0ecc75" STYLE="fork"/>
+            <node TEXT="医药即时零售" ID="dbdd9726444fd0a343c814a01f859cdd" STYLE="fork">
+              <node TEXT="平台型" ID="9bd41dc094eb55b334ae24b6998202f8" STYLE="fork"/>
+              <node TEXT="连锁药店 O2O" ID="fef7b33efa8a4cf3d0d372a6a802dfec" STYLE="fork"/>
+            </node>
+            <node TEXT="药企线上渠道 / 合作" ID="43afd8c6e2f31181ad8da9c00309b8c9" STYLE="fork">
+              <node TEXT="新品首发 / 旗舰店 / 营销" ID="e6fe3d44d72ff35dabda07e8dbf554ae" STYLE="fork"/>
+            </node>
+            <node TEXT="医药跨境供应链" ID="2e7be6ce6930d5aa76c72bc6d1247849" STYLE="fork"/>
+          </node>
+          <node TEXT="医疗零售" ID="3f8a65416c9d0db7081559596d7078ef" STYLE="fork">
+            <node TEXT="实体药店" ID="fd1a61775d7e04393c89cc9caf4b4632" STYLE="fork">
+              <node TEXT="连锁药店" ID="88f9faa677e8c208e16fb71f00914e2b" STYLE="fork"/>
+              <node TEXT="DTP 药房 / 特药房" ID="2997b9c55916953b89d3138f1bfefe5d" STYLE="fork"/>
+            </node>
+            <node TEXT="医药电商" ID="b4d5fcc1c898489464bb637a4b31d0a7" STYLE="fork">
+              <node TEXT="B2B" ID="0a816f08410e3cbe34390802aec6e5cd" STYLE="fork"/>
+              <node TEXT="B2C" ID="46a4b62cbb36252eff327c6bd455dbb4" STYLE="fork"/>
+              <node TEXT="O2O" ID="63a89b43a60a4cd29f2c0eb1aa933b31" STYLE="fork"/>
+            </node>
+            <node TEXT="药店业务拓展" ID="7748c5ca9eecb11a9ad45e5d1a570d45" STYLE="fork">
+              <node TEXT="医美服务" ID="fb6b87320fc7411047e504cfec48693a" STYLE="fork"/>
+              <node TEXT="中医诊所" ID="448ab66ff77084b8fd0f195cd1285bd1" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="严肃医疗" ID="03aa3c5c9bdb4d8aaa86539c67ab4d2d" STYLE="fork">
+            <node TEXT="公立三级" ID="e5aea665f35b92df507ae6a1490705d7" STYLE="fork"/>
+            <node TEXT="公立二级" ID="12ad05b7a8ad440a97b2a9aa10858d89" STYLE="fork"/>
+            <node TEXT="基层公卫" ID="26c3dc0cdf330834f1c8fecffcd5f9c2" STYLE="fork"/>
+            <node TEXT="民营医院" ID="0493f3f3162a73935fa8ad74a63e9d7e" STYLE="fork">
+              <node TEXT="综合医院" ID="b00f139daeb0f694976d2c29b0a11c93" STYLE="fork"/>
+              <node TEXT="专科医院（肿瘤）" ID="60b47f07bc1918067a39b5aa4800e28b" STYLE="fork"/>
+              <node TEXT="专科医院（辅助生殖）" ID="776a10d7fa884b3cdc7edcdfb3203b18" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="消费医疗" ID="ed380f6811282cc8c65ed73cd70fe72e" STYLE="fork">
+            <node TEXT="口腔诊所 / 连锁" ID="31e59bbbc93d531ba1c26d0cc14f1e4d" STYLE="fork"/>
+            <node TEXT="体检中心 / 健康管理" ID="32645c4b7e29dbcadc8016c5801ec2d0" STYLE="fork"/>
+            <node TEXT="眼科诊所 / 连锁" ID="72db6d877149a8eec91b17e90bcfdb14" STYLE="fork">
+              <node TEXT="综合眼科集团" ID="740759245cd6cc7c2b3a6e0d4fc468f1" STYLE="fork"/>
+              <node TEXT="垂直眼视光 / 少儿眼科" ID="7b2c1fecdc86f239bd2a29f982d40491" STYLE="fork"/>
+            </node>
+            <node TEXT="产后中心 / 母婴护理" ID="869c6d4acdd3dad4b2806637909f99ac" STYLE="fork"/>
+            <node TEXT="生殖中心 / 门诊" ID="a362285ca5461863b764b3ef3cc514f9" STYLE="fork"/>
+            <node TEXT="中医诊所 / 连锁" ID="efe8fb5f765f75863fd94867c8b88da6" STYLE="fork"/>
+            <node TEXT="医美诊所 / 服务" ID="71b1f4507c6c0190c27ef9ccc3ba1c81" STYLE="fork"/>
+            <node TEXT="专科诊所 / 连锁（其他）" ID="3b8fc37f9a02965d4eaac2f96fbd49e8" STYLE="fork">
+              <node TEXT="骨科与肌肉健康（数字疗法）" ID="f5bdec2e70e6e8d3191c15b951fcaed9" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="互联网医疗" ID="3b2d11075999405e2708861f0d24f6f6" STYLE="fork">
+            <node TEXT="综合平台 / 在线诊疗" ID="50b8d0817eb3d6bb7ebb681f41b0734f" STYLE="fork">
+              <node TEXT="互联网医院" ID="9c8eb5a83558d801212e47d9b5b595ed" STYLE="fork"/>
+              <node TEXT="AI 医疗应用" ID="6f82a8ef0789cbf2e571149accbc3baa" STYLE="fork"/>
+            </node>
+            <node TEXT="垂直服务平台" ID="3187e24e22b0c4776376eb59acd7fd3d" STYLE="fork">
+              <node TEXT="互联网 + 护理服务" ID="d7fe999ff43084b85d4f58f9d9d1d9ea" STYLE="fork"/>
+              <node TEXT="数字慢病 / 专病管理" ID="56c4965db44b2b6331768e60e43a4c2d" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="第三方中心" ID="6d9c9692b742dede358aeef82548511c" STYLE="fork">
+            <node TEXT="检验中心" ID="82cba7b788bf27ff5bb5bc8644090fbf" STYLE="fork"/>
+            <node TEXT="影像中心" ID="803f662487061d456df688be33cce5be" STYLE="fork"/>
+            <node TEXT="病理中心" ID="4947861b5089321da871fd755dd441de" STYLE="fork"/>
+            <node TEXT="消毒中心" ID="a9bd9f013f7e309649b580344a6b0081" STYLE="fork">
+              <node TEXT="第三方消毒供应" ID="48ba7a77390ab3845aca9ac9106fe34b" STYLE="fork"/>
+            </node>
+            <node TEXT="血透中心" ID="dd851d84b4f3750bb33881090a91648e" STYLE="fork"/>
+            <node TEXT="其他第三方服务" ID="5eccb2bdc2b57e8fcdb51dc08c777dcc" STYLE="fork">
+              <node TEXT="居家护理 / 上门检测" ID="a43d5a94865c3834f0a8254f0f63766b" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="保险支付" ID="698f2840e780a6e9e65653d6076f0da7" STYLE="fork">
+            <node TEXT="商业保险" ID="9ca1d74b8141abbf99bfaca7487b6347" STYLE="fork">
+              <node TEXT="健康险产品 / 公司" ID="ca2630f66c1e48c7960fb756def118b5" STYLE="fork"/>
+            </node>
+            <node TEXT="TPA / 保险科技" ID="86fa00535f648a8cfba123f87a3b62a2" STYLE="fork">
+              <node TEXT="保险科技平台 / 服务" ID="9895e8d6e038140f73fbaac721d835c7" STYLE="fork"/>
+            </node>
+          </node>
+        </node>
+        <node TEXT="药品" ID="b23865bdb472a6a69acfed4aab503411" STYLE="fork">
+          <node TEXT="化学制药" ID="09b796de1035a8be7cff16973464c604" STYLE="fork">
+            <node TEXT="化学制剂" ID="c6776034c4ab4621d29b1b19ac719202" STYLE="fork">
+              <node TEXT="创新小分子药" ID="0acedcafa9905c7ce55a033e69d91f52" STYLE="fork"/>
+              <node TEXT="改良型新药" ID="60f882849a05ee779b9b3812601182fc" STYLE="fork"/>
+              <node TEXT="仿制药" ID="9a9f8640c129b53fa91127c4f37cae53" STYLE="fork"/>
+              <node TEXT="减重领域小分子药" ID="e1a1adb45bae096e03281349c956dba6" STYLE="fork"/>
+              <node TEXT="肿瘤靶向小分子药" ID="bb0422532eb1428108b11ddf9ed4ad7e" STYLE="fork"/>
+              <node TEXT="自免领域小分子药" ID="7ceecedcf335230b24ecf92e02176fec" STYLE="fork"/>
+            </node>
+            <node TEXT="原料药" ID="5c7a5ce9c381da80985fdace53f40aac" STYLE="fork">
+              <node TEXT="高端原料药" ID="a4df9576c30ef008067de16c924548ef" STYLE="fork"/>
+              <node TEXT="特色原料药" ID="bffe4d6066ae350e74916474eb17b118" STYLE="fork"/>
+              <node TEXT="大宗原料药" ID="eac451aa20b18c354bf0805b3ba7b7a0" STYLE="fork"/>
+              <node TEXT="多肽原料药" ID="fdd93bdcfe3abce0610b332f7ed73c46" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="生物制品" ID="7854081fe05886ac62a8b28ecfb694fa" STYLE="fork">
+            <node TEXT="血液制品" ID="fd84a8b7948fe385175990e9c27ff52a" STYLE="fork">
+              <node TEXT="人血白蛋白" ID="7ef5931a64afc6b92e16f39dfb058393" STYLE="fork"/>
+              <node TEXT="免疫球蛋白" ID="cb86ac5180d210ec5bf2de1a73b46be6" STYLE="fork"/>
+              <node TEXT="凝血因子" ID="9506d2f5efdf594f6545e5fc30a656db" STYLE="fork"/>
+            </node>
+            <node TEXT="疫苗" ID="ce80b407b1fb62f974a43f39ed8a2eea" STYLE="fork">
+              <node TEXT="预防性疫苗（HPV、PCV13）" ID="d16d25088f5fbc4eb86028f478a309fd" STYLE="fork"/>
+              <node TEXT="治疗性疫苗" ID="0957ead2781e6a31bc1e211f8518c63d" STYLE="fork"/>
+              <node TEXT="mRNA 疫苗" ID="c2846229841c3e0385e5cd6f7aaa06d4" STYLE="fork"/>
+              <node TEXT="乙肝治疗性疫苗" ID="86ca7bf48683a8fcc807f82da39ab143" STYLE="fork"/>
+            </node>
+            <node TEXT="抗体药物" ID="b709462bb9f8048d7383a8c182f0c42c" STYLE="fork">
+              <node TEXT="双特异性抗体" ID="928a6e8b7a42a93c710d7fe36b9f36b7" STYLE="fork"/>
+              <node TEXT="ADC（抗体偶联药物）" ID="1afb1947ead3402615cbb19cddf922e0" STYLE="fork"/>
+              <node TEXT="双抗 ADC" ID="3a9f5036e3c653d7169215ccc0f45d0d" STYLE="fork"/>
+              <node TEXT="双载荷 ADC" ID="31fe65a0e3d5a353ed0cee8599660aa5" STYLE="fork"/>
+              <node TEXT="单克隆抗体" ID="51bd5a73695057a3f1c2c243d868eb4f" STYLE="fork"/>
+              <node TEXT="髓系细胞衔接器（MCE）" ID="f8fcd7789a307e28124b01d4ad67fc63" STYLE="fork"/>
+            </node>
+            <node TEXT="蛋白药物" ID="463d1cf62f82f9d5f655625d07db5863" STYLE="fork">
+              <node TEXT="重组蛋白药物" ID="fdd72bc3c1ed3f82ca4d799e6f2b6342" STYLE="fork"/>
+              <node TEXT="酶替代疗法" ID="a07d426396d2c8ce741aa579dc586424" STYLE="fork"/>
+              <node TEXT="细胞因子" ID="f3713047ee92de2a8af3ca9ebc3c719d" STYLE="fork"/>
+            </node>
+            <node TEXT="基因治疗" ID="8de1d759ce20b9dd3bc594852576722c" STYLE="fork">
+              <node TEXT="CAR-T（自体 / 通用型 / 体内 CAR-T）" ID="c64d431d2b220351a6cb5014ce7398c2" STYLE="fork"/>
+              <node TEXT="TIL 疗法" ID="901c45e9673e22a29729715b702bdd88" STYLE="fork"/>
+              <node TEXT="核酸药物（siRNA、mRNA 等）" ID="bf1b17ea3c61b7ae97a587962043811d" STYLE="fork"/>
+              <node TEXT="基因编辑疗法" ID="4fe4b009990b98b255ae30320f10ee87" STYLE="fork"/>
+              <node TEXT="现货型细胞疗法" ID="8f4ebfe5292de5e910c871eec4067a24" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="中药" ID="d5e06e065360cc23800a5b80f876424c" STYLE="fork">
+            <node TEXT="中药饮片" ID="219c7745b138ff339eaa85ad440ff9cc" STYLE="fork">
+              <node TEXT="传统饮片" ID="50da23d76f5c7c02655f18ca94088e5e" STYLE="fork"/>
+              <node TEXT="配方颗粒" ID="c02688b3492af1b882602a819adba077" STYLE="fork"/>
+              <node TEXT="破壁饮片" ID="3a929d4765ffd4c706aa3f62a1f84ae7" STYLE="fork"/>
+            </node>
+            <node TEXT="中成药" ID="1bee72767051ecbda370c94f5a787feb" STYLE="fork">
+              <node TEXT="心脑血管类" ID="46f02014adf52f3c343c7fc6a908f597" STYLE="fork"/>
+              <node TEXT="呼吸系统类" ID="ea6362a744d5e25f34f35f7a8a185b31" STYLE="fork"/>
+              <node TEXT="抗肿瘤辅助类" ID="e9c5d34575813ee24d76c5a87f07ac9f" STYLE="fork"/>
+            </node>
+          </node>
+        </node>
+        <node TEXT="AI 药物研" ID="05cd0efa5b502b6362cbad8a95b8fe57" STYLE="fork">
+          <node TEXT="AI 药物研发平台" ID="d44ceb2e79e74742db22ce2803e25c16" STYLE="fork">
+            <node TEXT="小分子 / AI 药物研发平台等" ID="964ecbb4c7df7e38a63e79b1bf3951ea" STYLE="fork">
+              <node TEXT="小分子 / AI 药物研发平台（如晶泰科技 XtalFold™）" ID="4646e4a823e4bc71a99016b7e7239a2e" STYLE="fork"/>
+              <node TEXT="DNA 编码化合物库技术" ID="2da31da4ad3ef06112ca68a155d2c769" STYLE="fork"/>
+              <node TEXT="一站式 AI 赋能新药研发平台（如腾迈医药 TandemViz™）" ID="c5ec5468c48ca746b0cc59a8231dccc7" STYLE="fork"/>
+              <node TEXT="计算设计平台（如深势科技 Hermite®）" ID="bb34ee80025eb973f3b4d5f3327fd0e3" STYLE="fork"/>
+              <node TEXT="AI + 疫苗研发平台" ID="288f6fc6ae399e0c0870bf7d485d928a" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="AI CRO / 技术服务商" ID="b8d71751a33d3b42eb51099d1a68753e" STYLE="fork">
+            <node TEXT="AI 驱动的口服小分子药物等" ID="8c74983d4274387c9e707621a8f97169" STYLE="fork">
+              <node TEXT="AI 驱动的口服小分子药物" ID="7a4200b2430b294f02bfc91da4374ca3" STYLE="fork"/>
+              <node TEXT="代谢增强型细胞疗法（如莱芒生物 MetaOC 平台）" ID="0bed24aff2819730d7aa88d3ee7f40dc" STYLE="fork"/>
+              <node TEXT="AI 驱动的大分子药物（如倍华生物抗体平台）" ID="eb5bc44e03af4803fc0b52db1f070542" STYLE="fork"/>
+              <node TEXT="AI 设计的减重 / 代谢类药物" ID="6b8eea4b624a61712c964e06e3a34268" STYLE="fork"/>
+              <node TEXT="AI 辅助临床试验设计" ID="63a72aa6394ec52fbcae0ac1b5638d8a" STYLE="fork"/>
+              <node TEXT="数字化 CRO 服务" ID="28b60d90f19a4fcfc419dbbdba00b017" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="AI 自研管线企业" ID="9c0cb90aae346e9b62df20abd1d28090" STYLE="fork">
+            <node TEXT="AI 药物研发 SaaS 平台等" ID="550eb68dee28179893bc1c15ac269f79" STYLE="fork">
+              <node TEXT="AI 药物研发 SaaS 平台（覆盖药物设计、虚拟筛选、成药性预测）" ID="d13f69f1e026949229dcbbcb7a782939" STYLE="fork"/>
+              <node TEXT="AI 智能体（如衍因科技在 RNA 药物、IND 申报等场景的嵌入）" ID="e333173549998d684c5a9ed8dcba5ecb" STYLE="fork"/>
+              <node TEXT="AI 蛋白质设计平台" ID="f706d486dea596db5657e7ebba9d4060" STYLE="fork"/>
+              <node TEXT="AI 设计的抗肿瘤药物" ID="43e36dec9f1b9d6e9392fac0706adba0" STYLE="fork"/>
+              <node TEXT="AI 优化的代谢类药物" ID="81f6be3743dcb9c1d646779858b3fe20" STYLE="fork"/>
+              <node TEXT="AI 驱动的神经免疫疗法" ID="f8f52290798ecb00c09f0c5b3d9f6e90" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="AI 软件 / 工具平台" ID="32a6f799d520736092028b66af19eec2" STYLE="fork">
+            <node TEXT="AI + 神经免疫疗法等" ID="2a8e006ebceec6a46a937ccf4826c878" STYLE="fork">
+              <node TEXT="AI + 神经免疫疗法（如埃格林医药 EG-501）" ID="d2e0614e96cb7897f8304007c7bf1170" STYLE="fork"/>
+              <node TEXT="AI + 疫苗研发（如智峪生科与沃森生物合作）" ID="1d51790fba7c6d6a2da24ba88aa0ade4" STYLE="fork"/>
+              <node TEXT="AI + 多肽药物发现平台" ID="4dc7a8dca6763e1816c069f82c63eb4e" STYLE="fork"/>
+              <node TEXT="AI + 新型 ADC 化合物库开发" ID="5acde2c1943be84e499f2227756ae074" STYLE="fork"/>
+              <node TEXT="AI 药物发现平台" ID="14af55f970bd128ef3b80dbbc7f268ff" STYLE="fork"/>
+              <node TEXT="AI 蛋白质设计平台" ID="ad15aacaea46ff9b9dc09cc6563cf3cd" STYLE="fork"/>
+              <node TEXT="AI 临床试验优化平台" ID="bfe42aeb9db70e7ad48b9e2d53710a81" STYLE="fork"/>
+              <node TEXT="AI 智能体平台" ID="8d5e31e284f28dfdb0b35dcf80e558f6" STYLE="fork"/>
+            </node>
+          </node>
+          <node TEXT="AI + 特定领域研发" ID="ca36c429ef1b80117fa5786d4452785b" STYLE="fork">
+            <node TEXT="小分子及抗体类新药研发平台授权等" ID="88606567a14efd18736fe3e918e9da8e" STYLE="fork">
+              <node TEXT="小分子及抗体类新药研发平台授权" ID="c74d521e90111531ae7992c68b9cbff7" STYLE="fork"/>
+              <node TEXT="AI 驱动的药物选择平台授权" ID="efc3678a4bd6a830fe0ea09fafed2e46" STYLE="fork"/>
+              <node TEXT="AI 平台用于大分子药物研发" ID="faf40d36b0889488ce04a02bea1af4f9" STYLE="fork"/>
+            </node>
+          </node>
+        </node>
+      </node>
+      <node TEXT="应用场景" ID="ba13f96e400fb7370e0122a8dd7bcb04" STYLE="fork">
+        <node TEXT="健康管理" ID="efd28db8d546de5fdafa01684ee17a70" STYLE="fork"/>
+        <node TEXT="患者社区" ID="3f7f7b5186e0e0394b42283ce8eda12b" STYLE="fork"/>
+        <node TEXT="健康和疾病咨询" ID="89ffe29ffdebf22629704bf5ef03c8d9" STYLE="fork"/>
+        <node TEXT="就诊挂号" ID="17227c40b7a1ef642789deb53c67ef16" STYLE="fork"/>
+        <node TEXT="就诊服务" ID="4e25b3e889763e42663043336500c868" STYLE="fork"/>
+        <node TEXT="转诊服务" ID="a8f8765056d159b70dfca767ac13562e" STYLE="fork"/>
+        <node TEXT="诊后服务" ID="d7b50c2827c787def21e62769e7660b5" STYLE="fork"/>
+        <node TEXT="疾病诊断" ID="a38ddf8b3abe5f5b10b76589f7a18092" STYLE="fork"/>
+        <node TEXT="疾病治疗" ID="639a48fc36a4c304f97bd7fb6a68f3d5" STYLE="fork"/>
+        <node TEXT="康复治疗" ID="3181fb705062448e327831a59592a02e" STYLE="fork"/>
+        <node TEXT="疾病预防" ID="5d83db313106c3ee32753f7818905a2c" STYLE="fork"/>
+        <node TEXT="中医科" ID="3c6923cfc495d9590c51693954bb9a1d" STYLE="fork"/>
+        <node TEXT="口腔科" ID="1eaf6a7a0575b529d127eb87efcb7546" STYLE="fork"/>
+        <node TEXT="眼科" ID="377f19bf2a598854f1c5edba97f1e396" STYLE="fork"/>
+        <node TEXT="疼痛科" ID="b731c9982581849e53710e10aacc0b5b" STYLE="fork"/>
+        <node TEXT="辅助科室" ID="3b687793bb492274fa75675a2a5b3c28" STYLE="fork"/>
+        <node TEXT="精神科" ID="af55aa8f8126caa60c6908b113e50a70" STYLE="fork"/>
+        <node TEXT="行政管理" ID="651c0bc6f3b5ced847018fff1a176c96" STYLE="fork"/>
+        <node TEXT="后勤支持" ID="6bd020ce2722f9aeef8c64b8557da8f6" STYLE="fork"/>
+        <node TEXT="肿瘤" ID="bac92ff110fa9c3b251fee112287e473" STYLE="fork"/>
+        <node TEXT="心血管疾病" ID="ff7a5b39933ea21f3b1661beb341142e" STYLE="fork"/>
+        <node TEXT="感染性疾病" ID="63545314e7708d6f7143e8af8037e755" STYLE="fork"/>
+        <node TEXT="内分泌系统疾病" ID="138d72b3fa47ec5f04abd476dcf680c4" STYLE="fork"/>
+        <node TEXT="代谢性疾病" ID="7fd64bce5e18612fab3e9dd1e1457cfb" STYLE="fork"/>
+        <node TEXT="精神类疾病" ID="8e79a686002c0aa8a41454467343b0d5" STYLE="fork"/>
+        <node TEXT="神经系统疾病" ID="adfdcfcc05bf2ef71c5ffd64c1db7a53" STYLE="fork"/>
+        <node TEXT="呼吸系统疾病" ID="60cebe5d2c8f05b6f5db485d30f0231a" STYLE="fork"/>
+        <node TEXT="血液系统疾病" ID="377e977ca559e2d5c962628c110864ce" STYLE="fork"/>
+        <node TEXT="消化系统疾病" ID="f14478bfbb4cd15ccd3bae7823d2cf0a" STYLE="fork"/>
+        <node TEXT="眼部疾病" ID="179d2507adb0c7d0ed79d2d2e6c50957" STYLE="fork"/>
+        <node TEXT="皮肤疾病" ID="4a93f3c968ae57b781b2f661b3205f8a" STYLE="fork"/>
+        <node TEXT="生殖系统疾病" ID="fe943f407ef90f1991a63297f3980317" STYLE="fork"/>
+        <node TEXT="罕见病" ID="544703c7319f88e826c6b281b2f0db95" STYLE="fork"/>
+        <node TEXT="泌尿系统疾病" ID="a44a413706f583e559dd247c1117e6e5" STYLE="fork"/>
+        <node TEXT="慢性病" ID="45e622f5c503993972f1366f7b3db8df" STYLE="fork"/>
+        <node TEXT="脑部疾病" ID="64fbc9c052ca86fbb2e3b5c8d2d9c6ab" STYLE="fork"/>
+        <node TEXT="运动系统疾病" ID="16dcd2b6ddfb5c2b4fbf9f82dae36ac2" STYLE="fork"/>
+        <node TEXT="骨科" ID="57d51e2667670e445ffefb87593dda80" STYLE="fork"/>
+      </node>
+      <node TEXT="产业链环节" ID="b16d0af44de61b17b50a626aecab73df" STYLE="fork">
+        <node TEXT="上游" ID="bfe60adbefd6a5faf6c98a9b1aac77ed" STYLE="fork"/>
+        <node TEXT="中游" ID="a9173ebcf4d9d778748060a7ecf5330c" STYLE="fork"/>
+        <node TEXT="下游" ID="bc687610979fce426b631c3afa42dd9a" STYLE="fork"/>
+      </node>
+    </node>
+  </node>
+</map>

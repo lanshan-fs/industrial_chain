@@ -1172,9 +1172,7 @@ const Overview: React.FC = () => {
               <div style={{ color: "#fff", fontSize: 16, marginBottom: 16 }}>
                 联系我们
               </div>
-              <div style={{ marginBottom: 8 }}>
-                地址：北京市朝阳区日坛北街33号
-              </div>
+              <div style={{ marginBottom: 8 }}>地址：北京市朝阳区xxxx号</div>
               <div style={{ marginBottom: 8 }}>电话：010-6509XXXX</div>
               <div>邮箱：support@chaoyang.gov.cn</div>
             </Col>
@@ -1189,7 +1187,7 @@ const Overview: React.FC = () => {
               alignItems: "center",
             }}
           >
-            <span>京ICP备20260001号-1</span>
+            <span></span>
             <Space size="large">
               <GithubOutlined style={{ fontSize: 20, cursor: "pointer" }} />
               <GlobalOutlined style={{ fontSize: 20, cursor: "pointer" }} />
